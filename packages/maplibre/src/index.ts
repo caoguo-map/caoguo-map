@@ -33,6 +33,35 @@ import type { ThemeName } from '@caoguo/theme';
 
 export type MapInstance = MlMap;
 
+/**
+ * WebGL 不可用时抛出（如无 GPU 的沙箱/无头环境、老旧浏览器）。
+ * 调用方应捕获并向用户展示降级提示，而非让页面崩溃。
+ */
+export class WebGLUnavailableError extends Error {
+  constructor(message = '当前环境不支持 WebGL，无法渲染地图') {
+    super(message);
+    this.name = 'WebGLUnavailableError';
+  }
+}
+
+/**
+ * 探测当前环境是否可创建 WebGL 上下文。
+ * 某些沙箱/无头浏览器会返回 canvas 但 getContext 抛错或返回 null，
+ * 因此同时捕获异常与 null 两种情况。
+ */
+export function isWebGLAvailable(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl =
+      canvas.getContext('webgl2') ||
+      canvas.getContext('webgl') ||
+      canvas.getContext('experimental-webgl');
+    return !!gl;
+  } catch {
+    return false;
+  }
+}
+
 export { maplibregl, WUHAN_CENTER, WUHAN_ZOOM, osmRasterStyle };
 export * from './crs';
 export * from './sources';
@@ -69,6 +98,9 @@ export class Map {
 
   constructor(options: MapOptions) {
     this._dataCRS = options.dataCRS ?? 'WGS84';
+    if (!isWebGLAvailable()) {
+      throw new WebGLUnavailableError();
+    }
     this._map = new maplibregl.Map({
       container: options.container,
       center: options.center ?? WUHAN_CENTER,

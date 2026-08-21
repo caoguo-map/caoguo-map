@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue';
-import { Map, WUHAN_CENTER, type MapInstance } from '@caoguo/maplibre';
+import { Map, WUHAN_CENTER, WebGLUnavailableError, type MapInstance } from '@caoguo/maplibre';
 
 const props = withDefaults(
   defineProps<{
@@ -32,6 +32,7 @@ const emit = defineEmits<{ ready: [MapInstance] }>();
 
 const el = ref<HTMLElement | null>(null);
 let map: InstanceType<typeof Map> | null = null;
+const webglError = ref(false);
 
 function lineColorExpr(): unknown {
   if (props.colorBy) {
@@ -52,7 +53,15 @@ function highlightFilter(): unknown {
 
 onMounted(() => {
   if (!el.value) return;
-  map = new Map({ container: el.value, center: props.center, zoom: props.zoom });
+  try {
+    map = new Map({ container: el.value, center: props.center, zoom: props.zoom });
+  } catch (e) {
+    if (e instanceof WebGLUnavailableError) {
+      webglError.value = true;
+      return;
+    }
+    throw e;
+  }
   map.on('load', () => {
     if (props.data) {
       map?.addSource('demo', { type: 'geojson', data: props.data as object });
@@ -115,14 +124,63 @@ onUnmounted(() => map?.remove());
 </script>
 
 <template>
-  <div ref="el" class="map-demo" :style="{ height }"></div>
+  <div class="map-demo-wrap" :style="{ height }">
+    <div ref="el" class="map-demo" :style="{ height }"></div>
+    <div v-if="webglError" class="map-demo-fallback">
+      <div class="map-demo-fallback-icon">🗺️</div>
+      <p class="map-demo-fallback-title">当前环境无法渲染地图</p>
+      <p class="map-demo-fallback-desc">
+        检测到浏览器未启用 WebGL（常见于沙箱、无头环境或禁用了硬件加速）。
+        请在支持 WebGL 的桌面浏览器中打开本页以查看交互式地图。
+      </p>
+    </div>
+  </div>
 </template>
 
 <style scoped>
+.map-demo-wrap {
+  position: relative;
+  width: 100%;
+}
+
 .map-demo {
   width: 100%;
   height: 100%;
   min-height: 480px;
   background: var(--cg-bg);
+}
+
+.map-demo-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  background: var(--cg-bg);
+  color: var(--cg-text-muted);
+  min-height: 480px;
+}
+
+.map-demo-fallback-icon {
+  font-size: 40px;
+  opacity: 0.7;
+}
+
+.map-demo-fallback-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--cg-text);
+}
+
+.map-demo-fallback-desc {
+  margin: 0;
+  max-width: 360px;
+  font-size: 13px;
+  line-height: 1.6;
 }
 </style>
