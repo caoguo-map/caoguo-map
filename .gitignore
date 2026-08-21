@@ -10,6 +10,8 @@ node_modules/
 # 构建产物
 dist/
 *.tsbuildinfo
+.vitepress/.temp/
+.vitepress/cache/
 
 # Docker
 docker/.env
