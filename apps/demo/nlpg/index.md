@@ -3,95 +3,132 @@ title: D3 NLPG 查询
 ---
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import DemoLayout from '../common/DemoLayout.vue';
 import SimPanel from '../common/SimPanel.vue';
 import MapDemo from '../common/MapDemo.vue';
-import { wuhanPipes } from '../data/wuhan-pipes';
+import { queryNlpg, checkHealth, type NlpgRow } from '../common/api';
 
 const query = ref('光谷附近 500 米内的管线');
 const examples = [
   '光谷附近 500 米内的管线',
   '江汉路片区主干管',
   '直径大于 600 的管线',
+  '材质为铸铁的管段',
+  '负载率超过 90% 的变电站',
+  '信号弱于 -100dBm 的基站',
 ];
+const loading = ref(false);
+const errorMsg = ref('');
+const sql = ref('');
+const source = ref('');
+const rows = ref<NlpgRow[]>([]);
+const health = ref<{ postgis: boolean; deepseek: boolean } | null>(null);
 
-const POIS = {
-  光谷: [114.4, 30.49],
-  江汉路: [114.27, 30.58],
-} as Record<string, [number, number]>;
-
-const pipes = wuhanPipes.features.map((f) => ({
-  name: f.properties.name as string,
-  diameter: f.properties.diameter as number,
-}));
-
-const highlight = ref<string[]>([]);
-const flyTo = ref<[number, number] | null>(null);
-const steps = ref<string[]>([]);
-
-function run(q: string) {
-  const text = q.trim();
-  const names: string[] = [];
-  let fly: [number, number] | null = null;
-  const log: string[] = [`解析：「${text}」`];
-
-  // 1) 地理实体 → 中心点
-  for (const [poi, coord] of Object.entries(POIS)) {
-    if (text.includes(poi)) {
-      fly = coord;
-      log.push(`→ 地理实体解析：${poi} → 中心点`);
-      break;
-    }
-  }
-  if (!fly) log.push('→ 地理实体解析：未识别 POI，使用全图');
-
-  // 2) 类型过滤
-  if (text.includes('主干')) {
-    names.push(...pipes.filter((p) => p.name.includes('主干')).map((p) => p.name));
-    log.push('→ 要素过滤：主干管');
-  } else if (text.includes('支管')) {
-    names.push(...pipes.filter((p) => p.name.includes('支管')).map((p) => p.name));
-    log.push('→ 要素过滤：支管');
-  }
-
-  // 3) 管径过滤
-  const m = text.match(/直径\s*(大于|大于等?于|>|≥)\s*(\d+)/);
-  if (m) {
-    const n = Number(m[2]);
-    const matched = pipes.filter((p) => p.diameter > n).map((p) => p.name);
-    names.push(...matched);
-    log.push(`→ 管径约束：diameter > ${n} → 命中 ${matched.length} 条`);
-  }
-
-  // 默认全量
-  if (names.length === 0) {
-    names.push(...pipes.map((p) => p.name));
-    log.push('→ 未识别过滤条件，返回全部管线');
-  }
-
-  const uniq = [...new Set(names)];
-  log.push(`→ 命中 ${uniq.length} 条管线，已在地图高亮`);
-  highlight.value = uniq;
-  flyTo.value = fly;
-  steps.value = log;
+function formatCell(v: unknown): string {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
 }
 
-run(query.value);
+/** 将代理返回的行转换为 FeatureCollection（支持 geojson / lon,lat / lng,lat） */
+function toFeatureCollection(rs: NlpgRow[]): Record<string, unknown> {
+  const features = rs
+    .map((r, i) => {
+      let geometry: unknown = null;
+      if (typeof r.geojson === 'string') {
+        try { geometry = JSON.parse(r.geojson); } catch { geometry = null; }
+      } else if (r.geojson && typeof r.geojson === 'object') {
+        geometry = r.geojson;
+      } else {
+        const lon = Number(r.lon ?? r.lng ?? r.longitude);
+        const lat = Number(r.lat ?? r.latitude);
+        if (Number.isFinite(lon) && Number.isFinite(lat)) {
+          geometry = { type: 'Point', coordinates: [lon, lat] };
+        }
+      }
+      const { geojson, lon, lng, lat, longitude, latitude, ...props } = r as any;
+      return { type: 'Feature', geometry, properties: { ...props, name: props.name ?? `结果${i + 1}` } };
+    })
+    .filter((f) => f.geometry);
+  return { type: 'FeatureCollection', features };
+}
+
+/** 地图渲染用的数据：仅包含有几何的结果 */
+const mapData = computed(() => toFeatureCollection(rows.value));
+const hasGeo = computed(() => (mapData.value.features as unknown[]).length > 0);
+const highlight = computed(() => rows.value.map((r) => (r.name as string) ?? '').filter(Boolean));
+const columns = computed(() => {
+  const set = new Set<string>();
+  rows.value.forEach((r) => Object.keys(r).forEach((k) => {
+    if (k !== 'geojson') set.add(k);
+  }));
+  return [...set];
+});
+
+async function run(q: string) {
+  const text = q.trim();
+  if (!text) return;
+  loading.value = true;
+  errorMsg.value = '';
+  sql.value = '';
+  rows.value = [];
+  try {
+    const res = await queryNlpg(text);
+    if (!res.ok) {
+      errorMsg.value = res.message || '查询失败';
+      return;
+    }
+    sql.value = res.sql || '';
+    source.value = res.source || '';
+    rows.value = res.rows || [];
+  } catch (e) {
+    errorMsg.value = '调用 AI 代理失败：' + (e instanceof Error ? e.message : String(e));
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(async () => {
+  health.value = await checkHealth();
+  run(query.value);
+});
 </script>
 
-<DemoLayout title="D3 · NLPG 自然语言查询" subtitle="用一句话把地理意图转为空间查询（演示：前端模拟解析 + 实时高亮）。">
+<DemoLayout title="D3 · NLPG 自然语言查询" subtitle="用一句话把地理意图转为 PostGIS 空间查询。真实 LLM 生成 SQL，经安全校验后在 PostGIS 执行。">
   <template #map>
-    <MapDemo :data="wuhanPipes" :zoom="11.4" color-by="diameter" :highlight="highlight" :fly-to="flyTo" :height="'100%'" ></MapDemo>
+    <MapDemo :data="mapData" :zoom="12" :highlight="highlight" :height="'100%'"></MapDemo>
   </template>
   <template #panel>
-    <SimPanel title="自然语言查询" hint="前端模拟">
+    <SimPanel title="自然语言查询" :hint="health && health.postgis ? '已连接 PostGIS' : '代理不可用'">
       <input v-model="query" class="nlpg-input" placeholder="例如：光谷附近 500 米内的管线" @keyup.enter="run(query)" />
       <div class="nlpg-examples">
         <button v-for="e in examples" :key="e" @click="query = e; run(e)">{{ e }}</button>
       </div>
-      <button class="cg-btn cg-btn-primary nlpg-run" @click="run(query)">执行查询</button>
-      <pre v-if="steps.length" class="nlpg-result">{{ steps.join('\n') }}</pre>
+      <button class="cg-btn cg-btn-primary nlpg-run" :disabled="loading" @click="run(query)">
+        {{ loading ? '查询中…' : '执行查询' }}
+      </button>
+      <p v-if="errorMsg" class="nlpg-error">{{ errorMsg }}</p>
+      <div v-if="sql" class="nlpg-sql">
+        <div class="nlpg-sql-head">
+          <span>生成的 SQL</span>
+          <span class="nlpg-sql-src">来源：{{ source }}</span>
+        </div>
+        <div class="nlpg-result">{{ sql }}</div>
+      </div>
+      <div v-if="rows.length" class="nlpg-grid">
+        <table>
+          <thead>
+            <tr><th v-for="c in columns" :key="c">{{ c }}</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="(r, i) in rows" :key="i">
+              <td v-for="c in columns" :key="c">{{ formatCell(r[c]) }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="nlpg-count">共 {{ rows.length }} 条</p>
+      </div>
     </SimPanel>
   </template>
 </DemoLayout>
@@ -116,7 +153,7 @@ run(query.value);
   color: var(--cg-text-muted);
   cursor: pointer;
 }
-.nlpg-examples button:hover { color: var(--cg-text); border-color: var(--cg-border-strong); }
+.nlpg-examples button:hover { color: var(--cg-text); border-color: var(--cg-border-strong, #334155); }
 .nlpg-run { width: 100%; margin-top: 10px; }
 .nlpg-result {
   margin: 12px 0 0;
@@ -130,4 +167,25 @@ run(query.value);
   color: #cbd5e1;
   white-space: pre-wrap;
 }
+.nlpg-sql { margin-top: 14px; }
+.nlpg-sql-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 12px; color: var(--cg-text-muted); margin-bottom: 6px;
+}
+.nlpg-sql-src { font-size: 11px; opacity: 0.8; }
+.nlpg-error { margin-top: 12px; color: #f43f5e; font-size: 13px; }
+.nlpg-grid { margin-top: 14px; overflow: auto; max-height: 260px; }
+.nlpg-grid table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.nlpg-grid th, .nlpg-grid td {
+  border: 1px solid var(--cg-border);
+  padding: 6px 8px; text-align: left; white-space: nowrap;
+}
+.nlpg-grid th { background: var(--cg-bg-card); color: var(--cg-text-muted); position: sticky; top: 0; }
+.nlpg-count { margin: 8px 0 0; font-size: 12px; color: var(--cg-text-muted); }
+.nlpg-nogeo {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 24px; text-align: center; color: var(--cg-text-muted); min-height: 480px;
+}
+.nlpg-nogeo-icon { font-size: 40px; opacity: 0.7; }
+.nlpg-nogeo-sub { font-size: 12px; margin: 0; }
 </style>
