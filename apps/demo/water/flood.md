@@ -120,7 +120,6 @@ onUnmounted(() => {
       </div>
       <button class="cg-run" @click="runSim">重新模拟</button>
     </SimPanel>
-
     <SimPanel v-if="stats" title="模拟结果" :hint="`${stats.duration}ms`">
       <div class="result-grid">
         <div class="result-cell"><b>{{ stats.runoff }}</b><span>径流量 mm</span></div>

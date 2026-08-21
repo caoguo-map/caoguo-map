@@ -109,7 +109,6 @@ onUnmounted(() => {
         </div>
       </div>
     </SimPanel>
-
     <SimPanel title="层级钻取" hint="5 级">
       <div class="cg-tabs">
         <button
@@ -123,7 +122,6 @@ onUnmounted(() => {
         </button>
       </div>
     </SimPanel>
-
     <SimPanel title="供电路径追踪" hint="反向 BFS 到发电侧">
       <p class="cg-hint">选择一个设备，反向追踪到发电侧的完整供电路径</p>
       <select v-model="traceId" class="cg-select" @change="runTrace(traceId)">

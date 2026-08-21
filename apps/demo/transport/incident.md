@@ -59,7 +59,6 @@ onUnmounted(() => {
         </option>
       </select>
     </SimPanel>
-
     <SimPanel v-if="impact" title="影响分析" hint="IM-2/IM-3/IM-4">
       <div class="cg-result">
         <p>影响路段：<strong>{{ impact.affectedEdges.length }}</strong> 条</p>
@@ -73,7 +72,6 @@ onUnmounted(() => {
         </p>
       </div>
     </SimPanel>
-
     <SimPanel v-if="timeline.length" title="事件时间线" hint="IM-5">
       <div class="cg-timeline">
         <div v-for="(step, i) in timeline" :key="i" class="cg-tl-step">

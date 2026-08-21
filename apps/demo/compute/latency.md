@@ -64,7 +64,6 @@ onUnmounted(() => {
         <p>预估延迟：<strong>{{ recommendations[0].latencyMs.toFixed(1) }} ms</strong></p>
       </div>
     </SimPanel>
-
     <SimPanel title="延迟告警" hint="LM-4 超阈值">
       <label class="cg-label">告警阈值（ms）</label>
       <input v-model.number="thresholdMs" type="number" class="cg-input" @change="analyze" />

@@ -105,7 +105,6 @@ onUnmounted(() => {
         <button class="cg-btn" @click="clear">清除</button>
       </div>
     </SimPanel>
-
     <SimPanel v-if="result" title="推演结果" hint="纯函数 · 端到端毫秒级">
       <div class="cg-stat-row">
         <div class="cg-stat">
@@ -121,7 +120,6 @@ onUnmounted(() => {
           <div class="cg-stat-value">{{ result.affectedUserCount }}</div>
         </div>
       </div>
-
       <h4 class="cg-h4">隔离方案</h4>
       <div class="cg-summary">{{ result.valvePlan.summary }}</div>
       <div v-if="result.valvePlan.closeValves.length" class="cg-valve-list">
@@ -144,10 +142,8 @@ onUnmounted(() => {
           {{ v.properties?.code ?? v.id }}
         </span>
       </div>
-
       <h4 class="cg-h4">重要用户</h4>
       <div class="cg-important">{{ importantUserDesc }}</div>
-
       <h4 class="cg-h4">性能</h4>
       <div class="cg-perf">推演耗时 {{ durationMs.toFixed(1) }} ms</div>
     </SimPanel>

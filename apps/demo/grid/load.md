@@ -74,7 +74,6 @@ onUnmounted(() => {
       </div>
       <p v-else class="cg-hint">当前无过载设备</p>
     </SimPanel>
-
     <SimPanel title="负荷预测" hint="24h 简化模型">
       <div class="field">
         <label>基准负荷（MW）</label>

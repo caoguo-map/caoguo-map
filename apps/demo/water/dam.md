@@ -65,7 +65,6 @@ onUnmounted(() => {
       </div>
       <button class="cg-run" @click="runSchedule">推演下游水位</button>
     </SimPanel>
-
     <SimPanel v-if="result" title="下游水位影响" :hint="`${result.durationMs.toFixed(1)}ms`">
       <div v-for="ws in result.downstreamLevels" :key="ws.stationId" class="level-row">
         <span class="level-name">{{ ws.stationId }}</span>
@@ -77,7 +76,6 @@ onUnmounted(() => {
         </span>
       </div>
     </SimPanel>
-
     <SimPanel v-if="result" title="水库状态变化">
       <div v-for="rs in result.reservoirStates" :key="rs.reservoirId" class="res-state">
         <span class="res-name">{{ rs.reservoirId }}</span>

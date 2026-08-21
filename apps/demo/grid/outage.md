@@ -62,7 +62,6 @@ onUnmounted(() => {
         <option v-for="id in (targetType === 'device' ? gridDeviceIds : gridLineIds)" :key="id" :value="id">{{ id }}</option>
       </select>
     </SimPanel>
-
     <SimPanel v-if="result" title="分析结果" :hint="`${result.durationMs.toFixed(1)}ms`">
       <div class="stat-row">
         <span class="stat-label">受影响用户</span>
@@ -74,7 +73,6 @@ onUnmounted(() => {
         <div class="stat-cell"><b>{{ result.affectedUsers.industrial }}</b><span>工业</span></div>
         <div class="stat-cell"><b>{{ result.affectedUsers.important.length }}</b><span>重要</span></div>
       </div>
-
       <div v-if="result.affectedUsers.important.length" class="important-list">
         <h4>重要用户</h4>
         <div v-for="u in result.affectedUsers.important" :key="u.id" class="important-item">
@@ -83,9 +81,7 @@ onUnmounted(() => {
           <span class="important-reason">{{ u.reason }}</span>
         </div>
       </div>
-
       <div class="cg-divider" ></div>
-
       <h4>恢复方案</h4>
       <p class="cg-hint">预计恢复时间：{{ result.restoration.estimatedTime }}</p>
       <ul class="steps-list">

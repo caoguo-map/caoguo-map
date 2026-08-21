@@ -97,7 +97,14 @@ onMounted(async () => {
 
 <DemoLayout title="D3 · NLPG 自然语言查询" subtitle="用一句话把地理意图转为 PostGIS 空间查询。真实 LLM 生成 SQL，经安全校验后在 PostGIS 执行。">
   <template #map>
-    <MapDemo :data="mapData" :zoom="12" :highlight="highlight" :height="'100%'"></MapDemo>
+    <div class="nlpg-map-wrap">
+      <MapDemo v-show="hasGeo" :data="mapData" :zoom="12" :highlight="highlight" :height="'100%'"></MapDemo>
+      <div v-show="!hasGeo" class="nlpg-nogeo">
+        <div class="nlpg-nogeo-icon">🛰️</div>
+        <p>本次查询返回的是统计/属性结果（无空间几何），地图暂无可渲染要素。</p>
+        <p v-if="rows.length" class="nlpg-nogeo-sub">已命中 {{ rows.length }} 条记录，请在右侧查看明细。</p>
+      </div>
+    </div>
   </template>
   <template #panel>
     <SimPanel title="自然语言查询" :hint="health && health.postgis ? '已连接 PostGIS' : '代理不可用'">

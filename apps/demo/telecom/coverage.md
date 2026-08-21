@@ -90,7 +90,6 @@ onUnmounted(() => {
         </div>
       </div>
     </SimPanel>
-
     <SimPanel title="覆盖盲区识别" hint="CC-4">
       <button class="cg-btn" @click="detectGaps">重新检测</button>
       <div v-if="gaps.length" class="cg-result">

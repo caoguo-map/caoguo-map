@@ -110,7 +110,6 @@ onUnmounted(() => {
         解析
       </button>
     </SimPanel>
-
     <SimPanel v-if="result" title="解析结果" hint="正则 + 词典法">
       <div class="cg-intent-row">
         <div
@@ -123,9 +122,7 @@ onUnmounted(() => {
           置信度 {{ (result.confidence * 100).toFixed(0) }}%
         </div>
       </div>
-
       <div class="cg-description">{{ result.description }}</div>
-
       <h4 class="cg-h4">提取的约束（filters）</h4>
       <pre class="cg-filters">{{ JSON.stringify(result.filters, null, 2) }}</pre>
     </SimPanel>

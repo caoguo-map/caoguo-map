@@ -3,11 +3,23 @@ import { defineConfig } from 'vitepress';
 const TITLE = '草果地图 · 演示中心';
 const DESCRIPTION = '草果地图六张网场景的交互式演示：基础地图、GeoJSON 可视化、NLPG 查询、Copilot 交互。';
 
+const AI_PROXY_TARGET = process.env.CAOGUO_AI_PROXY || 'http://127.0.0.1:8787';
+
 export default defineConfig({
   base: '/demo/',
   title: TITLE,
   description: DESCRIPTION,
   lang: 'zh-CN',
+  vite: {
+    server: {
+      proxy: {
+        '/api': {
+          target: AI_PROXY_TARGET,
+          changeOrigin: true,
+        },
+      },
+    },
+  },
   cleanUrls: true,
   appearance: 'force-dark',
   ignoreDeadLinks: true,

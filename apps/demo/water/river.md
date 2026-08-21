@@ -108,7 +108,6 @@ onUnmounted(() => {
         </div>
       </div>
     </SimPanel>
-
     <SimPanel title="层级钻取" hint="流域→干流→支流→河段">
       <div class="cg-tabs">
         <button
@@ -122,7 +121,6 @@ onUnmounted(() => {
         </button>
       </div>
     </SimPanel>
-
     <SimPanel title="顺流 / 逆流钻取" hint="沿水系追踪">
       <p class="cg-hint">选择一个要素，沿上下游追踪</p>
       <select v-model="traceId" class="cg-select">
