@@ -26,7 +26,7 @@ map.on('load', () => {
 
 <DemoLayout title="D2 · GeoJSON 可视化" subtitle="把一份武汉管线 GeoJSON 渲染为矢量线图层。">
   <template #map>
-    <MapDemo :data="wuhanPipes" :zoom="11.4" color-by="diameter" :height="'100%'" />
+    <MapDemo :data="wuhanPipes" :zoom="11.4" color-by="diameter" :height="'100%'" ></MapDemo>
   </template>
   <template #panel>
     <SimPanel title="图层说明" hint="4 条管线">
@@ -37,7 +37,7 @@ map.on('load', () => {
         <span><i style="background:#f59e0b"></i>主干 ≥800</span>
       </div>
     </SimPanel>
-    <CodeViewer :code="code" lang="ts" />
+    <CodeViewer :code="code" lang="ts" ></CodeViewer>
   </template>
 </DemoLayout>
 

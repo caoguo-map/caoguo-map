@@ -82,7 +82,7 @@ run(query.value);
 
 <DemoLayout title="D3 · NLPG 自然语言查询" subtitle="用一句话把地理意图转为空间查询（演示：前端模拟解析 + 实时高亮）。">
   <template #map>
-    <MapDemo :data="wuhanPipes" :zoom="11.4" color-by="diameter" :highlight="highlight" :fly-to="flyTo" :height="'100%'" />
+    <MapDemo :data="wuhanPipes" :zoom="11.4" color-by="diameter" :highlight="highlight" :fly-to="flyTo" :height="'100%'" ></MapDemo>
   </template>
   <template #panel>
     <SimPanel title="自然语言查询" hint="前端模拟">

@@ -64,7 +64,7 @@ onUnmounted(() => {
   subtitle="caoguo-telecom：基站按运营商/技术着色 + 覆盖区域叠加 + 盲区识别。"
 >
   <template #map>
-    <div ref="mapEl" class="cell-map" />
+    <div ref="mapEl" class="cell-map" ></div>
     <div class="stats-tag">
       {{ stats.stations }} 基站 · {{ stats.areas }} 覆盖区域
     </div>
@@ -85,7 +85,7 @@ onUnmounted(() => {
       <div class="cg-legend">
         <h4>{{ legend.title }}</h4>
         <div v-for="(item, i) in legend.items" :key="i" class="cg-legend-item">
-          <span class="cg-legend-swatch" :style="{ background: item.color, borderRadius: '50%', width: '10px', height: '10px' }" />
+          <span class="cg-legend-swatch" :style="{ background: item.color, borderRadius: '50%', width: '10px', height: '10px' }" ></span>
           <span class="cg-legend-label">{{ item.label }}</span>
         </div>
       </div>
@@ -96,7 +96,7 @@ onUnmounted(() => {
       <div v-if="gaps.length" class="cg-result">
         <p>检测到 <strong>{{ gaps.length }}</strong> 个盲区点</p>
         <div v-for="(g, i) in gaps" :key="i" class="cg-gap-item">
-          <span class="cg-gap-dot" :style="{ background: g.level === 'none' ? '#ef4444' : '#f59e0b' }" />
+          <span class="cg-gap-dot" :style="{ background: g.level === 'none' ? '#ef4444' : '#f59e0b' }" ></span>
           <span>{{ g.level === 'none' ? '无覆盖' : '弱覆盖' }} ({{ g.rsrp }} dBm)</span>
         </div>
       </div>

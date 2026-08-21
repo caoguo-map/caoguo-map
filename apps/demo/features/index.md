@@ -18,7 +18,7 @@ import FeatureShowcase from '../common/FeatureShowcase.vue';
 - **离线瓦片**（T4）：把当前管线打包进 IndexedDB 离线存储，断网仍可调出
 - **空气隔离**（T5）：开关断网模式（需部署 SW 脚本后生效，见离线文档）
 
-<FeatureShowcase />
+<FeatureShowcase ></FeatureShowcase>
 
 > 注：天地图（T3）与空气隔离 Service Worker（T5）需运行时 token / 部署 SW 脚本，
 > 本演示聚焦无需外部密钥即可验证的能力。完整接入见对应模块文档。

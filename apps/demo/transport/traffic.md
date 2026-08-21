@@ -47,7 +47,7 @@ onUnmounted(() => {
   subtitle="caoguo-transport：拥堵预测（历史同时段 + 实时趋势）+ 拥堵传播分析。"
 >
   <template #map>
-    <div ref="mapEl" class="flow-map" />
+    <div ref="mapEl" class="flow-map" ></div>
     <div v-if="prediction" class="pred-tag">
       预测 {{ minutesAhead }}min 后：{{ prediction.speed.toFixed(0) }} km/h · {{ prediction.congestionLevel }}
     </div>

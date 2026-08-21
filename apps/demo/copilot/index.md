@@ -46,7 +46,7 @@ function send() {
 
 <DemoLayout title="D4 · MapCopilot 交互" subtitle="用自然语言指挥地图（演示：预置指令 + 实时地图反馈）。">
   <template #map>
-    <MapDemo :data="wuhanPipes" :zoom="11.4" color-by="diameter" :highlight="highlight" :fly-to="flyTo" :height="'100%'" />
+    <MapDemo :data="wuhanPipes" :zoom="11.4" color-by="diameter" :highlight="highlight" :fly-to="flyTo" :height="'100%'" ></MapDemo>
   </template>
   <template #panel>
     <SimPanel title="Copilot" hint="可交互演示">

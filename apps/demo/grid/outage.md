@@ -47,7 +47,7 @@ onUnmounted(() => {
   subtitle="选择故障设备 → 下游遍历 → 受影响用户统计 + 重要用户标注 + 备用路径。"
 >
   <template #map>
-    <div ref="mapEl" class="outage-map" />
+    <div ref="mapEl" class="outage-map" ></div>
     <div v-if="result" class="outage-tag">
       受影响 {{ result.affectedDevices.length }} 设备 · {{ result.affectedUsers.total }} 用户 · {{ result.durationMs.toFixed(1) }}ms
     </div>
@@ -78,13 +78,13 @@ onUnmounted(() => {
       <div v-if="result.affectedUsers.important.length" class="important-list">
         <h4>重要用户</h4>
         <div v-for="u in result.affectedUsers.important" :key="u.id" class="important-item">
-          <span class="important-dot" />
+          <span class="important-dot" ></span>
           <span>{{ u.name }}</span>
           <span class="important-reason">{{ u.reason }}</span>
         </div>
       </div>
 
-      <div class="cg-divider" />
+      <div class="cg-divider" ></div>
 
       <h4>恢复方案</h4>
       <p class="cg-hint">预计恢复时间：{{ result.restoration.estimatedTime }}</p>

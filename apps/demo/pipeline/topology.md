@@ -81,7 +81,7 @@ onUnmounted(() => {
   subtitle="caoguo-pipeline：按类型/管径/状态/材质着色，互通共用 caoguo-dark 主题。"
 >
   <template #map>
-    <div ref="mapEl" class="pipeline-map" />
+    <div ref="mapEl" class="pipeline-map" ></div>
     <div v-if="connectivityNodes.size > 0" class="connectivity-tag">
       连通节点：{{ connectivityNodes.size }}
     </div>
@@ -102,11 +102,11 @@ onUnmounted(() => {
       <div class="cg-legend">
         <h4>{{ legend.title }}</h4>
         <div v-for="(item, i) in legend.items" :key="i" class="cg-legend-item">
-          <span class="cg-legend-swatch" :style="{ background: item.color, ...(item.style === 'dashed' ? { background: `repeating-linear-gradient(90deg,${item.color} 0 4px,transparent 4px 8px)` } : {}) }" />
+          <span class="cg-legend-swatch" :style="{ background: item.color, ...(item.style === 'dashed' ? { background: `repeating-linear-gradient(90deg,${item.color} 0 4px,transparent 4px 8px)` } : {}) }" ></span>
           <span class="cg-legend-label">{{ item.label }}</span>
         </div>
       </div>
-      <div class="cg-divider" />
+      <div class="cg-divider" ></div>
       <h4>连通性高亮</h4>
       <p class="cg-hint">选择一根管段，高亮其下游连通子图</p>
       <select v-model="highlightPipeId" class="cg-select">

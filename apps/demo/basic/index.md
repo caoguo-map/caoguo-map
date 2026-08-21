@@ -21,7 +21,7 @@ const map = new Map({
 
 <DemoLayout title="D1 · 基础地图" subtitle="初始化一张武汉暗色底图，支持缩放、平移与俯仰。">
   <template #map>
-    <MapDemo :zoom="11" :height="'100%'" />
+    <MapDemo :zoom="11" :height="'100%'" ></MapDemo>
   </template>
   <template #panel>
     <SimPanel title="说明" hint="最小可用示例">
@@ -32,6 +32,6 @@ const map = new Map({
         <li>数据完全在前端渲染</li>
       </ul>
     </SimPanel>
-    <CodeViewer :code="code" lang="ts" />
+    <CodeViewer :code="code" lang="ts" ></CodeViewer>
   </template>
 </DemoLayout>

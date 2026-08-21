@@ -1,0 +1,14 @@
+{
+  "name": "@caoguo/ai-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "草果地图 AI 代理服务：DeepSeek 代理 + NLPG SQL 执行（PostGIS）",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

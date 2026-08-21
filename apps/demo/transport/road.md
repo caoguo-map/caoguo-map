@@ -60,7 +60,7 @@ onUnmounted(() => {
   subtitle="caoguo-transport：按道路等级/实时速度/状态着色，设施（收费站/服务区/停车场）标注。"
 >
   <template #map>
-    <div ref="mapEl" class="road-map" />
+    <div ref="mapEl" class="road-map" ></div>
     <div class="stats-tag">
       {{ stats.edges }} 路段 · {{ stats.nodes }} 节点
     </div>
@@ -81,7 +81,7 @@ onUnmounted(() => {
       <div class="cg-legend">
         <h4>{{ legend.title }}</h4>
         <div v-for="(item, i) in legend.items" :key="i" class="cg-legend-item">
-          <span class="cg-legend-swatch" :style="{ background: item.color }" />
+          <span class="cg-legend-swatch" :style="{ background: item.color }" ></span>
           <span class="cg-legend-label">{{ item.label }}</span>
         </div>
       </div>

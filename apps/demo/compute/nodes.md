@@ -56,7 +56,7 @@ onUnmounted(() => {
   subtitle="caoguo-compute：节点按类型/GPU 利用率/状态着色 + 光缆按带宽/利用率可视化。"
 >
   <template #map>
-    <div ref="mapEl" class="compute-map" />
+    <div ref="mapEl" class="compute-map" ></div>
     <div class="stats-tag">
       {{ stats.nodes }} 节点 · {{ stats.links }} 光缆
     </div>
@@ -77,7 +77,7 @@ onUnmounted(() => {
       <div class="cg-legend">
         <h4>{{ legend.title }}</h4>
         <div v-for="(item, i) in legend.items" :key="i" class="cg-legend-item">
-          <span class="cg-legend-swatch" :style="{ background: item.color, borderRadius: item.shape === 'circle' ? '50%' : '2px', width: item.shape === 'circle' ? '10px' : '28px', height: item.shape === 'circle' ? '10px' : '8px' }" />
+          <span class="cg-legend-swatch" :style="{ background: item.color, borderRadius: item.shape === 'circle' ? '50%' : '2px', width: item.shape === 'circle' ? '10px' : '28px', height: item.shape === 'circle' ? '10px' : '8px' }" ></span>
           <span class="cg-legend-label">{{ item.label }}</span>
         </div>
       </div>

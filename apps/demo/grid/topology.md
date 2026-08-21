@@ -83,7 +83,7 @@ onUnmounted(() => {
   subtitle="caoguo-grid：5 级钻取（发电→输电→变电→配电→用户），按电压/状态/负荷/年份着色。"
 >
   <template #map>
-    <div ref="mapEl" class="grid-map" />
+    <div ref="mapEl" class="grid-map" ></div>
     <div v-if="traceResult" class="trace-tag">
       供电路径：{{ traceResult.deviceIds.size }} 设备 · {{ traceResult.lineIds.size }} 线路
     </div>
@@ -104,7 +104,7 @@ onUnmounted(() => {
       <div class="cg-legend">
         <h4>{{ legend.title }}</h4>
         <div v-for="(item, i) in legend.items" :key="i" class="cg-legend-item">
-          <span class="cg-legend-swatch" :style="{ background: item.color }" />
+          <span class="cg-legend-swatch" :style="{ background: item.color }" ></span>
           <span class="cg-legend-label">{{ item.label }}</span>
         </div>
       </div>

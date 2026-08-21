@@ -49,7 +49,7 @@ onUnmounted(() => {
   subtitle="caoguo-transport：事件标记 + 影响范围 + 附近资源 + 绕行方案 + 事件时间线。"
 >
   <template #map>
-    <div ref="mapEl" class="inc-map" />
+    <div ref="mapEl" class="inc-map" ></div>
   </template>
   <template #panel>
     <SimPanel title="事件选择" hint="IM-1 事件标记">
@@ -77,7 +77,7 @@ onUnmounted(() => {
     <SimPanel v-if="timeline.length" title="事件时间线" hint="IM-5">
       <div class="cg-timeline">
         <div v-for="(step, i) in timeline" :key="i" class="cg-tl-step">
-          <span class="cg-tl-dot" />
+          <span class="cg-tl-dot" ></span>
           <div>
             <p class="cg-tl-label">{{ step.label }}</p>
             <p v-if="step.time" class="cg-tl-time">{{ step.time }}</p>

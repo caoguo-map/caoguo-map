@@ -53,7 +53,7 @@ const gapLevelColor: Record<string, string> = {
         <div v-for="g in gaps" :key="g.region" class="pp-card" :class="{ 'pp-gap': g.isGap }">
           <div class="pp-region">{{ g.region }}</div>
           <div class="pp-bar">
-            <div class="pp-bar-fill" :style="{ width: `${(g.predictedUtilization * 100).toFixed(0)}%`, background: gapLevelColor[g.gapLevel] }" />
+            <div class="pp-bar-fill" :style="{ width: `${(g.predictedUtilization * 100).toFixed(0)}%`, background: gapLevelColor[g.gapLevel] }" ></div>
           </div>
           <div class="pp-meta">
             <span>当前 {{ (g.currentUtilization * 100).toFixed(0) }}%</span>

@@ -48,7 +48,7 @@ onUnmounted(() => {
   subtitle="caoguo-compute：延迟分级 + 最优接入推荐（LM-2）+ 延迟告警（LM-4）。"
 >
   <template #map>
-    <div ref="mapEl" class="latency-map" />
+    <div ref="mapEl" class="latency-map" ></div>
     <div class="tag">
       延迟告警：{{ alerts.length }} 条
     </div>
@@ -70,7 +70,7 @@ onUnmounted(() => {
       <input v-model.number="thresholdMs" type="number" class="cg-input" @change="analyze" />
       <div v-if="alerts.length" class="cg-result">
         <div v-for="a in alerts" :key="a.linkId" class="cg-alert">
-          <span class="cg-alert-dot" :style="{ background: a.level === 'critical' ? '#ef4444' : '#f59e0b' }" />
+          <span class="cg-alert-dot" :style="{ background: a.level === 'critical' ? '#ef4444' : '#f59e0b' }" ></span>
           <span>{{ a.linkId }}：{{ a.latencyMs }}ms</span>
         </div>
       </div>

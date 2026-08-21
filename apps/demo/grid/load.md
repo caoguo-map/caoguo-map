@@ -58,7 +58,7 @@ onUnmounted(() => {
   subtitle="台区/线路负荷着色（绿→黄→红）+ 过载预警（负荷率 ≥80%）+ 24h 负荷预测。"
 >
   <template #map>
-    <div ref="mapEl" class="load-map" />
+    <div ref="mapEl" class="load-map" ></div>
     <div v-if="overloaded.length" class="overload-tag">
       过载设备：{{ overloaded.length }} 个
     </div>
@@ -67,7 +67,7 @@ onUnmounted(() => {
     <SimPanel title="过载预警" hint="负荷率 ≥ 80%">
       <div v-if="overloaded.length" class="overload-list">
         <div v-for="d in overloaded" :key="d.id" class="overload-item">
-          <span class="overload-dot" />
+          <span class="overload-dot" ></span>
           <span>{{ d.name ?? d.id }}</span>
           <span class="overload-rate">{{ ((d.properties?.loadRate ?? 0) * 100).toFixed(0) }}%</span>
         </div>
@@ -99,7 +99,7 @@ onUnmounted(() => {
           class="forecast-bar"
           :style="{ height: `${(v / peakForecast) * 100}%` }"
           :title="`${i}:00 → ${v.toFixed(1)} MW`"
-        />
+        ></div>
       </div>
     </SimPanel>
   </template>

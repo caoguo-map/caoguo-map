@@ -78,7 +78,7 @@ onUnmounted(() => {
   subtitle="故障管段 → 自动找隔离阀门 → 推演受影响范围 → 识别重要用户。"
 >
   <template #map>
-    <div ref="mapEl" class="pipeline-map" />
+    <div ref="mapEl" class="pipeline-map" ></div>
   </template>
   <template #panel>
     <SimPanel title="爆管参数" hint="选择故障管段 + 场景">

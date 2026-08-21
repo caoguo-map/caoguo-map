@@ -45,7 +45,7 @@ onUnmounted(() => {
   subtitle="调整各水库泄量 → 下游水位影响推演 → 多方案对比。"
 >
   <template #map>
-    <div ref="mapEl" class="dam-map" />
+    <div ref="mapEl" class="dam-map" ></div>
   </template>
   <template #panel>
     <SimPanel title="调度方案编辑器" hint="调整各水库泄量">

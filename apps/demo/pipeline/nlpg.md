@@ -96,11 +96,11 @@ onUnmounted(() => {
   subtitle="意图识别 + 约束提取 → 联动 burst/topology/health 组件。"
 >
   <template #map>
-    <div ref="mapEl" class="pipeline-map" />
+    <div ref="mapEl" class="pipeline-map" ></div>
   </template>
   <template #panel>
     <SimPanel title="查询输入" hint="中文意图识别">
-      <textarea v-model="query" class="cg-textarea" rows="3" placeholder="例如：武昌区燃气爆管推演" />
+      <textarea v-model="query" class="cg-textarea" rows="3" placeholder="例如：武昌区燃气爆管推演" ></textarea>
       <div class="cg-examples">
         <button v-for="e in examples" :key="e" class="cg-example" @click="query = e; run()">
           {{ e }}

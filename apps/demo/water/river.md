@@ -82,7 +82,7 @@ onUnmounted(() => {
   subtitle="caoguo-water：流域→干流→支流→河段层级渲染，按流量/蓄水率/堤防安全着色。"
 >
   <template #map>
-    <div ref="mapEl" class="river-map" />
+    <div ref="mapEl" class="river-map" ></div>
     <div v-if="traceResult" class="trace-tag">
       关联要素：{{ traceResult.size }}
     </div>
@@ -103,7 +103,7 @@ onUnmounted(() => {
       <div class="cg-legend">
         <h4>{{ legend.title }}</h4>
         <div v-for="(item, i) in legend.items" :key="i" class="cg-legend-item">
-          <span class="cg-legend-swatch" :style="{ background: item.color }" />
+          <span class="cg-legend-swatch" :style="{ background: item.color }" ></span>
           <span class="cg-legend-label">{{ item.label }}</span>
         </div>
       </div>

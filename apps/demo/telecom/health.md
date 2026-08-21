@@ -53,7 +53,7 @@ function ratePercent(r: number): string {
         <h3>故障告警（NH-2 / NH-4）</h3>
         <div v-if="alerts.length" class="hp-alerts">
           <div v-for="a in alerts" :key="a.station.id" class="hp-alert">
-            <span class="hp-alert-dot" />
+            <span class="hp-alert-dot" ></span>
             <div>
               <p class="hp-alert-name">{{ a.station.name }}（{{ a.station.carrier }}）</p>
               <p class="hp-alert-reason">疑似原因：{{ a.reason }}</p>

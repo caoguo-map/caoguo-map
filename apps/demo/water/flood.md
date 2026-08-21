@@ -103,7 +103,7 @@ onUnmounted(() => {
   subtitle="SCS-CN 径流 + 推理公式洪峰 + flood fill 淹没范围提取（简化 DEM）。"
 >
   <template #map>
-    <div ref="mapEl" class="flood-map" />
+    <div ref="mapEl" class="flood-map" ></div>
     <div v-if="stats" class="flood-tag">
       淹没 {{ stats.area }} 格 · 最大水深 {{ stats.maxDepth }}m · {{ stats.duration }}ms
     </div>
@@ -130,7 +130,7 @@ onUnmounted(() => {
       </div>
       <div class="depth-legend">
         <h4>水深色谱</h4>
-        <div class="depth-bar" />
+        <div class="depth-bar" ></div>
         <div class="depth-labels">
           <span>浅</span>
           <span>深</span>
