@@ -1,0 +1,102 @@
+{
+  "name": "@caoguo/maplibre-ai",
+  "version": "0.0.2",
+  "description": "草果地图 AI 工具链 - MapCopilot 代码生成 / GeoAI 数据入图 / NLPG 自然语言查询 / DeepSeek LLM 接入 / 性能诊断 / 样式生成器 v2",
+  "license": "Apache-2.0",
+  "author": "caoguo <caoguo@hb.cn>",
+  "homepage": "https://github.com/caoguo/map/blob/main/packages/ai/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caoguo/map.git",
+    "directory": "packages/ai"
+  },
+  "bugs": {
+    "url": "https://github.com/caoguo/map/issues"
+  },
+  "keywords": [
+    "maplibre",
+    "caoguo",
+    "gis",
+    "ai",
+    "copilot",
+    "code-generation",
+    "geoai",
+    "geocoding",
+    "address-parsing",
+    "crs-conversion",
+    "nlpg",
+    "natural-language",
+    "postgis",
+    "sql-generator",
+    "sql-validator",
+    "performance-profiler",
+    "tile-monitor",
+    "memory-leak",
+    "style-generator",
+    "palette-extraction",
+    "industry-template",
+    "china"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./debug": {
+      "types": "./dist/debug/index.d.ts",
+      "import": "./dist/debug/index.js",
+      "require": "./dist/debug/index.cjs"
+    },
+    "./stylegen": {
+      "types": "./dist/stylegen/index.d.ts",
+      "import": "./dist/stylegen/index.js",
+      "require": "./dist/stylegen/index.cjs"
+    },
+    "./copilot": {
+      "types": "./dist/copilot/index.d.ts",
+      "import": "./dist/copilot/index.js",
+      "require": "./dist/copilot/index.cjs"
+    },
+    "./geoai": {
+      "types": "./dist/geoai/index.d.ts",
+      "import": "./dist/geoai/index.js",
+      "require": "./dist/geoai/index.cjs"
+    },
+    "./nlpg": {
+      "types": "./dist/nlpg/index.d.ts",
+      "import": "./dist/nlpg/index.js",
+      "require": "./dist/nlpg/index.cjs"
+    },
+    "./llm": {
+      "types": "./dist/llm/index.d.ts",
+      "import": "./dist/llm/index.js",
+      "require": "./dist/llm/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@caoguo/theme": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

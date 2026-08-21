@@ -1,0 +1,97 @@
+{
+  "name": "@caoguo/maplibre-transport",
+  "version": "0.0.2",
+  "description": "草果地图交通网组件包 - 路网 / 交通流 / 拥堵预测 / 事件响应",
+  "license": "Apache-2.0",
+  "author": "caoguo <caoguo@hb.cn>",
+  "homepage": "https://github.com/caoguo/map/blob/main/packages/transport/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caoguo/map.git",
+    "directory": "packages/transport"
+  },
+  "bugs": {
+    "url": "https://github.com/caoguo/map/issues"
+  },
+  "keywords": [
+    "maplibre",
+    "caoguo",
+    "gis",
+    "traffic",
+    "road-network",
+    "traffic-flow",
+    "congestion-prediction",
+    "incident-map",
+    "detour",
+    "graph-algorithm",
+    "dijkstra",
+    "nlpg",
+    "china"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./style": {
+      "types": "./dist/style/index.d.ts",
+      "import": "./dist/style/index.js",
+      "require": "./dist/style/index.cjs"
+    },
+    "./road": {
+      "types": "./dist/road/index.d.ts",
+      "import": "./dist/road/index.js",
+      "require": "./dist/road/index.cjs"
+    },
+    "./traffic": {
+      "types": "./dist/traffic/index.d.ts",
+      "import": "./dist/traffic/index.js",
+      "require": "./dist/traffic/index.cjs"
+    },
+    "./incident": {
+      "types": "./dist/incident/index.d.ts",
+      "import": "./dist/incident/index.js",
+      "require": "./dist/incident/index.cjs"
+    },
+    "./nlpg": {
+      "types": "./dist/nlpg/index.d.ts",
+      "import": "./dist/nlpg/index.js",
+      "require": "./dist/nlpg/index.cjs"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@caoguo/maplibre": "workspace:*",
+    "@caoguo/theme": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "maplibre-gl": "^4.7.1"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

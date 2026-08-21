@@ -1,0 +1,92 @@
+/* ============================================================
+   草果地图 共享品牌主题 Token
+   暗色优先（caoguo-dark）为旗舰视觉基调；caoguo-light 为配套亮色。
+   三站点统一引用，保证品牌一致性。
+   ============================================================ */
+
+:root,
+[data-theme='caoguo-dark'] {
+  /* 背景层 */
+  --cg-bg: #0a0f1e;
+  --cg-bg-elev: #111827;
+  --cg-bg-card: rgba(17, 24, 39, 0.6);
+  --cg-bg-glass: rgba(15, 23, 42, 0.55);
+
+  /* 文字 */
+  --cg-text: #e5e7eb;
+  --cg-text-muted: #94a3b8;
+  --cg-text-invert: #0f172a;
+
+  /* 品牌主色（青蓝渐变体系） */
+  --cg-primary: #14b8a6;
+  --cg-primary-2: #0ea5e9;
+  --cg-primary-3: #22d3ee;
+  --cg-gradient: linear-gradient(135deg, #14b8a6 0%, #0ea5e9 50%, #22d3ee 100%);
+  --cg-gradient-soft: linear-gradient(135deg, rgba(20, 184, 166, 0.18) 0%, rgba(34, 211, 238, 0.12) 100%);
+
+  /* 功能色 */
+  --cg-green: #4ade80;
+  --cg-amber: #f59e0b;
+  --cg-red: #ef4444;
+  --cg-blue: #38bdf8;
+
+  /* 合作伙伴强调色（区别于品牌青蓝，用于合作伙伴入口/卡片高亮） */
+  --cg-accent: #a78bfa;
+  --cg-accent-soft: rgba(167, 139, 250, 0.16);
+
+  /* 边框 / 分隔 */
+  --cg-border: rgba(148, 163, 184, 0.15);
+  --cg-border-strong: rgba(148, 163, 184, 0.28);
+
+  /* 玻璃拟态 */
+  --cg-glass-blur: 16px;
+  --cg-glow: 0 0 40px rgba(20, 184, 166, 0.25);
+  --cg-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
+
+  /* 圆角 */
+  --cg-radius-sm: 10px;
+  --cg-radius: 16px;
+  --cg-radius-lg: 24px;
+
+  /* 字体 */
+  --cg-font: 'PingFang SC', 'Noto Sans SC', system-ui, sans-serif;
+}
+
+[data-theme='caoguo-light'] {
+  --cg-bg: #ffffff;
+  --cg-bg-elev: #f8fafc;
+  --cg-bg-card: rgba(255, 255, 255, 0.75);
+  --cg-bg-glass: rgba(255, 255, 255, 0.7);
+
+  --cg-text: #0f172a;
+  --cg-text-muted: #475569;
+  --cg-text-invert: #f8fafc;
+
+  --cg-primary: #0d9488;
+  --cg-primary-2: #0284c7;
+  --cg-primary-3: #06b6d4;
+  --cg-gradient: linear-gradient(135deg, #0d9488 0%, #0284c7 50%, #06b6d4 100%);
+  --cg-gradient-soft: linear-gradient(135deg, rgba(13, 148, 136, 0.12) 0%, rgba(6, 182, 212, 0.1) 100%);
+
+  --cg-green: #16a34a;
+  --cg-amber: #d97706;
+  --cg-red: #dc2626;
+  --cg-blue: #0284c7;
+
+  /* 合作伙伴强调色 */
+  --cg-accent: #7c3aed;
+  --cg-accent-soft: rgba(124, 58, 237, 0.12);
+
+  --cg-border: rgba(15, 23, 42, 0.12);
+  --cg-border-strong: rgba(15, 23, 42, 0.22);
+
+  --cg-glass-blur: 16px;
+  --cg-glow: 0 0 40px rgba(13, 148, 136, 0.18);
+  --cg-shadow: 0 20px 60px -24px rgba(15, 23, 42, 0.25);
+
+  --cg-radius-sm: 10px;
+  --cg-radius: 16px;
+  --cg-radius-lg: 24px;
+
+  --cg-font: 'PingFang SC', 'Noto Sans SC', system-ui, sans-serif;
+}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0f1e"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#14b8a6"/>
+      <stop offset="0.5" stop-color="#0ea5e9"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <path d="M600 120 L900 300 L600 480 L300 300 Z" fill="none" stroke="url(#g)" stroke-width="6" opacity="0.8"/>
+  <text x="600" y="300" font-family="PingFang SC, Noto Sans SC, sans-serif" font-size="84" font-weight="700" fill="#e5e7eb" text-anchor="middle">草果地图</text>
+  <text x="600" y="372" font-family="PingFang SC, Noto Sans SC, sans-serif" font-size="34" fill="#94a3b8" text-anchor="middle">六张网的开源地图引擎</text>
+</svg>

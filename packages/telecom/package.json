@@ -1,0 +1,91 @@
+{
+  "name": "@caoguo/maplibre-telecom",
+  "version": "0.0.2",
+  "description": "草果地图通信网组件包 - 基站覆盖 / 信号热力 / 网络健康 / 盲区识别",
+  "license": "Apache-2.0",
+  "author": "caoguo <caoguo@hb.cn>",
+  "homepage": "https://github.com/caoguo/map/blob/main/packages/telecom/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caoguo/map.git",
+    "directory": "packages/telecom"
+  },
+  "bugs": {
+    "url": "https://github.com/caoguo/map/issues"
+  },
+  "keywords": [
+    "maplibre",
+    "caoguo",
+    "gis",
+    "telecom",
+    "cell-coverage",
+    "base-station",
+    "signal-heatmap",
+    "network-health",
+    "dead-zone",
+    "operator-theme",
+    "nlpg",
+    "china"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./style": {
+      "types": "./dist/style/index.d.ts",
+      "import": "./dist/style/index.js",
+      "require": "./dist/style/index.cjs"
+    },
+    "./coverage": {
+      "types": "./dist/coverage/index.d.ts",
+      "import": "./dist/coverage/index.js",
+      "require": "./dist/coverage/index.cjs"
+    },
+    "./health": {
+      "types": "./dist/health/index.d.ts",
+      "import": "./dist/health/index.js",
+      "require": "./dist/health/index.cjs"
+    },
+    "./nlpg": {
+      "types": "./dist/nlpg/index.d.ts",
+      "import": "./dist/nlpg/index.js",
+      "require": "./dist/nlpg/index.cjs"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@caoguo/maplibre": "workspace:*",
+    "@caoguo/theme": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "maplibre-gl": "^4.7.1"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "name": "@caoguo/maplibre",
+  "version": "0.0.3",
+  "description": "草果地图引擎核心 — 基于 MapLibre GL 的国内坐标系/离线瓦片/辉光/LOD 一体化封装",
+  "license": "Apache-2.0",
+  "author": "caoguo <caoguo@hb.cn>",
+  "homepage": "https://github.com/caoguo/map/blob/main/packages/maplibre/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caoguo/map.git",
+    "directory": "packages/maplibre"
+  },
+  "bugs": {
+    "url": "https://github.com/caoguo/map/issues"
+  },
+  "keywords": [
+    "maplibre",
+    "maplibre-gl",
+    "map",
+    "gis",
+    "caoguo",
+    "webgl",
+    "tile-server",
+    "tianditu",
+    "wgs84",
+    "gcj02",
+    "cgcs2000",
+    "offline",
+    "service-worker",
+    "indexeddb",
+    "lod",
+    "shader",
+    "china"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./styles": {
+      "types": "./dist/styles.d.ts",
+      "import": "./dist/styles.js",
+      "require": "./dist/styles.cjs"
+    },
+    "./sources": {
+      "types": "./dist/sources/index.d.ts",
+      "import": "./dist/sources/index.js",
+      "require": "./dist/sources/index.cjs"
+    },
+    "./offline": {
+      "types": "./dist/offline/index.d.ts",
+      "import": "./dist/offline/index.js",
+      "require": "./dist/offline/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@caoguo/theme": "workspace:*",
+    "idb": "^8.0.0",
+    "maplibre-gl": "^4.7.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "tsup": "^8.3.5",
+    "vitest": "^2.1.8"
+  }
+}

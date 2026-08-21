@@ -1,0 +1,60 @@
+{
+  "name": "@caoguo/theme",
+  "version": "0.0.2",
+  "description": "草果地图主题样式 — 矢量主题构造 + 暗/亮双套配色 + CSS 变量体系",
+  "license": "Apache-2.0",
+  "author": "caoguo <caoguo@hb.cn>",
+  "homepage": "https://github.com/caoguo/map/blob/main/packages/theme/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caoguo/map.git",
+    "directory": "packages/theme"
+  },
+  "bugs": {
+    "url": "https://github.com/caoguo/map/issues"
+  },
+  "keywords": [
+    "maplibre",
+    "theme",
+    "map",
+    "gis",
+    "caoguo",
+    "vector-tiles",
+    "dark-theme",
+    "light-theme",
+    "css-variables"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./tokens.css": "./styles/tokens.css"
+  },
+  "files": [
+    "dist",
+    "styles"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "maplibre-gl": "^4.7.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "maplibre-gl": "^4.7.1",
+    "tsup": "^8.3.5",
+    "vitest": "^2.1.8"
+  }
+}

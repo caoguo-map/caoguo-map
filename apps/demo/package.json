@@ -1,0 +1,27 @@
+{
+  "name": "@caoguo/demo",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "dependencies": {
+    "@caoguo/maplibre": "workspace:*",
+    "@caoguo/maplibre-ai": "workspace:*",
+    "@caoguo/maplibre-compute": "workspace:*",
+    "@caoguo/maplibre-grid": "workspace:*",
+    "@caoguo/maplibre-pipeline": "workspace:*",
+    "@caoguo/maplibre-telecom": "workspace:*",
+    "@caoguo/maplibre-transport": "workspace:*",
+    "@caoguo/maplibre-water": "workspace:*",
+    "@caoguo/theme": "workspace:*",
+    "maplibre-gl": "^4.7.1"
+  },
+  "devDependencies": {
+    "vitepress": "^1.4.0",
+    "vue": "^3.5.0"
+  }
+}

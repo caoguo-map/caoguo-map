@@ -1,0 +1,91 @@
+{
+  "name": "@caoguo/maplibre-grid",
+  "version": "0.0.2",
+  "description": "草果地图电网组件包 - 停电分析 / 负荷热力 / 拓扑钻取 / 供电路径追踪",
+  "license": "Apache-2.0",
+  "author": "caoguo <caoguo@hb.cn>",
+  "homepage": "https://github.com/caoguo/map/blob/main/packages/grid/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caoguo/map.git",
+    "directory": "packages/grid"
+  },
+  "bugs": {
+    "url": "https://github.com/caoguo/map/issues"
+  },
+  "keywords": [
+    "maplibre",
+    "caoguo",
+    "gis",
+    "power-grid",
+    "electrical-grid",
+    "outage-analysis",
+    "load-heatmap",
+    "load-forecast",
+    "grid-topology",
+    "power-path",
+    "graph-algorithm",
+    "china"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./style": {
+      "types": "./dist/style/index.d.ts",
+      "import": "./dist/style/index.js",
+      "require": "./dist/style/index.cjs"
+    },
+    "./topology": {
+      "types": "./dist/topology/index.d.ts",
+      "import": "./dist/topology/index.js",
+      "require": "./dist/topology/index.cjs"
+    },
+    "./outage": {
+      "types": "./dist/outage/index.d.ts",
+      "import": "./dist/outage/index.js",
+      "require": "./dist/outage/index.cjs"
+    },
+    "./load": {
+      "types": "./dist/load/index.d.ts",
+      "import": "./dist/load/index.js",
+      "require": "./dist/load/index.cjs"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@caoguo/maplibre": "workspace:*",
+    "@caoguo/theme": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "maplibre-gl": "^4.7.1"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

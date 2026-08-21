@@ -1,0 +1,50 @@
+# 草果地图 PostGIS 开发环境
+#
+# 用法：
+#   1. 复制 .env.example 为 .env，填入 DeepSeek API Key（PostGIS 密码可保持默认）
+#   2. docker compose up -d postgis          # 仅启动数据库
+#      docker compose up -d                  # 启动全部（含 pgAdmin）
+#
+# 端口：
+#   PostGIS  5432（映射宿主 5433，避免与宿主已有 PG 冲突）
+#   pgAdmin  5050
+
+services:
+  postgis:
+    image: postgis/postgis:16-3.4
+    container_name: caoguo-postgis
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-caoguo}
+      POSTGRES_USER: ${POSTGRES_USER:-caoguo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-caoguo123}
+      TZ: Asia/Shanghai
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-caoguo} -d ${POSTGRES_DB:-caoguo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: caoguo-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@caoguo.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-caoguo123}
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      postgis:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  postgis_data:
+  pgadmin_data:

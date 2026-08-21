@@ -1,0 +1,20 @@
+{
+  "name": "@caoguo/landing",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "dependencies": {
+    "@caoguo/maplibre": "workspace:*",
+    "@caoguo/theme": "workspace:*",
+    "maplibre-gl": "^4.7.1"
+  },
+  "devDependencies": {
+    "vitepress": "^1.4.0",
+    "vue": "^3.5.0"
+  }
+}

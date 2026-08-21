@@ -1,0 +1,90 @@
+{
+  "name": "@caoguo/maplibre-water",
+  "version": "0.0.2",
+  "description": "草果地图水网组件包 - 水系拓扑 / 洪水淹没 / 水库调度",
+  "license": "Apache-2.0",
+  "author": "caoguo <caoguo@hb.cn>",
+  "homepage": "https://github.com/caoguo/map/blob/main/packages/water/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caoguo/map.git",
+    "directory": "packages/water"
+  },
+  "bugs": {
+    "url": "https://github.com/caoguo/map/issues"
+  },
+  "keywords": [
+    "maplibre",
+    "caoguo",
+    "gis",
+    "hydrology",
+    "water-network",
+    "river-system",
+    "flood-inundation",
+    "scs-cn",
+    "dam-operation",
+    "flood-fill",
+    "china"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./style": {
+      "types": "./dist/style/index.d.ts",
+      "import": "./dist/style/index.js",
+      "require": "./dist/style/index.cjs"
+    },
+    "./river": {
+      "types": "./dist/river/index.d.ts",
+      "import": "./dist/river/index.js",
+      "require": "./dist/river/index.cjs"
+    },
+    "./flood": {
+      "types": "./dist/flood/index.d.ts",
+      "import": "./dist/flood/index.js",
+      "require": "./dist/flood/index.cjs"
+    },
+    "./dam": {
+      "types": "./dist/dam/index.d.ts",
+      "import": "./dist/dam/index.js",
+      "require": "./dist/dam/index.cjs"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@caoguo/maplibre": "workspace:*",
+    "@caoguo/theme": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "maplibre-gl": "^4.7.1"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}
