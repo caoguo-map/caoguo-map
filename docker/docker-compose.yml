@@ -11,7 +11,8 @@
 
 services:
   postgis:
-    image: postgis/postgis:16-3.4
+    # 使用国内镜像加速前缀（docker.1ms.run 对大镜像更稳定；可改回官方 postgis/postgis:16-3.4）
+    image: ${POSTGIS_IMAGE:-docker.1ms.run/postgis/postgis:16-3.4}
     container_name: caoguo-postgis
     restart: unless-stopped
     environment:
