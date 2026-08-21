@@ -45,18 +45,41 @@ export class WebGLUnavailableError extends Error {
 }
 
 /**
- * 探测当前环境是否可创建 WebGL 上下文。
- * 某些沙箱/无头浏览器会返回 canvas 但 getContext 抛错或返回 null，
- * 因此同时捕获异常与 null 两种情况。
+ * 探测当前环境是否可创建真正可用的 WebGL 上下文。
+ * 某些沙箱/无头浏览器会返回 canvas，且 getContext 也返回一个「伪对象」，
+ * 但上下文实际不可用（渲染时崩溃）。因此除了非 null 判断，还进一步验证
+ * 上下文确实能工作：能读出 VENDOR、能取到必要扩展，并捕获
+ * webglcontextcreationerror 事件。
  */
 export function isWebGLAvailable(): boolean {
   try {
     const canvas = document.createElement('canvas');
+    let failed = false;
+    const onErr = () => {
+      failed = true;
+    };
+    canvas.addEventListener('webglcontextcreationerror', onErr, { once: true });
+
     const gl =
-      canvas.getContext('webgl2') ||
-      canvas.getContext('webgl') ||
-      canvas.getContext('experimental-webgl');
-    return !!gl;
+      (canvas.getContext('webgl2') as WebGLRenderingContext | null) ||
+      (canvas.getContext('webgl') as WebGLRenderingContext | null) ||
+      (canvas.getContext('experimental-webgl') as WebGLRenderingContext | null);
+
+    canvas.removeEventListener('webglcontextcreationerror', onErr);
+
+    if (failed || !gl) return false;
+
+    // 进一步验证上下文确实可用：读取基础参数 + 编译一个最小着色器。
+    const vendor = gl.getParameter(gl.VERSION);
+    if (!vendor) return false;
+
+    const vs = gl.createShader(gl.VERTEX_SHADER);
+    if (!vs) return false;
+    gl.shaderSource(vs, 'attribute vec2 p; void main(){ gl_Position = vec4(p,0.0,1.0); }');
+    gl.compileShader(vs);
+    if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) return false;
+
+    return true;
   } catch {
     return false;
   }

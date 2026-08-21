@@ -6,6 +6,7 @@ const props = withDefaults(
   defineProps<{
     center?: [number, number];
     zoom?: number;
+    /** GeoJSON FeatureCollection（线/点混合均可） */
     data?: Record<string, unknown> | null;
     lineColor?: string;
     height?: string;
@@ -51,6 +52,21 @@ function highlightFilter(): unknown {
   return ['in', ['get', 'name'], ['literal', props.highlight ?? []]];
 }
 
+function applyHighlight() {
+  if (!map) return;
+  const mi = map.instance;
+  if (mi.getLayer('demo-line-hl')) mi.setFilter('demo-line-hl', (['all', ['!=', ['geometry-type'], 'Point'], highlightFilter()]) as never);
+  if (mi.getLayer('demo-point-hl')) mi.setFilter('demo-point-hl', (['all', ['==', ['geometry-type'], 'Point'], highlightFilter()]) as never);
+}
+
+/** 地图渲染过程中抛出的致命错误（如 WebGL 上下文不可用）兜底到降级提示 */
+function handleFatal(e: ErrorEvent | Error) {
+  const msg = (e instanceof ErrorEvent ? e.message : e.message) || '';
+  if (/webgl|context|fire|redraw|Map\._render/i.test(msg)) {
+    webglError.value = true;
+  }
+}
+
 onMounted(() => {
   if (!el.value) return;
   try {
@@ -62,41 +78,80 @@ onMounted(() => {
     }
     throw e;
   }
+  // 某些沙箱环境能创建出「伪」WebGL 上下文，构造不报错但渲染即崩。
+  // 这里再校验 maplibre 实际拿到的上下文是否真的可用。
+  try {
+    const canvas = map.instance.getCanvas();
+    const ctx = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (!ctx) {
+      webglError.value = true;
+      return;
+    }
+  } catch {
+    webglError.value = true;
+    return;
+  }
+  window.addEventListener('error', handleFatal);
+  map.on('error', (e) => {
+    if (e && /webgl|context/i.test(String((e as { error?: Error }).error?.message ?? ''))) {
+      webglError.value = true;
+    }
+  });
   map.on('load', () => {
     if (props.data) {
       map?.addSource('demo', { type: 'geojson', data: props.data as object });
+
+      // 线/面层（排除纯点位）
       map?.addLayer({
         id: 'demo-line',
         type: 'line',
         source: 'demo',
+        filter: ['!=', ['geometry-type'], 'Point'] as never,
         paint: {
           'line-color': lineColorExpr() as never,
           'line-width': ['interpolate', ['linear'], ['zoom'], 9, 1.5, 14, 4],
           'line-opacity': 0.85,
         },
       });
-      // 高亮层：覆盖在基础线之上
+
+      // 点层（基站/变电站/学校等）
       map?.addLayer({
-        id: 'demo-highlight',
+        id: 'demo-point',
+        type: 'circle',
+        source: 'demo',
+        filter: ['==', ['geometry-type'], 'Point'] as never,
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 3, 14, 6],
+          'circle-color': '#14b8a6',
+          'circle-stroke-color': '#04141a',
+          'circle-stroke-width': 1.5,
+        },
+      });
+
+      // 线/面高亮层：覆盖在基础层之上
+      map?.addLayer({
+        id: 'demo-line-hl',
         type: 'line',
         source: 'demo',
-        filter: highlightFilter() as never,
+        filter: ['all', ['!=', ['geometry-type'], 'Point'], highlightFilter()] as never,
         paint: {
           'line-color': '#f43f5e',
           'line-width': ['interpolate', ['linear'], ['zoom'], 9, 3, 14, 7],
           'line-blur': 0.6,
         },
       });
-      // 管线端点圆点
+
+      // 点高亮层：放大 + 红色描边
       map?.addLayer({
-        id: 'demo-nodes',
+        id: 'demo-point-hl',
         type: 'circle',
         source: 'demo',
+        filter: ['all', ['==', ['geometry-type'], 'Point'], highlightFilter()] as never,
         paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 2.5, 14, 5],
-          'circle-color': '#04141a',
-          'circle-stroke-color': props.lineColor,
-          'circle-stroke-width': 1.5,
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 5, 14, 10],
+          'circle-color': '#f43f5e',
+          'circle-stroke-color': '#04141a',
+          'circle-stroke-width': 2,
         },
       });
     }
@@ -104,14 +159,7 @@ onMounted(() => {
   });
 });
 
-watch(
-  () => props.highlight,
-  () => {
-    if (map && props.data && map.instance.getLayer('demo-highlight')) {
-      map.instance.setFilter('demo-highlight', highlightFilter() as never);
-    }
-  },
-);
+watch(() => props.highlight, applyHighlight);
 
 watch(
   () => props.flyTo,
@@ -120,7 +168,10 @@ watch(
   },
 );
 
-onUnmounted(() => map?.remove());
+onUnmounted(() => {
+  window.removeEventListener('error', handleFatal);
+  map?.remove();
+});
 </script>
 
 <template>

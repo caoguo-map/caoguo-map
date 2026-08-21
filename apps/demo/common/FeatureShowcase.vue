@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import {
   Map,
   WUHAN_CENTER,
+  WebGLUnavailableError,
   type MapInstance,
   type GlowLine,
   type LodLevel,
@@ -26,6 +27,7 @@ const LOD_LEVELS: LodLevel<string>[] = [
 
 const el = ref<HTMLElement | null>(null);
 let map: InstanceType<typeof Map> | null = null;
+const webglError = ref(false);
 let scale: ReturnType<Map['addScaleControl']> | null = null;
 let theme: ReturnType<Map['addThemeSwitcher']> | null = null;
 let lod: ReturnType<Map['addLodController']> | null = null;
@@ -47,9 +49,42 @@ function applyGlow() {
   }
 }
 
+function handleFatal(e: ErrorEvent | Error) {
+  const msg = (e instanceof ErrorEvent ? e.message : e.message) || '';
+  if (/webgl|context|fire|redraw|Map\._render/i.test(msg)) {
+    webglError.value = true;
+  }
+}
+
 onMounted(() => {
   if (!el.value) return;
-  map = new Map({ container: el.value, center: WUHAN_CENTER, zoom: 11 });
+  try {
+    map = new Map({ container: el.value, center: WUHAN_CENTER, zoom: 11 });
+  } catch (e) {
+    if (e instanceof WebGLUnavailableError) {
+      webglError.value = true;
+      return;
+    }
+    throw e;
+  }
+  // 某些沙箱环境能创建出「伪」WebGL 上下文，构造不报错但渲染即崩。
+  try {
+    const canvas = map.instance.getCanvas();
+    const ctx = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (!ctx) {
+      webglError.value = true;
+      return;
+    }
+  } catch {
+    webglError.value = true;
+    return;
+  }
+  window.addEventListener('error', handleFatal);
+  map.on('error', (e) => {
+    if (e && /webgl|context/i.test(String((e as { error?: Error }).error?.message ?? ''))) {
+      webglError.value = true;
+    }
+  });
   map.on('load', () => {
     if (!map) return;
     scale = map.addScaleControl({ showCoordinate: true });
@@ -104,6 +139,7 @@ function toggleAirgap() {
 }
 
 onUnmounted(() => {
+  window.removeEventListener('error', handleFatal);
   scale?.remove();
   theme?.remove();
   lod?.remove();
@@ -113,7 +149,17 @@ onUnmounted(() => {
 
 <template>
   <div class="fs">
-    <div ref="el" class="fs-map" />
+    <div class="fs-map-wrap">
+      <div ref="el" class="fs-map" />
+      <div v-if="webglError" class="fs-fallback">
+        <div class="fs-fallback-icon">🗺️</div>
+        <p class="fs-fallback-title">当前环境无法渲染地图</p>
+        <p class="fs-fallback-desc">
+          检测到浏览器未启用 WebGL（常见于沙箱、无头环境或禁用了硬件加速）。
+          请在支持 WebGL 的桌面浏览器中打开本页以查看交互式地图。
+        </p>
+      </div>
+    </div>
     <div class="fs-panel">
       <h3>Phase-0 能力面板</h3>
       <button class="fs-btn" @click="toggleGlow">{{ glowOn ? '关闭辉光' : '开启辉光' }}</button>
@@ -138,7 +184,12 @@ onUnmounted(() => {
 
 <style scoped>
 .fs { display: grid; grid-template-columns: 1.7fr 1fr; gap: 16px; min-height: 520px; }
-.fs-map { width: 100%; height: 520px; border-radius: 12px; overflow: hidden; border: 1px solid var(--cg-border); background: var(--cg-bg); }
+.fs-map-wrap { position: relative; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--cg-border); }
+.fs-map { width: 100%; height: 520px; background: var(--cg-bg); }
+.fs-fallback { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px; text-align: center; background: var(--cg-bg); color: var(--cg-text-muted); height: 520px; }
+.fs-fallback-icon { font-size: 40px; opacity: 0.7; }
+.fs-fallback-title { margin: 0; font-size: 16px; font-weight: 600; color: var(--cg-text); }
+.fs-fallback-desc { margin: 0; max-width: 360px; font-size: 13px; line-height: 1.6; }
 .fs-panel { display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--cg-border); border-radius: 12px; background: var(--cg-bg-soft); }
 .fs-panel h3 { margin: 0 0 4px; font-size: 16px; }
 .fs-btn { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--cg-border); background: var(--cg-gradient-soft); color: var(--cg-text); cursor: pointer; font-size: 13px; }
