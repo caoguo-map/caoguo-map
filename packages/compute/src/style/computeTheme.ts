@@ -8,6 +8,10 @@
  */
 
 import type { ComputeNodeType, ComputeNodeStatus, FiberLinkType } from '../types';
+import { INDUSTRY_META } from '@caoguo/theme';
+
+/** 算力网行业主色（六张网统一标识色，单一来源 @caoguo/theme） */
+export const INDUSTRY_PRIMARY = INDUSTRY_META.compute.primary;
 
 /** 节点类型配色 */
 export const NODE_TYPE_COLORS: Record<ComputeNodeType, string> = {

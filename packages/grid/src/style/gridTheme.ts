@@ -10,6 +10,10 @@
  */
 
 import type { VoltageLevel, GridDeviceStatus, GridDeviceKind, GridLevel } from '../types';
+import { INDUSTRY_META } from '@caoguo/theme';
+
+/** 电网行业主色（六张网统一标识色，单一来源 @caoguo/theme） */
+export const INDUSTRY_PRIMARY = INDUSTRY_META.grid.primary;
 
 /** 电压等级配色（caoguo-grid，PRD §3.1.3） */
 export const VOLTAGE_COLORS: Record<VoltageLevel, string> = {

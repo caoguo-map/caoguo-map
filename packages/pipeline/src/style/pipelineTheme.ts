@@ -10,6 +10,10 @@
  */
 
 import type { PipelineType, PipeMaterial, PipeStatus, NodeKind } from '../types';
+import { INDUSTRY_META } from '@caoguo/theme';
+
+/** 管网行业主色（六张网统一标识色，单一来源 @caoguo/theme） */
+export const INDUSTRY_PRIMARY = INDUSTRY_META.pipeline.primary;
 
 /** 管线大类配色（caoguo-pipeline） */
 export const PIPELINE_TYPE_COLORS: Record<PipelineType, string> = {

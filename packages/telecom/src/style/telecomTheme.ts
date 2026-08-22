@@ -8,6 +8,10 @@
  */
 
 import type { Carrier, Technology, StationStatus, SignalLevel } from '../types';
+import { INDUSTRY_META } from '@caoguo/theme';
+
+/** 通信网行业主色（六张网统一标识色，单一来源 @caoguo/theme） */
+export const INDUSTRY_PRIMARY = INDUSTRY_META.telecom.primary;
 
 /** 运营商配色（PRD §5.1.3） */
 export const CARRIER_COLORS: Record<Carrier, string> = {

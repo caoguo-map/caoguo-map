@@ -31,3 +31,19 @@ import { INDUSTRY_META } from '@caoguo/theme';
   :line-color="INDUSTRY_META.pipeline.primary"
   :height="'420px'"
 />
+
+## 行业主题底图变体
+
+通过 `buildStyle({ theme: 'caoguo-ind-<key>' })`（或 `buildIndustryStyle(key)`）可派生每张网的
+**行业暗色底图变体**：在 `caoguo-dark` 基础上注入行业主色作为背景辉光 / 强调 tint（`cg:industry` /
+`cg:industry-label` / `cg:industry-primary` 元数据），实现「六张网各自品牌底色」。
+
+下方以电网为例，传入 `industry="grid"` 即用电网行业底图变体渲染（无在线矢量资源的环境会回退默认底图）：
+
+<MapDemo
+  :data="wuhanPipes"
+  :zoom="11.2"
+  :industry="'grid'"
+  :line-color="INDUSTRY_META.grid.primary"
+  :height="'420px'"
+/>

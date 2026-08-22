@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { Map, WUHAN_CENTER, WebGLUnavailableError, type MapInstance } from '@caoguo/maplibre';
+import { buildIndustryStyle, type IndustryKey } from '@caoguo/theme';
 
 const props = withDefaults(
   defineProps<{
@@ -16,6 +17,10 @@ const props = withDefaults(
     highlight?: string[];
     /** 飞行到指定坐标 */
     flyTo?: [number, number] | null;
+    /** 自定义底图 style（优先级最高，覆盖 tianditu / OSM 默认底图） */
+    style?: unknown;
+    /** 六张网行业主题底图变体 key（如 'grid' / 'pipeline'），自动用 buildIndustryStyle 派生 */
+    industry?: IndustryKey;
   }>(),
   {
     center: () => WUHAN_CENTER,
@@ -80,6 +85,12 @@ onMounted(() => {
     center: props.center,
     zoom: props.zoom,
   };
+  // 行业主题底图变体优先于自定义 style，二者均优先于默认底图。
+  if (props.style) {
+    opts.style = props.style;
+  } else if (props.industry) {
+    opts.style = buildIndustryStyle(props.industry);
+  }
   if (TIANDITU_TOKEN) {
     opts.tianditu = { token: TIANDITU_TOKEN, type: 'vector' };
   } else {
