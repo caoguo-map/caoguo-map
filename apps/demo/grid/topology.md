@@ -4,8 +4,7 @@ title: G1 电网拓扑浏览器
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { Map as CaoguoMap, WUHAN_CENTER } from '@caoguo/maplibre';
-import { buildIndustryStyle } from '@caoguo/theme';
+import { Map as CaoguoMap, WUHAN_CENTER, geoqRasterStyle } from '@caoguo/maplibre';
 import {
   GridTopology,
   buildGridLegend,
@@ -64,8 +63,8 @@ function runTrace(id: string | null) {
 
 onMounted(() => {
   if (!mapEl.value) return;
-  // 行业页切换为「电网行业主题底图变体」（caoguo-ind-grid：暗色底图 + 电网主色辉光 tint）
-  const m = new CaoguoMap({ container: mapEl.value, center: WUHAN_CENTER, zoom: 11.2, style: buildIndustryStyle('grid') });
+  // 行业页使用国内可达的 GeoQ 栅格底图（行业配色由 GridTopology 自身 paint 承担）
+  const m = new CaoguoMap({ container: mapEl.value, center: WUHAN_CENTER, zoom: 11.2, style: geoqRasterStyle() });
   m.on('load', () => {
     map.value = m as unknown as InstanceType<typeof CaoguoMap>;
     const t = new GridTopology({ map: m as unknown as InstanceType<typeof CaoguoMap>, dataset: wuhanGrid, colorBy: colorMode.value, layerPrefix: 'cg-grid-topo' });

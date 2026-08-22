@@ -5,7 +5,7 @@ import type {
 } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import { osmRasterStyle, WUHAN_CENTER, WUHAN_ZOOM } from './styles';
+import { osmRasterStyle, geoqRasterStyle, WUHAN_CENTER, WUHAN_ZOOM } from './styles';
 import { createTransformer, type CRS, type LngLat } from './crs';
 import { toWgs84 } from './crs';
 import {
@@ -86,7 +86,7 @@ export function isWebGLAvailable(): boolean {
   }
 }
 
-export { maplibregl, WUHAN_CENTER, WUHAN_ZOOM, osmRasterStyle };
+export { maplibregl, WUHAN_CENTER, WUHAN_ZOOM, osmRasterStyle, geoqRasterStyle };
 export * from './crs';
 export * from './sources';
 export * from './offline';
