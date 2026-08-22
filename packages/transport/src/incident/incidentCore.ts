@@ -55,6 +55,24 @@ const SEVERITY_RADIUS: Record<IncidentSeverity, number> = {
 };
 
 /**
+ * 查找中心半径内的附近资源（IM-3）。PRD §3.3「事故点 3 公里内摄像头」。
+ * 纯函数：返回按类型分组的节点，便于 NLPG 与 IncidentMap 复用。
+ */
+export function findNearbyResources(
+  dataset: RoadNetworkDataset,
+  lng: number,
+  lat: number,
+  radius: number
+): { cameras: RoadNode[]; rescue: RoadNode[]; hospitals: RoadNode[] } {
+  const inRange = (n: RoadNode) => haversine(lng, lat, n.lng, n.lat) <= radius;
+  return {
+    cameras: dataset.nodes.filter((n) => n.kind === 'camera' && inRange(n)),
+    rescue: dataset.nodes.filter((n) => n.kind === 'rescue' && inRange(n)),
+    hospitals: dataset.nodes.filter((n) => n.kind === 'hospital' && inRange(n)),
+  };
+}
+
+/**
  * 计算事件影响范围 + 附近资源 + 绕行方案
  */
 export function analyzeIncident(
@@ -76,14 +94,11 @@ export function analyzeIncident(
   });
 
   // 附近资源
-  const cameras = dataset.nodes.filter(
-    (n) => n.kind === 'camera' && haversine(incident.lng, incident.lat, n.lng, n.lat) <= radius
-  );
-  const rescue = dataset.nodes.filter(
-    (n) => n.kind === 'rescue' && haversine(incident.lng, incident.lat, n.lng, n.lat) <= radius
-  );
-  const hospitals = dataset.nodes.filter(
-    (n) => n.kind === 'hospital' && haversine(incident.lng, incident.lat, n.lng, n.lat) <= radius
+  const { cameras, rescue, hospitals } = findNearbyResources(
+    dataset,
+    incident.lng,
+    incident.lat,
+    radius
   );
 
   // 绕行方案：若事件关联路段，找该路段两端点绕行路径

@@ -50,6 +50,23 @@
 
   /* 字体 */
   --cg-font: 'PingFang SC', 'Noto Sans SC', system-ui, sans-serif;
+
+  /* 地图要素配色（与矢量主题 JSON 对齐，便于统一换肤） */
+  --cg-map-bg: #0a0f1e;
+  --cg-map-water: #0d1b2a;
+  --cg-map-landuse: #121a2e;
+  --cg-map-landcover: #0f1d16;
+  --cg-map-road-minor: #1e293b;
+  --cg-map-road-major: #334155;
+  --cg-map-waterway: #155e75;
+  --cg-map-rail: #64748b;
+  --cg-map-park: #14532d;
+  --cg-map-building: #1e293b;
+  --cg-map-building-extrusion: #334155;
+  --cg-map-boundary: #22d3ee;
+  --cg-map-label: #e5e7eb;
+  --cg-map-label-minor: #cbd5e1;
+  --cg-map-label-halo: #0a0f1e;
 }
 
 [data-theme='caoguo-light'] {
@@ -71,7 +88,8 @@
   --cg-green: #16a34a;
   --cg-amber: #d97706;
   --cg-red: #dc2626;
-  --cg-blue: #0284c7;
+  /* 信息蓝：与品牌主色-2（#0284c7）区分，改为更偏靛蓝 */
+  --cg-blue: #4f46e5;
 
   /* 合作伙伴强调色 */
   --cg-accent: #7c3aed;
@@ -89,4 +107,21 @@
   --cg-radius-lg: 24px;
 
   --cg-font: 'PingFang SC', 'Noto Sans SC', system-ui, sans-serif;
+
+  /* 地图要素配色（与矢量主题 JSON 对齐，便于统一换肤） */
+  --cg-map-bg: #f8fafc;
+  --cg-map-water: #bae6fd;
+  --cg-map-landuse: #e2e8f0;
+  --cg-map-landcover: #dcfce7;
+  --cg-map-road-minor: #cbd5e1;
+  --cg-map-road-major: #94a3b8;
+  --cg-map-waterway: #38bdf8;
+  --cg-map-rail: #94a3b8;
+  --cg-map-park: #bbf7d0;
+  --cg-map-building: #e2e8f0;
+  --cg-map-building-extrusion: #cbd5e1;
+  --cg-map-boundary: #0284c7;
+  --cg-map-label: #0f172a;
+  --cg-map-label-minor: #475569;
+  --cg-map-label-halo: #ffffff;
 }

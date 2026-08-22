@@ -158,6 +158,33 @@ export interface RoadSpeedRecord {
 /** 拥堵等级（PRD §3.2.2 classify_speed） */
 export type CongestionLevel = 'free' | 'smooth' | 'slow' | 'congested' | 'jammed';
 
+/**
+ * 路段速度时序（历史/回放用，PRD §3.2 T-4 路况时间轴 / TF-3 趋势图）
+ * - 每条记录带时间戳与速度/流量
+ */
+export interface SpeedTimePoint {
+  /** 时间戳（epoch ms 或 ISO 字符串的数值毫秒） */
+  t: number;
+  /** 速度（km/h） */
+  speed: number;
+  /** 流量（辆/小时，可选） */
+  flow?: number;
+}
+
+/**
+ * 全路网速度时序：以时间戳轴为基准，每个路段一个速度序列。
+ * 用于时间轴回放（T-4）与选中路段趋势（TF-3）。
+ */
+export interface SpeedTimeSeries {
+  /** 时间轴（升序，epoch ms） */
+  timestamps: number[];
+  /**
+   * 每个路段在 timestamps 各时刻的速度/流量。
+   * key 为 edgeId，value 数组长度须与 timestamps 一致。
+   */
+  series: Record<string, SpeedTimePoint[]>;
+}
+
 // ============================================================
 // 八、事件
 // ============================================================

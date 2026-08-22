@@ -22,8 +22,8 @@ export interface TransportNlpFilters {
   topN?: number;
   /** 半径（米） */
   radius?: number;
-  /** POI 类型 */
-  poiKind?: 'camera' | 'rescue' | 'hospital' | 'toll' | 'parking';
+  /** POI 类型（当前支持摄像头/医院/救援站） */
+  poiKind?: 'camera' | 'rescue' | 'hospital';
   /** 预测时长（分钟） */
   minutesAhead?: number;
   /** 道路等级 */
@@ -41,7 +41,7 @@ export interface TransportNlpResult {
 
 const PATTERNS: Array<{ intent: TransportNlpIntent; re: RegExp; confidence: number }> = [
   { intent: 'slowest_roads', re: /(平均速度|速度).*?(最低|最慢|慢)|(最低|最慢).*?(速度|路段)/, confidence: 0.9 },
-  { intent: 'nearby_poi', re: /(\d+)\s*(公里|km|千米|米|m).*?(摄像头|医院|救援|收费站|停车场)|(摄像头|医院|救援|收费站|停车场).*?(\d+)\s*(公里|km|米|m)/, confidence: 0.9 },
+  { intent: 'nearby_poi', re: /(\d+)\s*(公里|km|千米|米|m).*?(摄像头|医院|救援|收费站|停车场|资源)|(摄像头|医院|救援|收费站|停车场|资源).*?(\d+)\s*(公里|km|米|m)|(附近|周边).*?(有什么|资源|设施|摄像头|医院)/, confidence: 0.9 },
   { intent: 'predict_congestion', re: /预测.*?(拥堵|路况)|拥堵.*?(变化|预测)/, confidence: 0.9 },
   { intent: 'compare_congestion', re: /(昨天|今天|同期|同比).*?(拥堵|严重)|(早高峰|晚高峰)/, confidence: 0.85 },
 ];
@@ -84,8 +84,6 @@ export function parseTransportQuery(query: string): TransportNlpResult {
   if (/摄像头/.test(query)) filters.poiKind = 'camera';
   else if (/医院/.test(query)) filters.poiKind = 'hospital';
   else if (/救援/.test(query)) filters.poiKind = 'rescue';
-  else if (/收费站/.test(query)) filters.poiKind = 'toll';
-  else if (/停车场/.test(query)) filters.poiKind = 'parking';
 
   // 预测时长
   const timeMatch = query.match(/(\d+)\s*(小时|分钟|min|h)/);
@@ -142,8 +140,6 @@ function poiLabel(kind?: TransportNlpFilters['poiKind']): string {
     camera: '摄像头',
     hospital: '医院',
     rescue: '救援站',
-    toll: '收费站',
-    parking: '停车场',
   };
   return map[kind ?? ''] ?? 'POI';
 }

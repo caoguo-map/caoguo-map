@@ -12,10 +12,11 @@
  * - `traffic/`   `TrafficFlow` 交通流 + 拥堵预测
  * - `incident/`  `IncidentMap` 事件响应（影响范围/附近资源/绕行）
  * - `nlpg/`      NLPG 交通查询意图识别
+ * - `transit/`   `TransitHeatmap` 公交/地铁客流 OD 热力
  *
  * ## 设计原则
  *
- * 1. **算法纯函数 + 渲染薄壳**：拥堵预测、事件分析、图遍历都是纯函数。
+ * 1. **算法纯函数 + 渲染薄壳**：拥堵预测、事件分析、图遍历、OD 聚合都是纯函数。
  * 2. **可插拔**：每个组件可独立使用，也可组合。
  * 3. **离线友好**：所有计算在前端完成。
  *
@@ -29,3 +30,4 @@ export * from './road/index';
 export * from './traffic/index';
 export * from './incident/index';
 export * from './nlpg/index';
+export * from './transit/index';

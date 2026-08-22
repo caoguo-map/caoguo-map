@@ -54,14 +54,52 @@
       "paint": { "line-color": "#22d3ee", "line-width": 1, "line-dasharray": [2, 2], "line-opacity": 0.5 }
     },
     {
-      "id": "place-label", "type": "symbol", "source": "caoguo-basemap", "source-layer": "places",
-      "filter": ["has", "name"],
+      "id": "waterway", "type": "line", "source": "caoguo-basemap", "source-layer": "waterway",
+      "paint": { "line-color": "#155e75", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.5, 16, 3] }
+    },
+    {
+      "id": "rail", "type": "line", "source": "caoguo-basemap", "source-layer": "railway",
+      "paint": { "line-color": "#64748b", "line-width": ["interpolate", ["linear"], ["zoom"], 10, 0.5, 16, 2], "line-dasharray": [4, 2] }
+    },
+    {
+      "id": "park", "type": "fill", "source": "caoguo-basemap", "source-layer": "park",
+      "paint": { "fill-color": "#14532d", "fill-opacity": 0.45 }
+    },
+    {
+      "id": "building", "type": "fill", "source": "caoguo-basemap", "source-layer": "building",
+      "minzoom": 13,
+      "paint": { "fill-color": "#1e293b", "fill-opacity": 0.8 }
+    },
+    {
+      "id": "building-extrusion", "type": "fill-extrusion", "source": "caoguo-basemap", "source-layer": "building",
+      "minzoom": 15,
+      "paint": {
+        "fill-extrusion-color": "#334155",
+        "fill-extrusion-height": ["coalesce", ["get", "height"], 10],
+        "fill-extrusion-base": ["coalesce", ["get", "min_height"], 0],
+        "fill-extrusion-opacity": 0.7
+      }
+    },
+    {
+      "id": "place-label-major", "type": "symbol", "source": "caoguo-basemap", "source-layer": "places",
+      "filter": ["all", ["has", "name"], ["<=", ["get", "scalerank"], 3]],
       "layout": {
         "text-field": ["get", "name"],
         "text-font": ["Open Sans Bold", "Arial Unicode MS Regular"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 4, 11, 10, 15]
+        "text-size": ["interpolate", ["linear"], ["zoom"], 4, 13, 10, 18]
       },
-      "paint": { "text-color": "#e5e7eb", "text-halo-color": "#0a0f1e", "text-halo-width": 1.4 }
+      "paint": { "text-color": "#f8fafc", "text-halo-color": "#0a0f1e", "text-halo-width": 1.6 }
+    },
+    {
+      "id": "place-label-minor", "type": "symbol", "source": "caoguo-basemap", "source-layer": "places",
+      "minzoom": 8,
+      "filter": ["all", ["has", "name"], [">", ["get", "scalerank"], 3]],
+      "layout": {
+        "text-field": ["get", "name"],
+        "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 8, 10, 14, 13]
+      },
+      "paint": { "text-color": "#cbd5e1", "text-halo-color": "#0a0f1e", "text-halo-width": 1.2 }
     }
   ]
 }
