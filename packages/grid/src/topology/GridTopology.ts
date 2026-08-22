@@ -15,6 +15,8 @@ import type {
   GridTopologyDataset,
   GridColorByMode,
   GridDevice,
+  GridDeviceDetail,
+  GridDeviceKind,
   GridLine,
   GridLevel,
 } from '../types';
@@ -233,4 +235,152 @@ export class GridTopology {
       return lv1 === this.currentLevel || lv2 === this.currentLevel;
     });
   }
+
+  // ============================================================
+  // 设备搜索与定位（PRD G-4）
+  // ============================================================
+
+  /**
+   * 按 id / 名称 / 类型匹配设备（G-4 设备搜索）。
+   * - 字符串：同时匹配 id、name、properties.code（大小写不敏感）
+   * - 对象：按 id/kind/name 字段组合过滤
+   * @returns 首个匹配设备，无匹配返回 undefined
+   */
+  findDevice(
+    query: string | { id?: string; kind?: GridDeviceKind; name?: string },
+  ): GridDevice | undefined {
+    const devices = this.dataset.devices ?? [];
+    if (typeof query === 'string') {
+      const q = query.trim().toLowerCase();
+      if (!q) return undefined;
+      return devices.find(
+        (d) =>
+          d.id.toLowerCase().includes(q) ||
+          d.name?.toLowerCase().includes(q) ||
+          d.properties?.code?.toLowerCase().includes(q),
+      );
+    }
+    return devices.find(
+      (d) =>
+        (!query.id || d.id === query.id) &&
+        (!query.kind || d.kind === query.kind) &&
+        (!query.name || d.name?.toLowerCase().includes(query.name.toLowerCase())),
+    );
+  }
+
+  /**
+   * 搜索设备并定位（G-4 定位）：找到后用底层地图 flyTo 到设备坐标。
+   * @returns 匹配到的设备（供上层高亮/弹卡片）；无匹配返回 undefined
+   */
+  locateDevice(
+    query: string | { id?: string; kind?: GridDeviceKind; name?: string },
+    opts?: { zoom?: number; duration?: number },
+  ): GridDevice | undefined {
+    const device = this.findDevice(query);
+    if (!device || typeof device.lng !== 'number' || typeof device.lat !== 'number') {
+      return device;
+    }
+    const mlMap = (this.map as unknown as {
+      instance?: {
+        flyTo?: (o: {
+          center: [number, number];
+          zoom?: number;
+          duration?: number;
+        }) => void;
+      };
+    }).instance;
+    mlMap?.flyTo?.({
+      center: [device.lng, device.lat],
+      zoom: opts?.zoom ?? (this.currentLevel ? 13 : 14),
+      duration: opts?.duration ?? 1200,
+    });
+    return device;
+  }
+
+  // ============================================================
+  // 设备卡片数据层（PRD G-2）
+  // ============================================================
+
+  /**
+   * 构建设备卡片所需的详情结构（G-2 设备卡片数据层）。
+   * 纯数据层：补全关联线路数、供电下游用户数、卡片展示字段，
+   * 供上层 UI 直接渲染，不依赖任何框架。
+   * @returns 设备详情；设备不存在返回 undefined
+   */
+  getDeviceDetail(deviceId: string): GridDeviceDetail | undefined {
+    const device = (this.dataset.devices ?? []).find((d) => d.id === deviceId);
+    if (!device) return undefined;
+
+    const lines = this.dataset.lines ?? [];
+    const connectedLines = lines.filter(
+      (l) => l.fromDevice === deviceId || l.toDevice === deviceId,
+    ).length;
+
+    // 供电下游用户数：以该设备为起点的上游可达性估算（沿 line.from === deviceId 的下游方向）
+    const downstreamUserCount = this.countDownstreamUsers(deviceId);
+
+    const statusLabel = device.properties?.status
+      ? { running: '运行中', standby: '备用', fault: '故障', maintenance: '检修' }[
+          device.properties.status
+        ]
+      : '未知';
+    const levelLabel = device.level ?? DEVICE_LEVEL[device.kind];
+    const capacity = device.properties?.capacity ?? device.properties?.installedCapacity;
+    const capacityLabel =
+      capacity != null
+        ? device.kind === 'plant'
+          ? `${capacity} MW（装机）`
+          : `${capacity} MVA`
+        : undefined;
+
+    return {
+      ...device,
+      connectedLines,
+      downstreamUserCount,
+      cardInfo: {
+        title: device.name ?? device.id,
+        subtitle: `${kindLabel(device.kind)} · ${device.properties?.code ?? device.id}`,
+        statusLabel,
+        levelLabel,
+        capacityLabel,
+      },
+    };
+  }
+
+  /** 估算从某设备向下的供电用户数（沿线路下游方向 BFS） */
+  private countDownstreamUsers(deviceId: string): number {
+    const lines = this.dataset.lines ?? [];
+    const adjacency = new Map<string, string[]>();
+    for (const l of lines) {
+      if (!adjacency.has(l.fromDevice)) adjacency.set(l.fromDevice, []);
+      adjacency.get(l.fromDevice)!.push(l.toDevice);
+    }
+    const visited = new Set<string>([deviceId]);
+    const queue = [deviceId];
+    let userCount = 0;
+    while (queue.length) {
+      const cur = queue.shift()!;
+      for (const next of adjacency.get(cur) ?? []) {
+        if (visited.has(next)) continue;
+        visited.add(next);
+        const dev = (this.dataset.devices ?? []).find((d) => d.id === next);
+        if (dev?.kind === 'user') userCount += 1;
+        queue.push(next);
+      }
+    }
+    return userCount;
+  }
+}
+
+/** 设备类型中文标签 */
+function kindLabel(kind: GridDeviceKind): string {
+  return (
+    {
+      plant: '发电厂',
+      tower: '输电铁塔',
+      substation: '变电站',
+      transformer: '配变',
+      user: '用户',
+    } as Record<GridDeviceKind, string>
+  )[kind];
 }

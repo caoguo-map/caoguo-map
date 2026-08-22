@@ -24,4 +24,5 @@ export * from './types/index';
 export * from './style/index';
 export * from './coverage/index';
 export * from './health/index';
+export * from './capacity/index';
 export * from './nlpg/index';

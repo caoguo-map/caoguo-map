@@ -123,6 +123,28 @@ export interface GridDevice {
 }
 
 // ============================================================
+// 四-B、设备卡片详情（PRD G-2 设备卡片数据层）
+// ============================================================
+/**
+ * 设备卡片详情（供上层 UI 弹卡片，G-2）。
+ * 在 {@link GridDevice} 基础上补全「关联网路」「供电下游用户」等卡片展示字段。
+ */
+export interface GridDeviceDetail extends GridDevice {
+  /** 关联线路数（该设备作为端点的线路条数） */
+  connectedLines: number;
+  /** 供电下游用户数（按上游可达性估算；仅配变/变电站/线路有意义） */
+  downstreamUserCount: number;
+  /** 卡片展示用的关键信息（已格式化，便于直接渲染） */
+  cardInfo: {
+    title: string;
+    subtitle: string;
+    statusLabel: string;
+    levelLabel: string;
+    capacityLabel?: string;
+  };
+}
+
+// ============================================================
 // 五、线路（Line/Edge）
 // ============================================================
 /**

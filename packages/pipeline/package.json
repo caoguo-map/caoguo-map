@@ -1,6 +1,6 @@
 {
   "name": "@caoguo/maplibre-pipeline",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "草果地图管网组件包 - 爆管推演 / 泄漏扩散 / 健康评估 / 拓扑编辑器",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",

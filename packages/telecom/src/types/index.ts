@@ -50,6 +50,10 @@ export interface BaseStationProperties {
   userCount?: number;
   /** 吞吐量（Mbps） */
   throughputMbps?: number;
+  /** 额定容量（Mbps，容量热力图 CH 系列用） */
+  capacityMbps?: number;
+  /** 额定用户容量（户，容量热力图 userLoad 用） */
+  capacityUserCount?: number;
   /** 区域 */
   region?: string;
   /** 扩展 */
