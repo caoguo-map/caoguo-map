@@ -1,11 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   detectCoverageGaps,
   buildSectors,
   pointInPolygon,
   coverageOverlapRatio,
   classifySamples,
+  rsrpWeight,
 } from '../coverage';
+import { CellCoverage } from '../coverage';
 import { NetworkHealth } from '../health';
 import { parseTelecomQuery } from '../nlpg';
 import { classifyRsrp } from '../style';
@@ -68,6 +70,53 @@ describe('telecom/coverage', () => {
     expect(classifyRsrp(-75)).toBe('good');
     expect(classifyRsrp(-85)).toBe('fair');
     expect(classifyRsrp(-100)).toBe('poor');
+  });
+});
+
+describe('telecom/CellCoverage 渲染', () => {
+  const makeMap = () => ({
+    instance: {
+      addSource: vi.fn(),
+      getSource: vi.fn(() => null),
+      addLayer: vi.fn(),
+    },
+    removeLayer: vi.fn(),
+  });
+
+  it('CC-3 渲染连续信号强度热力图（heatmap 图层，提供 signalSamples 时）', () => {
+    const topo = makeTopology();
+    topo.signalSamples = [
+      { lng: 114.305, lat: 30.505, rsrp: -70 },
+      { lng: 114.315, lat: 30.515, rsrp: -110 },
+    ];
+    const map = makeMap();
+    const cov = new CellCoverage({ map: map as never, dataset: topo });
+    cov.render();
+    const layers = (map.instance.addLayer as unknown as vi.Mock).mock.calls.map(
+      (c: unknown[]) => c[0] as { id: string; type: string; paint?: Record<string, unknown> }
+    );
+    expect(layers.map((l) => l.id)).toContain('cg-cell-coverage-fill');
+    expect(layers.map((l) => l.id)).toContain('cg-cell-station-pt');
+    const heat = layers.find((l) => l.id === 'cg-cell-signal-heat');
+    expect(heat).toBeDefined();
+    expect(heat!.type).toBe('heatmap');
+    expect(heat!.paint).toHaveProperty('heatmap-color');
+  });
+
+  it('rsrpWeight 将 RSRP 归一化为 0~1 权重（极弱有基础权重）', () => {
+    expect(rsrpWeight(-120)).toBeCloseTo(0.15, 5);
+    expect(rsrpWeight(-65)).toBeCloseTo(1, 5);
+    expect(rsrpWeight(-92.5)).toBeCloseTo((0.15 + (27.5 / 55) * 0.85), 5);
+  });
+
+  it('未提供 signalSamples 时不渲染信号层', () => {
+    const map = makeMap();
+    const cov = new CellCoverage({ map: map as never, dataset: makeTopology() });
+    cov.render();
+    const ids = (map.instance.addLayer as unknown as vi.Mock).mock.calls.map(
+      (c: unknown[]) => (c[0] as { id: string }).id
+    );
+    expect(ids).not.toContain('cg-cell-signal-pt');
   });
 });
 

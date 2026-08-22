@@ -98,6 +98,8 @@ export interface CoverageArea {
 export interface TelecomTopologyDataset {
   baseStations: BaseStation[];
   coverageAreas: CoverageArea[];
+  /** 信号采样点（路测/用户上报，CC-3 信号热力图用，可选） */
+  signalSamples?: SignalSample[];
 }
 
 // ============================================================

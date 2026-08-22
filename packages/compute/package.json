@@ -1,6 +1,6 @@
 {
   "name": "@caoguo/maplibre-compute",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "草果地图算力网组件包 - 数据中心 / 边缘节点 / 光缆路由 / 延迟热力 / 供需预测",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",

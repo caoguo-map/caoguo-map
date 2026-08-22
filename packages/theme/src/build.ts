@@ -43,6 +43,17 @@ function withNotoFonts(style: StyleSpecification): StyleSpecification {
  * - 对象式（推荐，与 README 一致）：`buildStyle({ theme, sourceUrl, glyphs, notoFonts })`
  * - 位置参数式（兼容旧代码）：`buildStyle('caoguo-dark', { sourceUrl, glyphs, notoFonts })`
  */
+export { darkStyle, lightStyle };
+
+/**
+ * 主题注册表 —— 内置基础主题 + 运行时行业主题（六张网 Phase 落地点注入）。
+ * 必须先于 `buildStyle` 声明，使其引用时必定已初始化（避免 TDZ 隐患）。
+ */
+const registry = new Map<string, StyleSpecification>([
+  ['caoguo-dark', darkStyle as StyleSpecification],
+  ['caoguo-light', lightStyle as StyleSpecification],
+]);
+
 export function buildStyle(
   opts?: BuildStyleOptions | ThemeName,
   legacyOpts: BuildStyleOptions = {}
@@ -74,18 +85,6 @@ export function buildStyle(
   else if (!next.glyphs) next.glyphs = DEFAULT_GLYPHS;
   return next;
 }
-
-export { darkStyle, lightStyle };
-
-/**
- * 行业主题注册表 —— 为六张网（管网/电网/水网/交通/算力/通信）预留扩展入口。
- * 基础 dark/light 已内置；行业主题在对应 Phase 落地时通过 `registerTheme` 注入，
- * 避免把「规划中」误标为「已交付」。
- */
-const registry = new Map<string, StyleSpecification>([
-  ['caoguo-dark', darkStyle as StyleSpecification],
-  ['caoguo-light', lightStyle as StyleSpecification],
-]);
 
 /** 注册（或覆盖）一个矢量主题。行业主题由此接入，buildStyle 即可按名构造。 */
 export function registerTheme(name: string, style: StyleSpecification): void {

@@ -1,6 +1,5 @@
 import { injectTheme } from './index';
-
-export type ThemeName = 'caoguo-dark' | 'caoguo-light';
+import type { ThemeName } from './build';
 
 export interface UseThemeOptions {
   /** 默认值，默认从 <html data-theme> 读取，否则 'caoguo-dark' */

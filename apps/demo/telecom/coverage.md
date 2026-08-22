@@ -46,7 +46,9 @@ onMounted(() => {
   const m = new CaoguoMap({ container: mapEl.value, center: WUHAN_CENTER, zoom: 11.5 });
   m.on('load', () => {
     map.value = m as unknown as InstanceType<typeof CaoguoMap>;
-    const c = new CellCoverage({ map: m as unknown as InstanceType<typeof CaoguoMap>, dataset: wuhanTelecom, colorBy: colorMode.value, layerPrefix: 'cg-cell' });
+    // CC-3 信号强度热力图：注入路测采样点，CellCoverage 自动生成连续热力面
+    const dataset = { ...wuhanTelecom, signalSamples: wuhanSignalSamples };
+    const c = new CellCoverage({ map: m as unknown as InstanceType<typeof CaoguoMap>, dataset, colorBy: colorMode.value, layerPrefix: 'cg-cell' });
     c.render();
     coverage.value = c;
     detectGaps();
@@ -67,6 +69,9 @@ onUnmounted(() => {
     <div ref="mapEl" class="cell-map" ></div>
     <div class="stats-tag">
       {{ stats.stations }} 基站 · {{ stats.areas }} 覆盖区域
+    </div>
+    <div class="heat-tag">
+      CC-3 信号强度热力图（{{ wuhanSignalSamples.length }} 路测采样点）
     </div>
   </template>
   <template #panel>
@@ -114,6 +119,17 @@ onUnmounted(() => {
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.55);
   color: #fef3c7;
+  font-size: 13px;
+  backdrop-filter: blur(8px);
+}
+.heat-tag {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #a7f3d0;
   font-size: 13px;
   backdrop-filter: blur(8px);
 }

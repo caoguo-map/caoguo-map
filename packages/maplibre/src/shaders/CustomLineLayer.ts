@@ -38,6 +38,9 @@ export interface GlowLayerOptions {
   lines: GlowLine[];
 }
 
+/** 取分组色的兜底色（灰蓝），避免未配置分组时渲染透明/黑。 */
+const FALLBACK_COLOR: [number, number, number] = [0.6, 0.7, 0.9];
+
 const DEFAULT_COLORS: Record<string, [number, number, number]> = {
   pipe: [0.2, 0.85, 1.0], // 青蓝：管线
   road: [0.6, 0.7, 0.9], // 灰蓝：路网
@@ -97,6 +100,7 @@ export class CustomLineLayer implements CustomLayerInterface {
   private buffer?: WebGLBuffer;
   private geometry: ReturnType<typeof buildGlowGeometry>;
   private map?: { getCanvas: () => HTMLCanvasElement };
+  private gl?: WebGLRenderingContext;
 
   constructor(opts: GlowLayerOptions) {
     this.id = opts.id ?? 'caoguo-glow-line';
@@ -104,10 +108,15 @@ export class CustomLineLayer implements CustomLayerInterface {
     this.colors = { ...DEFAULT_COLORS, ...opts.colors };
     this.baseWidth = opts.baseWidth ?? 3;
     this.geometry = buildGlowGeometry(this.lines, { passes: opts.passes ?? 4, baseWidth: this.baseWidth });
+    // 为新分组补充兜底色，保证未显式配置的分组也能渲染。
+    for (const g of this.geometry.groups) {
+      if (!(g in this.colors)) this.colors[g] = FALLBACK_COLOR;
+    }
   }
 
   onAdd(map: unknown, gl: WebGLRenderingContext): void {
     this.map = map as { getCanvas: () => HTMLCanvasElement };
+    this.gl = gl;
     const vs = compile(gl, gl.VERTEX_SHADER, VERT);
     const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
     const prog = gl.createProgram()!;
@@ -134,12 +143,17 @@ export class CustomLineLayer implements CustomLayerInterface {
     const aPos = gl.getAttribLocation(this.program, 'aPos');
     const aDir = gl.getAttribLocation(this.program, 'aDir');
     const aSide = gl.getAttribLocation(this.program, 'aSide');
+    const aGroup = gl.getAttribLocation(this.program, 'aGroup');
     gl.enableVertexAttribArray(aPos);
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, stride, 0);
     gl.enableVertexAttribArray(aDir);
     gl.vertexAttribPointer(aDir, 2, gl.FLOAT, false, stride, 8);
     gl.enableVertexAttribArray(aSide);
     gl.vertexAttribPointer(aSide, 1, gl.FLOAT, false, stride, 16);
+    if (aGroup >= 0) {
+      gl.enableVertexAttribArray(aGroup);
+      gl.vertexAttribPointer(aGroup, 1, gl.FLOAT, false, stride, 20);
+    }
 
     const uMatrix = gl.getUniformLocation(this.program, 'uMatrix');
     gl.uniformMatrix4fv(uMatrix, false, new Float32Array(matrix));
@@ -153,17 +167,35 @@ export class CustomLineLayer implements CustomLayerInterface {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // 加法混合形成辉光
 
-    // 按分组取色（演示数据统一用首条线的分组色）
-    const color = this.colors[this.lines[0]?.group ?? 'pipe'] ?? this.colors.pipe;
-
-    for (let p = 0; p < this.geometry.passes.length; p++) {
-      const pass = this.geometry.passes[p];
-      const range = this.geometry.passRanges[p];
-      if (range.count <= 0) continue;
+    // 逐遍、逐分组取色绘制：实现「按分组多色」，不同业务线（管/路/水）各自着色。
+    for (const rg of this.geometry.renderGroups) {
+      const pass = this.geometry.passes[rg.passIndex];
+      const color = this.colors[rg.group] ?? FALLBACK_COLOR;
       gl.uniform1f(uWidth, pass.width);
       gl.uniform3f(uColor, color[0], color[1], color[2]);
       gl.uniform1f(uOpacity, pass.opacity);
-      gl.drawArrays(gl.TRIANGLES, range.start, range.count);
+      gl.drawArrays(gl.TRIANGLES, rg.start, rg.count);
+    }
+  }
+
+  /**
+   * 动态更新线集合（高亮选中、切换数据等无需重建图层）。
+   * 浏览器环境会刷新 GPU 缓冲；纯逻辑/测试环境仅更新几何与数据。
+   */
+  setLines(lines: GlowLine[]): void {
+    this.lines = lines;
+    this.geometry = buildGlowGeometry(this.lines, {
+      passes: this.geometry.passes.length,
+      baseWidth: this.baseWidth,
+    });
+    // 为新分组补充兜底色，保证未显式配置的分组也能渲染。
+    for (const g of this.geometry.groups) {
+      if (!(g in this.colors)) this.colors[g] = FALLBACK_COLOR;
+    }
+    // 图层已挂载（this.gl 在 onAdd 时缓存）则刷新 GPU 缓冲。
+    if (this.buffer && this.gl) {
+      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
+      this.gl.bufferData(this.gl.ARRAY_BUFFER, this.geometry.vertices, this.gl.STATIC_DRAW);
     }
   }
 

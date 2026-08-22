@@ -46,8 +46,8 @@ const statusMsg = ref('加载中…');
 function applyGlow() {
   if (!map) return;
   if (glowOn.value) {
-    const id = map.addGlowLayer({ id: 'cg-glow', lines: PIPE_LINES, baseWidth: 3, passes: 4 });
-    statusMsg.value = `辉光图层已挂载：${id}`;
+    const handle = map.addGlowLayer({ id: 'cg-glow', lines: PIPE_LINES, baseWidth: 3, passes: 4 });
+    statusMsg.value = `辉光图层已挂载：${handle.id}`;
   } else {
     if (map.instance.getLayer('cg-glow')) map.instance.removeLayer('cg-glow');
     statusMsg.value = '辉光已关闭';

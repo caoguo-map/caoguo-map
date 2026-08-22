@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { recommendBestNode, lowestLatencyPath, findRoutes, buildComputeAdjacency } from '../graph';
 import { predictSupplyDemand } from '../predict';
-import { latencyLevel } from '../latency';
+import { latencyLevel, LatencyMap } from '../latency';
 import { parseComputeQuery } from '../nlpg';
 import type { ComputeTopologyDataset } from '../types';
 
@@ -85,5 +85,53 @@ describe('compute/nlpg', () => {
     expect(r.intent).toBe('predict_gap');
     expect(r.filters.region).toBe('华东');
     expect(r.filters.timeWindow).toBe('30d');
+  });
+});
+
+describe('compute/LatencyMap 渲染', () => {
+  const makeMap = () => ({
+    instance: {
+      addSource: vi.fn(),
+      getSource: vi.fn(() => null),
+      addLayer: vi.fn(),
+    },
+    removeLayer: vi.fn(),
+  });
+
+  it('render 绘制链路延迟着色层与节点层', () => {
+    const map = makeMap();
+    const lm = new LatencyMap({ map: map as never, dataset: makeTopology() });
+    lm.render();
+    const ids = (map.instance.addLayer as unknown as vi.Mock).mock.calls.map(
+      (c: unknown[]) => (c[0] as { id: string }).id
+    );
+    expect(ids).toContain('cg-latency-link-line');
+    expect(ids).toContain('cg-latency-node-pt');
+  });
+
+  it('clear 卸载图层', () => {
+    const map = makeMap();
+    const lm = new LatencyMap({ map: map as never, dataset: makeTopology() });
+    lm.render();
+    lm.clear();
+    expect(map.removeLayer).toHaveBeenCalledWith('cg-latency-link-line');
+    expect(map.removeLayer).toHaveBeenCalledWith('cg-latency-node-pt');
+  });
+
+  it('renderLatencyIsobands 生成 4 个延迟等级分级面（LM-1 等值线）', () => {
+    const map = makeMap();
+    const topo = makeTopology();
+    // 取第一个节点坐标作为「用户端原点」
+    const u = topo.nodes[0];
+    const lm = new LatencyMap({ map: map as never, dataset: topo });
+    lm.renderLatencyIsobands(u.lng, u.lat);
+    const layers = (map.instance.addLayer as unknown as vi.Mock).mock.calls.map(
+      (c: unknown[]) => c[0] as { id: string; type: string }
+    );
+    for (const level of ['excellent', 'good', 'fair', 'poor']) {
+      const l = layers.find((x) => x.id === `cg-latency-iso-${level}-fill`);
+      expect(l).toBeDefined();
+      expect(l!.type).toBe('fill');
+    }
   });
 });

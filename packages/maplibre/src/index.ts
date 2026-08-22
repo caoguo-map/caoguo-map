@@ -116,6 +116,14 @@ export function getGlobalConfig(): CaoguoMapGlobalConfig {
   return (globalThis as Record<string, unknown>)[GLOBAL_KEY] as CaoguoMapGlobalConfig ?? {};
 }
 
+/** `addGlowLayer` 返回的句柄：既提供图层 id（用于 removeLayer），也支持动态更新线数据。 */
+export interface GlowLayerHandle {
+  /** 图层 id，可用于 map.removeLayer(id) */
+  id: string;
+  /** 动态替换线集合（高亮选中 / 切换数据，无需重建图层） */
+  setLines: (lines: GlowLine[]) => void;
+}
+
 export interface MapOptions {
   container: string | HTMLElement;
   center?: [number, number];
@@ -362,10 +370,13 @@ export class Map {
     colors?: Record<string, [number, number, number]>;
     baseWidth?: number;
     passes?: number;
-  }): string {
+  }): GlowLayerHandle {
     const layer = new CustomLineLayer(opts);
     this._map.addLayer(layer as never);
-    return layer.id;
+    return {
+      id: layer.id,
+      setLines: (lines: GlowLine[]) => layer.setLines(lines),
+    };
   }
 
   /**

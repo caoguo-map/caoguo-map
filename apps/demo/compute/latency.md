@@ -19,11 +19,33 @@ const userLat = ref<number>(30.55);
 const recommendations = ref<Array<{ id: string; distance: number; latencyMs: number }>>([]);
 const alerts = ref<LatencyAlert[]>([]);
 const thresholdMs = ref<number>(50);
+const showIsobands = ref<boolean>(true);
+
+const isoLevels = [
+  { level: 'excellent', label: '≤10ms 极佳', color: '#22d3ee' },
+  { level: 'good', label: '≤30ms 良好', color: '#4ade80' },
+  { level: 'fair', label: '≤60ms 一般', color: '#fbbf24' },
+  { level: 'poor', label: '>60ms 较差', color: '#ef4444' },
+] as const;
 
 function analyze() {
   if (!latency.value) return;
   recommendations.value = latency.value.recommendBestNode(userLng.value, userLat.value);
   alerts.value = latency.value.checkAlerts();
+  // LM-1 延迟等值线：以用户端为原点生成连续延迟等级面（实时拖拽即重算）
+  if (showIsobands.value) {
+    latency.value.renderLatencyIsobands(userLng.value, userLat.value);
+  }
+}
+
+function toggleIsobands() {
+  showIsobands.value = !showIsobands.value;
+  if (!latency.value) return;
+  if (showIsobands.value) {
+    latency.value.renderLatencyIsobands(userLng.value, userLat.value);
+  } else {
+    latency.value.clearIsobands();
+  }
 }
 
 onMounted(() => {
@@ -52,6 +74,13 @@ onUnmounted(() => {
     <div class="tag">
       延迟告警：{{ alerts.length }} 条
     </div>
+    <div v-if="showIsobands" class="iso-legend">
+      <h4>LM-1 延迟等级区域</h4>
+      <div v-for="lv in isoLevels" :key="lv.level" class="iso-item">
+        <span class="iso-swatch" :style="{ background: lv.color }" ></span>
+        <span>{{ lv.label }}</span>
+      </div>
+    </div>
   </template>
   <template #panel>
     <SimPanel title="最优接入推荐" hint="LM-2 按延迟排序">
@@ -63,6 +92,13 @@ onUnmounted(() => {
         <p>最优接入节点：<strong>{{ recommendations[0].id }}</strong></p>
         <p>预估延迟：<strong>{{ recommendations[0].latencyMs.toFixed(1) }} ms</strong></p>
       </div>
+    </SimPanel>
+    <SimPanel title="延迟等值线" hint="LM-1 以用户端为原点的延迟等级区域">
+      <label class="cg-switch">
+        <input type="checkbox" v-model="showIsobands" @change="toggleIsobands" />
+        <span>显示连续延迟等值带</span>
+      </label>
+      <p class="cg-hint">基于各节点到用户端的估计延迟做 IDW 插值，实时拖拽用户位置即重算。</p>
     </SimPanel>
     <SimPanel title="延迟告警" hint="LM-4 超阈值">
       <label class="cg-label">告警阈值（ms）</label>
@@ -139,5 +175,49 @@ onUnmounted(() => {
   font-size: 13px;
   color: #94a3b8;
   margin: 4px 0;
+}
+.iso-legend {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #e2e8f0;
+  backdrop-filter: blur(8px);
+  font-size: 12px;
+}
+.iso-legend h4 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.iso-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+.iso-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.cg-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+.cg-hint {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 8px 0 0;
 }
 </style>

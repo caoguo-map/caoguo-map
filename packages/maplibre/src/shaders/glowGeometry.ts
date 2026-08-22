@@ -13,7 +13,7 @@
 export interface GlowLine {
   /** 线坐标 [lng, lat][] */
   coordinates: [number, number][];
-  /** 该线所属分组（如 'pipe' | 'road' | 'water'），用于着色 */
+  /** 该线所属分组（如 'pipe' | 'road' | 'water'），用于按组分色。缺省归入 'default'。 */
   group?: string;
 }
 
@@ -26,11 +26,12 @@ export interface GlowPass {
 
 export interface GlowGeometry {
   /**
-   * 扁平化顶点缓冲。每个顶点 5 个 float：
-   * [worldX, worldY, dirX, dirY, side]
+   * 扁平化顶点缓冲。每个顶点 6 个 float：
+   * [worldX, worldY, dirX, dirY, side, groupIndex]
    * - worldX/worldY：该端点的归一化世界坐标
    * - dirX/dirY：所在线段的世界空间方向（用于屏幕空间法线）
    * - side：±1，左/右扩展符号
+   * - groupIndex：该顶点所属分组在 `groups` 中的下标（用于按组分色）
    */
   vertices: Float32Array;
   /** 每遍在 vertices 中的顶点区间 [start, count]（按顶点数，非 float 数） */
@@ -39,6 +40,10 @@ export interface GlowGeometry {
   passes: GlowPass[];
   /** 顶点属性跨距（float 数） */
   stride: number;
+  /** 参与渲染的去重分组名（与上层 colorMap 对应，下标即 groupIndex） */
+  groups: string[];
+  /** 逐遍、逐分组的连续顶点区间，供按组分色绘制 */
+  renderGroups: { passIndex: number; group: string; start: number; count: number }[];
 }
 
 /**
@@ -79,39 +84,56 @@ export function buildGlowGeometry(
   opts: { passes?: number; baseWidth?: number } = {}
 ): GlowGeometry {
   const passes = glowPasses(opts.passes ?? 4, opts.baseWidth ?? 3);
-  const stride = 5;
+  const stride = 6; // worldX, worldY, dirX, dirY, side, groupIndex
   const verts: number[] = [];
   const passRanges: { start: number; count: number }[] = [];
+  const renderGroups: { passIndex: number; group: string; start: number; count: number }[] = [];
 
-  for (const pass of passes) {
+  // 分组名按首次出现顺序去重，下标即顶点携带的 groupIndex。
+  const groups: string[] = [];
+  for (const line of lines) {
+    const g = line.group ?? 'default';
+    if (!groups.includes(g)) groups.push(g);
+  }
+
+  for (let p = 0; p < passes.length; p++) {
+    const pass = passes[p];
     const start = verts.length / stride;
-    for (const line of lines) {
-      const pts = line.coordinates.map(([lng, lat]) => projectSimple(lng, lat));
-      if (pts.length < 2) continue;
-      for (let i = 0; i < pts.length - 1; i++) {
-        const a = pts[i];
-        const b = pts[i + 1];
-        // 段方向（世界空间，未归一化，shader 内会归一化）
-        const dx = b[0] - a[0];
-        const dy = b[1] - a[1];
-        // 每个端点左右各一个顶点，组成 quad：aL,aR,bL,bR → (aL,aR,bL),(bL,aR,bR)
-        const quad: Array<[number, number, number, number, number]> = [
-          [a[0], a[1], dx, dy, 1],
-          [a[0], a[1], dx, dy, -1],
-          [b[0], b[1], dx, dy, 1],
-          [b[0], b[1], dx, dy, -1],
-        ];
-        // 两个三角形：0,1,2 与 2,1,3
-        const idx = [0, 1, 2, 2, 1, 3];
-        for (const k of idx) {
-          const v = quad[k];
-          verts.push(v[0], v[1], v[2], v[3], v[4]);
+    // 每遍内部按分组聚集成连续区间，便于按组取色绘制。
+    for (const group of groups) {
+      const groupStart = verts.length / stride;
+      const groupIndex = groups.indexOf(group);
+      for (const line of lines) {
+        if ((line.group ?? 'default') !== group) continue;
+        const pts = line.coordinates.map(([lng, lat]) => projectSimple(lng, lat));
+        if (pts.length < 2) continue;
+        for (let i = 0; i < pts.length - 1; i++) {
+          const a = pts[i];
+          const b = pts[i + 1];
+          // 段方向（世界空间，未归一化，shader 内会归一化）
+          const dx = b[0] - a[0];
+          const dy = b[1] - a[1];
+          // 每个端点左右各一个顶点，组成 quad：aL,aR,bL,bR → (aL,aR,bL),(bL,aR,bR)
+          const quad: Array<[number, number, number, number, number, number]> = [
+            [a[0], a[1], dx, dy, 1, groupIndex],
+            [a[0], a[1], dx, dy, -1, groupIndex],
+            [b[0], b[1], dx, dy, 1, groupIndex],
+            [b[0], b[1], dx, dy, -1, groupIndex],
+          ];
+          // 两个三角形：0,1,2 与 2,1,3
+          const idx = [0, 1, 2, 2, 1, 3];
+          for (const k of idx) {
+            const v = quad[k];
+            verts.push(v[0], v[1], v[2], v[3], v[4], v[5]);
+          }
         }
       }
+      const count = verts.length / stride - groupStart;
+      if (count > 0) renderGroups.push({ passIndex: p, group, start: groupStart, count });
     }
     const count = verts.length / stride - start;
     passRanges.push({ start, count });
   }
 
-  return { vertices: new Float32Array(verts), passRanges, passes, stride };
+  return { vertices: new Float32Array(verts), passRanges, passes, stride, groups, renderGroups };
 }

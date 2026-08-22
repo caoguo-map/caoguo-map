@@ -71,4 +71,51 @@ describe('glowGeometry T6', () => {
     expect(geo.vertices.length).toBe(0);
     for (const range of geo.passRanges) expect(range.count).toBe(0);
   });
+
+  it('buildGlowGeometry 顶点跨距为 6（含 groupIndex 属性）', () => {
+    const geo = buildGlowGeometry([]);
+    expect(geo.stride).toBe(6);
+  });
+
+  it('多分组：groups 去重且按首次出现顺序，renderGroups 覆盖每遍每分组', () => {
+    const lines: GlowLine[] = [
+      { group: 'road', coordinates: [[114.3, 30.5], [114.4, 30.6]] },
+      { group: 'pipe', coordinates: [[114.3, 30.5], [114.31, 30.51], [114.32, 30.52]] },
+      { group: 'water', coordinates: [[114.2, 30.5], [114.25, 30.55]] },
+      { group: 'pipe', coordinates: [[114.35, 30.6], [114.36, 30.61]] },
+    ];
+    const geo = buildGlowGeometry(lines, { passes: 3 });
+    expect(geo.groups).toEqual(['road', 'pipe', 'water']);
+
+    // 每遍 × 每非空分组都有对应区间
+    expect(geo.renderGroups.length).toBe(3 * 3);
+    for (const rg of geo.renderGroups) {
+      expect(geo.passes[rg.passIndex]).toBeDefined();
+      expect(geo.groups).toContain(rg.group);
+      expect(rg.count).toBeGreaterThan(0);
+      // 区间顶点数必为 6 的倍数（每段 6 顶点）
+      expect(rg.count % 6).toBe(0);
+    }
+    // 所有 renderGroup 顶点总数 = 顶点总数 / stride
+    const total = geo.renderGroups.reduce((s, r) => s + r.count, 0);
+    expect(total).toBe(geo.vertices.length / geo.stride);
+  });
+
+  it('顶点携带的 groupIndex 与 groups 顺序一致', () => {
+    const lines: GlowLine[] = [
+      { group: 'a', coordinates: [[114.3, 30.5], [114.4, 30.6]] },
+      { group: 'b', coordinates: [[114.3, 30.5], [114.31, 30.51]] },
+    ];
+    const geo = buildGlowGeometry(lines, { passes: 2 });
+    // 循环顺序为 for pass { for group { for line } }，
+    // 2 遍 × (a 1段, b 1段) = 4 段，每段 6 顶点，groupIndex 依次为 [0,1,0,1]。
+    const expectSeq = [0, 1, 0, 1];
+    for (let s = 0; s < expectSeq.length; s++) {
+      const base = s * 6 * geo.stride;
+      for (let k = 0; k < 6; k++) {
+        const gi = geo.vertices[base + k * geo.stride + 5];
+        expect(gi).toBe(expectSeq[s]);
+      }
+    }
+  });
 });

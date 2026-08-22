@@ -5,8 +5,13 @@ const DESCRIPTION = '草果地图六张网场景的交互式演示：基础地�
 
 const AI_PROXY_TARGET = process.env.CAOGUO_AI_PROXY || 'http://127.0.0.1:8787';
 
+// GitHub Pages 项目站点根路径为 /<repo>/，demo 又挂在 /demo/ 下。
+// CI 部署时由 GITHUB_REPOSITORY 派生（如 /caoguo-map/demo/）；本地 dev 回退 /demo/。
+const REPO = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? '';
+const SITE_BASE = REPO ? `/${REPO}/demo/` : '/demo/';
+
 export default defineConfig({
-  base: '/demo/',
+  base: SITE_BASE,
   title: TITLE,
   description: DESCRIPTION,
   lang: 'zh-CN',
@@ -99,6 +104,12 @@ export default defineConfig({
           { text: '通信网总览', link: '/telecom/' },
           { text: 'T1 基站覆盖地图', link: '/telecom/coverage' },
           { text: 'T2 网络健康度面板', link: '/telecom/health' },
+        ],
+      },
+      {
+        text: 'AI 工具链 · Phase 0+',
+        items: [
+          { text: 'AI 总览', link: '/ai/' },
         ],
       },
     ],

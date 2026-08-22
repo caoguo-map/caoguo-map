@@ -5,8 +5,17 @@
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { upsertSource } from '@caoguo/maplibre';
 import type { TelecomTopologyDataset, StationColorBy } from '../types';
-import { paintStationBy, paintCoverageBySignal } from '../style/paintRules';
+import { paintStationBy, paintCoverageBySignal, paintSignalByRsrp } from '../style/paintRules';
 import type { NetworkHealth } from '../health/NetworkHealth';
+
+/**
+ * RSRP(dBm) → 热力权重（0~1）。范围约 [-120, -65]：
+ * 极弱(-120) 给基础权重 0.15（仍可见），极好(-65) 给 1.0。
+ */
+export function rsrpWeight(rsrp: number): number {
+  const clamped = Math.max(-120, Math.min(-65, rsrp));
+  return 0.15 + ((clamped + 120) / 55) * 0.85;
+}
 
 export interface CellCoverageOptions {
   map: CaoguoMap;
@@ -100,6 +109,52 @@ export class CellCoverage {
       },
     });
     this.layerIds.push(`${prefix}-station-pt`);
+
+    // CC-3 信号强度热力：基于路测/用户上报采样点，用 MapLibre 原生 heatmap 图层
+    // 生成连续信号强度热力面（权重由 RSRP 归一化：信号越强权重越大）。
+    const samples = this.dataset.signalSamples;
+    if (samples && samples.length > 0) {
+      const sampleGeoJSON: GeoJSON.FeatureCollection<GeoJSON.Point> = {
+        type: 'FeatureCollection',
+        features: samples.map((s) => ({
+          type: 'Feature' as const,
+          geometry: { type: 'Point' as const, coordinates: [s.lng, s.lat] },
+          properties: { rsrp: s.rsrp, weight: rsrpWeight(s.rsrp) },
+        })),
+      };
+      upsertSource(mlMap, `${prefix}-signal-src`, sampleGeoJSON);
+      mlMap.addLayer({
+        id: `${prefix}-signal-heat`,
+        type: 'heatmap',
+        source: `${prefix}-signal-src`,
+        paint: {
+          // RSRP 越高权重越大（弱信号也有基础权重，避免完全不可见）
+          'heatmap-weight': ['get', 'weight'] as never,
+          'heatmap-intensity': 1,
+          'heatmap-radius': 28,
+          'heatmap-opacity': 0.75,
+          // 色带：极弱红 → 弱橙 → 一般黄 → 好绿 → 极好青（与 PRD colorBySignal 一致）
+          'heatmap-color': [
+            'interpolate',
+            ['linear'],
+            ['heatmap-density'],
+            0,
+            'rgba(0,0,0,0)',
+            0.2,
+            'rgba(239,68,68,0.6)', // 极弱 红
+            0.4,
+            'rgba(245,158,11,0.7)', // 弱 橙
+            0.6,
+            'rgba(251,191,36,0.8)', // 一般 黄
+            0.8,
+            'rgba(74,222,128,0.85)', // 好 绿
+            1,
+            'rgba(34,211,238,0.95)', // 极好 青
+          ] as never,
+        },
+      });
+      this.layerIds.push(`${prefix}-signal-heat`);
+    }
   }
 
   /** 切换基站着色模式 */
