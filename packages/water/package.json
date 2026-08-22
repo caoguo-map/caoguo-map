@@ -1,6 +1,6 @@
 {
   "name": "@caoguo/maplibre-water",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "草果地图水网组件包 - 水系拓扑 / 洪水淹没 / 水库调度",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
