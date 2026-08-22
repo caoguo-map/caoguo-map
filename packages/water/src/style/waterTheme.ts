@@ -10,6 +10,7 @@
  */
 
 import type { DikeSafetyLevel, WaterFeatureKind, WaterColorByMode } from '../types';
+import { INDUSTRY_PALETTES } from '@caoguo/theme';
 
 /** 河流按流量着色（PRD §4.1.3） */
 export function flowColor(flowRate: number): string {
@@ -27,12 +28,12 @@ export function storageColor(storageRate: number): string {
   return '#fbbf24';                          // 干旱 黄
 }
 
-/** 堤防安全状态配色（PRD §4.1.3） */
+/** 堤防安全状态配色（PRD §4.1.3）—— 颜色值统一取自 @caoguo/theme 六张网配色寄存器 */
 export const DIKE_SAFETY_COLORS: Record<DikeSafetyLevel, string> = {
-  safe: '#4ade80',    // 安全 绿
-  warning: '#fbbf24', // 警戒 黄
-  danger: '#ef4444',  // 危险 红
-  breach: '#7f1d1d',  // 决口 暗红
+  safe: INDUSTRY_PALETTES.water.status.safe, // 安全 绿
+  warning: INDUSTRY_PALETTES.water.status.warning, // 警戒 黄
+  danger: INDUSTRY_PALETTES.water.status.danger, // 危险 红
+  breach: INDUSTRY_PALETTES.water.status.breach, // 决口 暗红
 };
 
 /** 堤防安全状态中文标签 */
@@ -43,17 +44,17 @@ export const DIKE_SAFETY_LABELS: Record<DikeSafetyLevel, string> = {
   breach: '决口',
 };
 
-/** 要素类型配色 */
+/** 要素类型配色 —— 颜色值统一取自 @caoguo/theme 六张网配色寄存器 */
 export const WATER_FEATURE_COLORS: Record<WaterFeatureKind, string> = {
-  basin: '#0ea5e9',       // 流域 天蓝
-  mainstream: '#3b82f6',  // 干流 蓝
-  tributary: '#60a5fa',   // 支流 浅蓝
-  reach: '#93c5fd',       // 河段 淡蓝
-  reservoir: '#0ea5e9',   // 水库 青
-  gate: '#f59e0b',        // 闸站 橙
-  dike: '#fbbf24',        // 堤防 黄
-  rainStation: '#22d3ee', // 雨量站 青
-  waterStation: '#38bdf8', // 水位站 天蓝
+  basin: INDUSTRY_PALETTES.water.palette.basin, // 流域 天蓝
+  mainstream: INDUSTRY_PALETTES.water.palette.mainstream, // 干流 蓝
+  tributary: INDUSTRY_PALETTES.water.palette.tributary, // 支流 浅蓝
+  reach: INDUSTRY_PALETTES.water.palette.reach, // 河段 淡蓝
+  reservoir: INDUSTRY_PALETTES.water.palette.reservoir, // 水库 青
+  gate: INDUSTRY_PALETTES.water.palette.gate, // 闸站 橙
+  dike: INDUSTRY_PALETTES.water.palette.dike, // 堤防 黄
+  rainStation: INDUSTRY_PALETTES.water.palette.rainStation, // 雨量站 青
+  waterStation: INDUSTRY_PALETTES.water.palette.waterStation, // 水位站 天蓝
 };
 
 /** 要素类型图标（SVG path 描点） */

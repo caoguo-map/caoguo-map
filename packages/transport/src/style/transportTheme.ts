@@ -13,13 +13,14 @@ import type {
   IncidentSeverity,
   CongestionLevel,
 } from '../types';
+import { INDUSTRY_PALETTES } from '@caoguo/theme';
 
-/** 道路等级配色（底图模式，PRD §3.1.3） */
+/** 道路等级配色（底图模式，PRD §3.1.3）—— 颜色值统一取自 @caoguo/theme 六张网配色寄存器 */
 export const ROAD_CLASS_COLORS: Record<RoadClass, string> = {
-  highway: '#f59e0b',     // 高速 橙色
-  national: '#ef4444',    // 国道 红色
-  provincial: '#8b5cf6',  // 省道 紫色
-  urban: '#6b7280',       // 城市道路 灰色
+  highway: INDUSTRY_PALETTES.transport.palette.highway, // 高速 橙色
+  national: INDUSTRY_PALETTES.transport.palette.national, // 国道 红色
+  provincial: INDUSTRY_PALETTES.transport.palette.provincial, // 省道 紫色
+  urban: INDUSTRY_PALETTES.transport.palette.urban, // 城市道路 灰色
 };
 
 /** 道路等级中文标签 */
@@ -30,12 +31,12 @@ export const ROAD_CLASS_LABELS: Record<RoadClass, string> = {
   urban: '城市道路',
 };
 
-/** 路段状态配色 */
+/** 路段状态配色 —— 颜色值统一取自 @caoguo/theme 六张网配色寄存器 */
 export const ROAD_STATUS_COLORS: Record<RoadStatus, string> = {
-  open: '#4ade80',        // 绿 开放
-  closed: '#ef4444',      // 红 封闭
-  construction: '#fbbf24', // 黄 施工
-  controlled: '#8b5cf6',  // 紫 管制
+  open: INDUSTRY_PALETTES.transport.status.open, // 绿 开放
+  closed: INDUSTRY_PALETTES.transport.status.closed, // 红 封闭
+  construction: INDUSTRY_PALETTES.transport.status.construction, // 黄 施工
+  controlled: INDUSTRY_PALETTES.transport.status.controlled, // 紫 管制
 };
 
 /** 路段状态中文标签 */
