@@ -21,7 +21,7 @@ export default defineConfig({
       { text: '指南', link: '/guide/quickstart' },
       { text: 'API', link: '/api/map' },
       { text: '部署', link: '/deployment/docker' },
-      { text: '演示中心', link: '/demo/' },
+      { text: '演示中心', link: 'https://map.hb.cn/demo/' },
       { text: 'GitHub', link: 'https://github.com/caoguo-map/caoguo-map' },
     ],
     sidebar: [

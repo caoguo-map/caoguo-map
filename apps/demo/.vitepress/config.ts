@@ -5,10 +5,9 @@ const DESCRIPTION = '草果地图六张网场景的交互式演示：基础地�
 
 const AI_PROXY_TARGET = process.env.CAOGUO_AI_PROXY || 'http://127.0.0.1:8787';
 
-// GitHub Pages 组织项目站点根路径为 /<repo>/（如 /caoguo-map/）。
-// CI 部署时由 GITHUB_REPOSITORY 派生；本地 dev 回退 /（dev server 根即 demo）。
-const REPO = process.env.GITHUB_REPOSITORY?.split('/')[1] ?? '';
-const SITE_BASE = REPO ? `/${REPO}/` : '/';
+// 演示中心部署在自定义域名根站点（map.hb.cn）下的 /demo/ 子路径。
+const SITE_URL = 'https://map.hb.cn';
+const SITE_BASE = '/demo/';
 
 export default defineConfig({
   base: SITE_BASE,
@@ -34,8 +33,8 @@ export default defineConfig({
   ],
   themeConfig: {
     nav: [
-      { text: '总览', link: '/', exact: true },
-      { text: '文档', link: '/docs/' },
+      { text: '总览', link: SITE_URL + '/', exact: true },
+      { text: '文档', link: SITE_URL + '/docs/' },
       { text: 'GitHub', link: 'https://github.com/caoguo-map/caoguo-map' },
     ],
     sidebar: [

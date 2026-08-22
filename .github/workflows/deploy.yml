@@ -1,15 +1,23 @@
-name: Deploy demo to GitHub Pages
+name: Deploy sites to GitHub Pages
+
+# 统一构建并部署三个站点到 GitHub Pages（自定义域名根站点 map.hb.cn）：
+#   - 落地页   apps/landing  -> 站点根      /
+#   - 文档站   apps/docs     -> 子路径      /docs/
+#   - 演示中心 apps/demo     -> 子路径      /demo/
+# 三个站点的 VitePress base 已分别设为 /、/docs/、/demo/，此处仅合并产物一次性部署。
 
 on:
   push:
     branches: [main]
     paths:
+      - 'apps/landing/**'
+      - 'apps/docs/**'
       - 'apps/demo/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
       - 'package.json'
       - 'pnpm-workspace.yaml'
-      - '.github/workflows/deploy-demo.yml'
+      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 permissions:
@@ -42,26 +50,37 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 重新构建所有 workspace 包的 dist（demo 经 workspace 软链引用）
+      # 重新构建所有 workspace 包的 dist（站点经 workspace 软链引用 @caoguo/*）
       - name: Build packages
         run: pnpm -r --filter './packages/*' build
 
+      - name: Build landing
+        run: pnpm --filter @caoguo/landing build
+
+      - name: Build docs
+        run: pnpm --filter @caoguo/docs build
+
       - name: Build demo
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
         run: pnpm --filter @caoguo/demo build
+
+      - name: Assemble Pages artifact
+        run: |
+          rm -rf /tmp/site && mkdir -p /tmp/site
+          cp -r apps/landing/.vitepress/dist/. /tmp/site/
+          mkdir -p /tmp/site/docs && cp -r apps/docs/.vitepress/dist/. /tmp/site/docs/
+          mkdir -p /tmp/site/demo && cp -r apps/demo/.vitepress/dist/. /tmp/site/demo/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/demo/.vitepress/dist
+          path: /tmp/site
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}/demo/
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
