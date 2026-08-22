@@ -96,6 +96,7 @@ export default defineConfig({
           { text: 'C1 算力节点地图', link: '/compute/nodes' },
           { text: 'C2 延迟热力图', link: '/compute/latency' },
           { text: 'C3 算力供需预测', link: '/compute/predict' },
+          { text: 'C4 自然语言查询', link: '/compute/nlp' },
         ],
       },
       {

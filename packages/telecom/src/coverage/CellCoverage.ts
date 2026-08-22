@@ -7,6 +7,7 @@ import { upsertSource } from '@caoguo/maplibre';
 import type { TelecomTopologyDataset, StationColorBy } from '../types';
 import { paintStationBy, paintCoverageBySignal, paintSignalByRsrp } from '../style/paintRules';
 import type { NetworkHealth } from '../health/NetworkHealth';
+import { buildSectorFans, detectCoverageGaps } from './coverageCore';
 
 /**
  * RSRP(dBm) → 热力权重（0~1）。范围约 [-120, -65]：
@@ -155,6 +156,108 @@ export class CellCoverage {
       });
       this.layerIds.push(`${prefix}-signal-heat`);
     }
+
+    // CC-5 扇区可视化：以基站为顶点，按方位角渲染半透明扇形波束
+    const sectorFeatures: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
+    for (const s of this.dataset.baseStations) {
+      if (!s.properties?.azimuth || s.properties.azimuth.length === 0) continue;
+      for (const fan of buildSectorFans(s)) {
+        sectorFeatures.push({
+          type: 'Feature' as const,
+          geometry: { type: 'Polygon' as const, coordinates: [fan.polygon] },
+          properties: {
+            stationId: fan.stationId,
+            sectorId: fan.sectorId,
+            azimuth: fan.azimuth,
+            carrier: s.carrier,
+          },
+        });
+      }
+    }
+    if (sectorFeatures.length > 0) {
+      const sectorGeoJSON: GeoJSON.FeatureCollection<GeoJSON.Polygon> = {
+        type: 'FeatureCollection',
+        features: sectorFeatures,
+      };
+      upsertSource(mlMap, `${prefix}-sector-src`, sectorGeoJSON);
+      mlMap.addLayer({
+        id: `${prefix}-sector-fill`,
+        type: 'fill',
+        source: `${prefix}-sector-src`,
+        paint: {
+          'fill-color': [
+            'match',
+            ['get', 'carrier'],
+            '中国移动', '#e60012',
+            '中国联通', '#e60012',
+            '中国电信', '#e60012',
+            '中国广电', '#e60012',
+            '#6b7280',
+          ] as never,
+          'fill-opacity': 0.12,
+        },
+      });
+      this.layerIds.push(`${prefix}-sector-fill`);
+      mlMap.addLayer({
+        id: `${prefix}-sector-line`,
+        type: 'line',
+        source: `${prefix}-sector-src`,
+        paint: {
+          'line-color': '#ffffff',
+          'line-width': 1,
+          'line-opacity': 0.5,
+        },
+      });
+      this.layerIds.push(`${prefix}-sector-line`);
+    }
+  }
+
+  /**
+   * CC-4 覆盖盲区识别：在地图上标记无覆盖 / 弱覆盖采样点。
+   * 调用 detectCoverageGaps 纯函数，将盲区渲染为红色（无覆盖）/
+   * 橙色（弱覆盖）高亮点。需先 render() 后再调用。
+   */
+  renderCoverageGaps(gaps?: ReturnType<typeof detectCoverageGaps>): void {
+    const mlMap = (this.map as unknown as {
+      instance: {
+        addSource: (id: string, source: unknown) => void;
+        getSource: (id: string) => unknown;
+        addLayer: (layer: unknown) => void;
+      };
+    }).instance;
+    const prefix = this.layerPrefix;
+
+    const gapList =
+      gaps ?? detectCoverageGaps(this.dataset.signalSamples ?? [], this.dataset.coverageAreas);
+    if (gapList.length === 0) return;
+
+    const geoJSON: GeoJSON.FeatureCollection<GeoJSON.Point> = {
+      type: 'FeatureCollection',
+      features: gapList.map((g) => ({
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: [g.lng, g.lat] },
+        properties: { gapType: g.level, rsrp: g.rsrp },
+      })),
+    };
+    upsertSource(mlMap, `${prefix}-gap-src`, geoJSON);
+    mlMap.addLayer({
+      id: `${prefix}-gap-pt`,
+      type: 'circle',
+      source: `${prefix}-gap-src`,
+      paint: {
+        'circle-radius': 7,
+        'circle-color': [
+          'match',
+          ['get', 'gapType'],
+          'none', '#ef4444',
+          'weak', '#f59e0b',
+          '#6b7280',
+        ] as never,
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': '#ffffff',
+      },
+    });
+    this.layerIds.push(`${prefix}-gap-pt`);
   }
 
   /** 切换基站着色模式 */

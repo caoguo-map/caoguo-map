@@ -93,8 +93,11 @@ describe('compute/LatencyMap 渲染', () => {
     instance: {
       addSource: vi.fn(),
       getSource: vi.fn(() => null),
+      getLayer: vi.fn(() => null),
       addLayer: vi.fn(),
     },
+    getSource: vi.fn(() => null),
+    removeSource: vi.fn(),
     removeLayer: vi.fn(),
   });
 

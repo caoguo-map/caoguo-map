@@ -3,11 +3,20 @@ title: T2 网络健康度面板
 ---
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { NetworkHealth, type OnlineRateStats, type StationAlert } from '@caoguo/maplibre-telecom';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { Map, WUHAN_CENTER, WUHAN_ZOOM } from '@caoguo/maplibre';
+import {
+  NetworkHealth,
+  CapacityHeatmap,
+  type OnlineRateStats,
+  type StationAlert,
+} from '@caoguo/maplibre-telecom';
 import { wuhanTelecom } from '../data/wuhan-telecom';
 import DemoLayout from '../common/DemoLayout.vue';
 import SimPanel from '../common/SimPanel.vue';
+
+const mapEl = ref<HTMLDivElement | null>(null);
+let map: Map | null = null;
 
 const health = ref<NetworkHealth | null>(null);
 const rateByCarrier = ref<OnlineRateStats[]>([]);
@@ -20,6 +29,47 @@ onMounted(() => {
   rateByCarrier.value = h.onlineRateByCarrier();
   rateByType.value = h.onlineRateByType();
   alerts.value = h.faultAlerts();
+
+  if (!mapEl.value) return;
+  map = new Map({
+    container: mapEl.value,
+    center: WUHAN_CENTER,
+    zoom: WUHAN_ZOOM,
+  });
+
+  map.on('load', () => {
+    if (!map) return;
+    // 基站散点图层
+    const stationGeoJSON = {
+      type: 'FeatureCollection' as const,
+      features: wuhanTelecom.baseStations.map((s) => ({
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: [s.lng, s.lat] },
+        properties: { id: s.id, name: s.name, carrier: s.carrier, status: s.properties?.status ?? 'online' },
+      })),
+    };
+    map.addSource('health-stations', stationGeoJSON);
+    map.addLayer({
+      id: 'health-station-pt',
+      type: 'circle',
+      source: 'health-stations',
+      paint: {
+        'circle-radius': 7,
+        'circle-color': '#38bdf8',
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#0ea5e9',
+      },
+    });
+
+    // CH-3 容量预警地图高亮：利用率 > 80% 的基站渲染为红色描边圆点
+    const heatmap = new CapacityHeatmap({ map, dataset: wuhanTelecom });
+    heatmap.renderAlerts(0.8);
+  });
+});
+
+onUnmounted(() => {
+  map?.remove();
+  map = null;
 });
 
 function ratePercent(r: number): string {
@@ -29,43 +79,32 @@ function ratePercent(r: number): string {
 
 <DemoLayout
   title="T2 · 网络健康度面板"
-  subtitle="caoguo-telecom：基站在线率统计（NH-1）+ 故障告警（NH-2）+ 根因分析（NH-4）。"
+  subtitle="caoguo-telecom：基站在线率统计（NH-1）+ 故障告警（NH-2）+ 容量预警地图高亮（CH-3）。"
 >
   <template #map>
-    <div class="health-panel">
-      <div class="hp-head">
-        <h2>网络健康度总览</h2>
-        <p>按运营商 / 类型统计基站在线率，识别故障根因</p>
-      </div>
-      <div class="hp-section">
-        <h3>运营商在线率（NH-1）</h3>
-        <div class="hp-list">
-          <div v-for="r in rateByCarrier" :key="r.group" class="hp-row">
-            <span class="hp-name">{{ r.group }}</span>
-            <div class="hp-bar">
-              <div class="hp-bar-fill" :style="{ width: ratePercent(r.onlineRate), background: r.onlineRate >= 0.8 ? '#4ade80' : r.onlineRate >= 0.5 ? '#fbbf24' : '#ef4444' }" />
-            </div>
-            <span class="hp-val">{{ r.online }}/{{ r.total }} · {{ ratePercent(r.onlineRate) }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="hp-section">
-        <h3>故障告警（NH-2 / NH-4）</h3>
-        <div v-if="alerts.length" class="hp-alerts">
-          <div v-for="a in alerts" :key="a.station.id" class="hp-alert">
-            <span class="hp-alert-dot" ></span>
-            <div>
-              <p class="hp-alert-name">{{ a.station.name }}（{{ a.station.carrier }}）</p>
-              <p class="hp-alert-reason">疑似原因：{{ a.reason }}</p>
-            </div>
-          </div>
-        </div>
-        <p v-else class="hp-empty">无故障基站</p>
-      </div>
-    </div>
+    <div ref="mapEl" class="health-map"></div>
   </template>
   <template #panel>
-    <SimPanel title="按类型统计" hint="NH-1">
+    <SimPanel title="运营商在线率" hint="NH-1">
+      <div v-for="r in rateByCarrier" :key="r.group" class="cg-row">
+        <span>{{ r.group }}</span>
+        <span>{{ r.online }}/{{ r.total }}</span>
+        <span class="cg-rate" :style="{ color: r.onlineRate >= 0.8 ? '#4ade80' : '#ef4444' }">{{ ratePercent(r.onlineRate) }}</span>
+      </div>
+    </SimPanel>
+    <SimPanel title="故障告警" hint="NH-2 / NH-4" style="margin-top: 16px;">
+      <div v-if="alerts.length" class="hp-alerts">
+        <div v-for="a in alerts" :key="a.station.id" class="hp-alert">
+          <span class="hp-alert-dot"></span>
+          <div>
+            <p class="hp-alert-name">{{ a.station.name }}（{{ a.station.carrier }}）</p>
+            <p class="hp-alert-reason">疑似原因：{{ a.reason }}</p>
+          </div>
+        </div>
+      </div>
+      <p v-else class="hp-empty">无故障基站</p>
+    </SimPanel>
+    <SimPanel title="按类型统计" hint="NH-1" style="margin-top: 16px;">
       <div v-for="r in rateByType" :key="r.group" class="cg-row">
         <span>{{ r.group }}</span>
         <span>{{ r.online }}/{{ r.total }}</span>
@@ -76,60 +115,22 @@ function ratePercent(r: number): string {
 </DemoLayout>
 
 <style scoped>
-.health-panel {
+.health-map {
+  width: 100%;
   height: 100%;
   min-height: 480px;
-  padding: 24px;
-  background: var(--cg-bg, #0b1320);
-  overflow-y: auto;
+  background: #0a0f1e;
 }
-.hp-head h2 {
-  margin: 0 0 6px;
-  font-size: 20px;
-}
-.hp-head p {
-  margin: 0 0 20px;
-  font-size: 13px;
-  color: var(--cg-text-muted);
-}
-.hp-section {
-  margin-bottom: 24px;
-}
-.hp-section h3 {
-  font-size: 15px;
-  margin: 0 0 12px;
-}
-.hp-list {
+.cg-row {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.hp-row {
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-}
-.hp-name {
-  width: 80px;
+  padding: 6px 0;
   font-size: 13px;
-  flex-shrink: 0;
+  color: #e2e8f0;
 }
-.hp-bar {
-  flex: 1;
-  height: 10px;
-  border-radius: 5px;
-  background: #1e293b;
-  overflow: hidden;
-}
-.hp-bar-fill {
-  height: 100%;
-  border-radius: 5px;
-  transition: width 0.4s ease;
-}
-.hp-val {
-  font-size: 12px;
-  color: #94a3b8;
-  flex-shrink: 0;
+.cg-rate {
+  font-weight: 600;
 }
 .hp-alerts {
   display: flex;
@@ -165,16 +166,5 @@ function ratePercent(r: number): string {
 .hp-empty {
   font-size: 13px;
   color: #94a3b8;
-}
-.cg-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 0;
-  font-size: 13px;
-  color: #e2e8f0;
-}
-.cg-rate {
-  font-weight: 600;
 }
 </style>

@@ -113,6 +113,85 @@ export function buildSectors(station: BaseStation): SectorGeometry[] {
   });
 }
 
+/** 扇形覆盖（CC-5 渲染用） */
+export interface SectorFan {
+  stationId: string;
+  sectorId: string;
+  /** 方位角（度） */
+  azimuth: number;
+  /** 半功率波束宽度（度） */
+  beamWidth: number;
+  /** 半径（米） */
+  radiusM: number;
+  /** 扇形多边形 [lng,lat][]（渲染用） */
+  polygon: [number, number][];
+}
+
+const EARTH_R = 6_371_000;
+
+/** 由经纬度 + 方位角 + 距离(米) 推算目标点（大圆航点法） */
+function destinationPoint(
+  lng: number,
+  lat: number,
+  bearingDeg: number,
+  distM: number
+): [number, number] {
+  const d = distM / EARTH_R;
+  const brng = (bearingDeg * Math.PI) / 180;
+  const lat1 = (lat * Math.PI) / 180;
+  const lng1 = (lng * Math.PI) / 180;
+  const lat2 = Math.asin(
+    Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brng)
+  );
+  const lng2 =
+    lng1 +
+    Math.atan2(
+      Math.sin(brng) * Math.sin(d) * Math.cos(lat1),
+      Math.cos(d) - Math.sin(lat1) * Math.sin(lat2)
+    );
+  return [(lng2 * 180) / Math.PI, (lat2 * 180) / Math.PI];
+}
+
+/**
+ * CC-5 扇区扇形多边形：以基站为顶点，按方位角 ± beamWidth/2 张角、
+ * radiusM 半径生成扇形 polygon（含中心点，便于 fill 渲染）。
+ */
+export function sectorFanPolygon(
+  center: [number, number],
+  azimuth: number,
+  beamWidth = 65,
+  radiusM = 800
+): [number, number][] {
+  const steps = 24;
+  const half = beamWidth / 2;
+  const ring: [number, number][] = [[center[0], center[1]]];
+  for (let i = 0; i <= steps; i++) {
+    const bearing = azimuth - half + (beamWidth * i) / steps;
+    ring.push(destinationPoint(center[0], center[1], bearing, radiusM));
+  }
+  return ring;
+}
+
+/** 生成某基站全部扇区扇形（CC-5） */
+export function buildSectorFans(
+  station: BaseStation,
+  opts: { beamWidth?: number; radiusM?: number } = {}
+): SectorFan[] {
+  const azimuths = station.properties?.azimuth;
+  // 无方位角配置时无法生成扇区（PRD CC-5 语义），返回空
+  if (!azimuths || azimuths.length === 0) return [];
+  const beamWidth = opts.beamWidth ?? 65;
+  const radiusM = opts.radiusM ?? 800;
+  return azimuths.map((az, i) => ({
+    stationId: station.id,
+    sectorId: `${station.id}-s${i}`,
+    azimuth: az,
+    beamWidth,
+    radiusM,
+    polygon: sectorFanPolygon([station.lng, station.lat], az, beamWidth, radiusM),
+  }));
+}
+
 /**
  * CC-3 信号热力：把 RSRP 采样点分类
  */

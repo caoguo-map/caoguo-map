@@ -8,6 +8,7 @@
  */
 
 import type { Carrier, Technology, StationStatus, SignalLevel } from '../types';
+import type { StyleSpecification } from 'maplibre-gl';
 import { INDUSTRY_META } from '@caoguo/theme';
 
 /** 通信网行业主色（六张网统一标识色，单一来源 @caoguo/theme） */
@@ -73,6 +74,63 @@ export const CARRIER_THEMES: Record<Carrier, CarrierTheme> = {
   '中国电信': { name: '中国电信', primary: '#3b82f6', secondary: '#1e40af' },
   '中国广电': { name: '中国广电', primary: '#f59e0b', secondary: '#92400e' },
 };
+
+/** 大屏昼夜模式 */
+export type ScreenMode = 'day' | 'night';
+
+/**
+ * 品牌大屏主题（PRD §5.3）：基于基础地图 style 克隆，注入运营商主色
+ * 作为背景/水体，并支持白天/夜间两档。纯函数，便于单测与预览。
+ *
+ * 调用方拿到返回的 StyleSpecification 后，可传给 Map 的 `style` 选项，
+ * 或在运行时通过 `map.setStyle(buildCarrierThemeStyle(...))` 一键切换。
+ */
+export function buildCarrierThemeStyle(
+  baseStyle: StyleSpecification,
+  carrier: Carrier,
+  mode: ScreenMode = 'night'
+): StyleSpecification {
+  const theme = CARRIER_THEMES[carrier];
+  const isNight = mode === 'night';
+  // 背景：夜间用运营商深色、白天用运营商浅色
+  const background = isNight ? theme.secondary : theme.primary;
+  // 水体：与背景同色系、略深
+  const water = isNight
+    ? shade(theme.secondary, -0.25)
+    : shade(theme.primary, 0.35);
+
+  const cloned: StyleSpecification = structuredClone(baseStyle);
+  for (const layer of cloned.layers ?? []) {
+    if (layer.type === 'background') {
+      (layer as unknown as { paint?: Record<string, unknown> }).paint = {
+        ...(layer as unknown as { paint?: Record<string, unknown> }).paint,
+        'background-color': background,
+      };
+    } else if (layer.type === 'fill' && /water|水体/i.test(layer.id)) {
+      (layer as unknown as { paint?: Record<string, unknown> }).paint = {
+        ...(layer as unknown as { paint?: Record<string, unknown> }).paint,
+        'fill-color': water,
+      };
+    }
+  }
+  return cloned;
+}
+
+/** 颜色明暗微调（factor>0 变亮，<0 变暗），输入/输出均为 #rrggbb */
+function shade(hex: string, factor: number): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const num = parseInt(m[1], 16);
+  let r = (num >> 16) & 0xff;
+  let g = (num >> 8) & 0xff;
+  let b = num & 0xff;
+  const adj = (c: number) =>
+    Math.max(0, Math.min(255, Math.round(factor >= 0 ? c + (255 - c) * factor : c * (1 + factor))));
+  r = adj(r);
+  g = adj(g);
+  b = adj(b);
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
 
 /**
  * RSRP → 信号等级

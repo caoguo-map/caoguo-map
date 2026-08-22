@@ -73,17 +73,23 @@ export function findRoutes(
 
   const dfsLocal = (cur: string) => {
     if (all.length >= maxRoutes) return;
-    if (cur === end) {
-      all.push([...path]);
-      return;
-    }
-    if (path.length >= maxDepth) return;
     onPath.add(cur);
     path.push(cur);
+    if (cur === end) {
+      all.push([...path]);
+      path.pop();
+      onPath.delete(cur);
+      return;
+    }
+    if (path.length >= maxDepth) {
+      path.pop();
+      onPath.delete(cur);
+      return;
+    }
     for (const e of adj.get(cur) ?? []) {
       if (onPath.has(e.to)) continue;
       dfsLocal(e.to);
-      if (all.length >= maxRoutes) return;
+      if (all.length >= maxRoutes) break;
     }
     path.pop();
     onPath.delete(cur);

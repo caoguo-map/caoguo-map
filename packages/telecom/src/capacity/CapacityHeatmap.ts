@@ -11,7 +11,7 @@
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { upsertSource } from '@caoguo/maplibre';
 import type { TelecomTopologyDataset } from '../types';
-import { capacityUtilizationPoints, type CapacityWeight } from './capacityCore';
+import { capacityUtilizationPoints, capacityAlerts, type CapacityWeight } from './capacityCore';
 
 export interface CapacityHeatmapOptions {
   map: CaoguoMap;
@@ -73,6 +73,58 @@ export class CapacityHeatmap {
     } catch {
       // 图层已存在等，忽略
     }
+  }
+
+  /**
+   * CH-3 容量预警地图高亮：将利用率 > 阈值（默认 80%）的基站渲染为
+   * 醒目红色描边圆点，叠加在容量热力图之上。需先 render() 后再调用。
+   */
+  renderAlerts(threshold = 0.8): void {
+    const thresholds = {
+      critical: Math.min(1, threshold + 0.15),
+      warning: Math.min(1, threshold + 0.05),
+      info: threshold,
+    };
+    const alerts = capacityAlerts(this.dataset.baseStations, thresholds);
+    if (alerts.length === 0) return;
+    const byId = new Map(this.dataset.baseStations.map((s) => [s.id, s]));
+
+    const mlMap = (this.map as unknown as {
+      instance: {
+        addSource: (id: string, source: unknown) => void;
+        getSource: (id: string) => unknown;
+        addLayer: (layer: unknown) => void;
+      };
+    }).instance;
+
+    const geoJSON: GeoJSON.FeatureCollection<GeoJSON.Point> = {
+      type: 'FeatureCollection',
+      features: alerts
+        .filter((a) => byId.has(a.stationId))
+        .map((a) => {
+          const s = byId.get(a.stationId)!;
+          return {
+            type: 'Feature' as const,
+            geometry: { type: 'Point' as const, coordinates: [s.lng, s.lat] },
+            properties: { stationId: a.stationId, utilization: a.utilization },
+          };
+        }),
+    };
+    const srcId = `${this.layerPrefix}-alert-src`;
+    upsertSource(mlMap, srcId, geoJSON);
+    mlMap.addLayer({
+      id: `${this.layerPrefix}-alert-pt`,
+      type: 'circle',
+      source: srcId,
+      paint: {
+        'circle-radius': 10,
+        'circle-color': '#ef4444',
+        'circle-opacity': 0.35,
+        'circle-stroke-width': 2.5,
+        'circle-stroke-color': '#dc2626',
+      },
+    });
+    this.layerIds.push(`${this.layerPrefix}-alert-pt`);
   }
 
   /** 清空图层 */
