@@ -2,6 +2,8 @@ export { buildStyle, darkStyle, lightStyle, registerTheme, getRegisteredThemes, 
 export type { ThemeName, AnyTheme, BuildStyleOptions, ZoomGap, ZoomCoverageReport } from './build';
 export { useTheme } from './useTheme';
 export type { UseThemeOptions, UseThemeReturn } from './useTheme';
+export { createThemeStore, globalThemeStore, setTheme } from './themeStore';
+export type { ThemeStore, ThemeListener } from './themeStore';
 /** 六张网行业主题真实配色：色板、行业主题注册与派生底图 */
 export {
   INDUSTRY_META,

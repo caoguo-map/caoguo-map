@@ -91,3 +91,91 @@ export function capacityUtilizationPoints(
     }),
   };
 }
+
+// ============================================================
+// CH-3 容量预警（多级阈值 + 排名）
+// ============================================================
+
+/** 预警严重等级 */
+export type AlertSeverity = 'critical' | 'warning' | 'info';
+
+/** 单条预警 */
+export interface CapacityAlert {
+  stationId: string;
+  name: string;
+  /** 容量利用率（0-1） */
+  utilization: number;
+  /** 严重等级 */
+  severity: AlertSeverity;
+  /** 超出阈值的比例（如 0.95 - 0.8 = 0.15） */
+  exceed: number;
+}
+
+/** 预警阈值（默认 critical=0.95, warning=0.85, info=0.80） */
+export interface AlertThresholds {
+  critical: number;
+  warning: number;
+  info: number;
+}
+
+export const DEFAULT_ALERT_THRESHOLDS: AlertThresholds = {
+  critical: 0.95,
+  warning: 0.85,
+  info: 0.8,
+};
+
+/** 根据利用率映射严重等级 */
+function severityOf(u: number, t: AlertThresholds): AlertSeverity {
+  if (u >= t.critical) return 'critical';
+  if (u >= t.warning) return 'warning';
+  return 'info';
+}
+
+/**
+ * CH-3 容量预警列表。
+ *
+ * 按利用率降序排列，仅返回 utilization ≥ info 阈值的基站。
+ */
+export function capacityAlerts(
+  stations: BaseStation[],
+  thresholds: AlertThresholds = DEFAULT_ALERT_THRESHOLDS,
+): CapacityAlert[] {
+  const out: CapacityAlert[] = [];
+  for (const s of stations) {
+    const stat = stationCapacityStat(s);
+    if (stat.utilization == null) continue;
+    if (stat.utilization < thresholds.info) continue;
+    const severity = severityOf(stat.utilization, thresholds);
+    const exceed = stat.utilization - thresholds.info;
+    out.push({
+      stationId: s.id,
+      name: stat.name,
+      utilization: stat.utilization,
+      severity,
+      exceed,
+    });
+  }
+  return out.sort((a, b) => b.utilization - a.utilization);
+}
+
+/** 按 severity 分组统计 */
+export function alertSeveritySummary(
+  alerts: CapacityAlert[],
+): Record<AlertSeverity, number> {
+  const out: Record<AlertSeverity, number> = { critical: 0, warning: 0, info: 0 };
+  for (const a of alerts) out[a.severity]++;
+  return out;
+}
+
+/** 取 Top N 超载基站（按利用率降序） */
+export function topOverloadedStations(
+  stations: BaseStation[],
+  n: number,
+  threshold: number = 0.8,
+): StationCapacityStat[] {
+  return stations
+    .map(stationCapacityStat)
+    .filter((s) => s.utilization != null && s.utilization > threshold)
+    .sort((a, b) => (b.utilization ?? 0) - (a.utilization ?? 0))
+    .slice(0, n);
+}

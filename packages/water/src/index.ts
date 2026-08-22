@@ -29,3 +29,6 @@ export * from './style/index';
 export * from './river/index';
 export * from './flood/index';
 export * from './dam/index';
+
+// NLPG（自然语言管线 - 河道/水库/闸站命名抽取，PRD §5.5）
+export * from './nlpg/index';

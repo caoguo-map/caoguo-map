@@ -1,6 +1,6 @@
 {
   "name": "@caoguo/maplibre-transport",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "草果地图交通网组件包 - 路网 / 交通流 / 拥堵预测 / 事件响应",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",

@@ -1,6 +1,6 @@
 {
   "name": "@caoguo/maplibre-telecom",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "草果地图通信网组件包 - 基站覆盖 / 信号热力 / 网络健康 / 盲区识别",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",

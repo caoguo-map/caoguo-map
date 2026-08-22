@@ -12,7 +12,12 @@
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { upsertSource } from '@caoguo/maplibre';
 import type { GridTopologyDataset } from '../types';
-import { stationFootprint, stationHeightMeters } from './station3dCore';
+import {
+  stationFootprint,
+  stationHeightMeters,
+  allStationAccessories,
+  accessoryHeightMeters,
+} from './station3dCore';
 
 export interface Station3DOptions {
   map: CaoguoMap;
@@ -21,6 +26,8 @@ export interface Station3DOptions {
   layerPrefix?: string;
   /** 渲染时是否自动启用地形（默认 true） */
   enableTerrainOnRender?: boolean;
+  /** G-6 进阶：叠加附属设备（铁塔/配变/用户），默认 false */
+  renderAccessories?: boolean;
 }
 
 export class Station3D {
@@ -28,17 +35,21 @@ export class Station3D {
   private dataset: GridTopologyDataset;
   private layerPrefix: string;
   private enableTerrainOnRender: boolean;
+  private renderAccessories: boolean;
   private layerId = '';
   private sourceId = '';
+  private accessoryLayerId = '';
+  private accessorySourceId = '';
 
   constructor(options: Station3DOptions) {
     this.map = options.map;
     this.dataset = options.dataset;
     this.layerPrefix = options.layerPrefix ?? 'cg-station3d';
     this.enableTerrainOnRender = options.enableTerrainOnRender ?? true;
+    this.renderAccessories = options.renderAccessories ?? false;
   }
 
-  /** 渲染变电站 3D 体块 */
+  /** 渲染变电站 3D 体块（含可选附属设备叠加层） */
   render(): void {
     this.clear();
     const stations = (this.dataset.devices ?? []).filter((d) => d.kind === 'substation');
@@ -90,12 +101,76 @@ export class Station3D {
         'fill-extrusion-opacity': 0.85,
       },
     });
+
+    // 附属设备叠加层（G-6 进阶）
+    if (this.renderAccessories) {
+      const accessories = allStationAccessories(this.dataset);
+      const accessoryFeatures: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
+      for (const acc of accessories) {
+        for (const dev of acc.devices) {
+          // 复用 footprint 公式（附属设备占地更小），按 accessoryHalfSize 计算
+          const half = 6; // 附属设备半径 6m
+          const dlng = half / (111320 * Math.cos((dev.lat * Math.PI) / 180));
+          const dlat = half / 110540;
+          accessoryFeatures.push({
+            type: 'Feature' as const,
+            geometry: {
+              type: 'Polygon' as const,
+              coordinates: [
+                [
+                  [dev.lng - dlng, dev.lat - dlat],
+                  [dev.lng + dlng, dev.lat - dlat],
+                  [dev.lng + dlng, dev.lat + dlat],
+                  [dev.lng - dlng, dev.lat + dlat],
+                  [dev.lng - dlng, dev.lat - dlat],
+                ],
+              ],
+            },
+            properties: {
+              deviceId: dev.id,
+              stationId: acc.stationId,
+              kind: dev.kind,
+              height: accessoryHeightMeters(dev),
+            },
+          });
+        }
+      }
+      if (accessoryFeatures.length > 0) {
+        this.accessorySourceId = `${this.layerPrefix}-acc-src`;
+        this.accessoryLayerId = `${this.layerPrefix}-acc-extrusion`;
+        upsertSource(mlMap, this.accessorySourceId, {
+          type: 'FeatureCollection',
+          features: accessoryFeatures,
+        });
+        mlMap.addLayer({
+          id: this.accessoryLayerId,
+          type: 'fill-extrusion',
+          source: this.accessorySourceId,
+          paint: {
+            'fill-extrusion-color': [
+              'match',
+              ['get', 'kind'],
+              'tower', '#fbbf24',
+              'transformer', '#34d399',
+              'user', '#a78bfa',
+              '#94a3b8',
+            ],
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': 0,
+            'fill-extrusion-opacity': 0.9,
+          },
+        });
+      }
+    }
   }
 
   clear(): void {
     if (this.layerId) this.map.removeLayer(this.layerId);
+    if (this.accessoryLayerId) this.map.removeLayer(this.accessoryLayerId);
     this.layerId = '';
     this.sourceId = '';
+    this.accessoryLayerId = '';
+    this.accessorySourceId = '';
   }
 
   destroy(): void {

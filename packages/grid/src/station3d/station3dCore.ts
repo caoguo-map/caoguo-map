@@ -77,3 +77,73 @@ export function stationFootprint(device: GridDevice): GeoJSON.Polygon {
     ],
   };
 }
+
+// ============================================================
+// 设备叠加层（G-6 进阶：附属设备）
+// ============================================================
+
+/** 附属设备聚合：返回某变电站关联的非变电站设备（铁塔/配变/用户） */
+export interface StationAccessory {
+  /** 变电站 id */
+  stationId: string;
+  /** 附属设备列表 */
+  devices: GridDevice[];
+  /** 通过的线路条数 */
+  lineCount: number;
+}
+
+/**
+ * G-6 进阶：聚合某变电站的附属设备。
+ *
+ * 判定规则：与 substation 通过至少一条 GridLine 相连，且 kind != 'substation' 的设备。
+ * 同时返回通过该变电站的总线路条数（含变电站间互联）。
+ */
+export function stationAccessoryDevices(
+  substationId: string,
+  dataset: { devices: GridDevice[]; lines: { fromDevice: string; toDevice: string }[] }
+): StationAccessory {
+  const connectedDevices: GridDevice[] = [];
+  let lineCount = 0;
+  const subDeviceIds = new Set<string>();
+  for (const line of dataset.lines) {
+    if (line.fromDevice === substationId) subDeviceIds.add(line.toDevice);
+    else if (line.toDevice === substationId) subDeviceIds.add(line.fromDevice);
+  }
+  for (const d of dataset.devices) {
+    if (d.id === substationId) continue;
+    if (subDeviceIds.has(d.id) && d.kind !== 'substation') connectedDevices.push(d);
+  }
+  for (const line of dataset.lines) {
+    if (line.fromDevice === substationId || line.toDevice === substationId) lineCount++;
+  }
+  return { stationId: substationId, devices: connectedDevices, lineCount };
+}
+
+/** 批量聚合：返回数据集中所有变电站的附属设备 */
+export function allStationAccessories(
+  dataset: { devices: GridDevice[]; lines: { fromDevice: string; toDevice: string }[] }
+): StationAccessory[] {
+  const subs = dataset.devices.filter((d) => d.kind === 'substation');
+  return subs.map((s) => stationAccessoryDevices(s.id, dataset));
+}
+
+/**
+ * 计算附属设备的 3D 标识尺寸（小柱状，按设备类型差异化）。
+ *
+ * - tower：8m 高（细铁塔示意）
+ * - transformer：4m 高（小型配电箱）
+ * - user：2m 高
+ * 半径统一 6m。
+ */
+export function accessoryHeightMeters(device: GridDevice): number {
+  switch (device.kind) {
+    case 'tower':
+      return 8;
+    case 'transformer':
+      return 4;
+    case 'user':
+      return 2;
+    default:
+      return 3;
+  }
+}
