@@ -10,8 +10,11 @@ node_modules/
 # 构建产物
 dist/
 *.tsbuildinfo
-.vitepress/.temp/
-.vitepress/cache/
+**/.vitepress/.temp/
+**/.vitepress/cache/
+
+# tsup 临时生成物
+tsup.config.bundled_*.mjs
 
 # Docker
 docker/.env
