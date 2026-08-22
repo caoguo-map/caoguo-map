@@ -1,6 +1,6 @@
 {
   "name": "@caoguo/theme",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "草果地图主题样式 — 矢量主题构造 + 暗/亮双套配色 + CSS 变量体系",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
