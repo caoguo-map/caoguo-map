@@ -54,7 +54,9 @@ export class FloodRender {
     }).instance;
   }
 
-  /** 渲染一次淹没结果（水位上涨时重复调用可更新范围） */
+  /** 渲染一次淹没结果（水位上涨时重复调用可更新范围）
+   * 主面层按最大水深单色着色（向后兼容）；如需真实分级着色请用 renderGraded。
+   */
   render(result: FloodResult): void {
     this.clear();
     const mlMap = this.getMlMap();
@@ -84,6 +86,38 @@ export class FloodRender {
       },
     });
     this.layerIds.push(`${prefix}-fill`);
+  }
+
+  /**
+   * 真实水深分级渲染（F-3）：直接绘制 data-driven 分级面层。
+   * 传入由 gradedFloodFeatureCollection 生成的 GeoJSON（每格带 `depth` 属性）。
+   * fill-color 用 `["interpolate"]` 表达式按水深连续映射 depthColor 分级档位。
+   */
+  renderGraded(graded: GeoJSON.FeatureCollection): void {
+    this.clear();
+    const mlMap = this.getMlMap();
+    const prefix = this.layerPrefix;
+
+    upsertSource(mlMap, `${prefix}-graded-src`, graded);
+    mlMap.addLayer({
+      id: `${prefix}-graded`,
+      type: 'fill',
+      source: `${prefix}-graded-src`,
+      paint: {
+        'fill-color': [
+          'interpolate',
+          ['linear'],
+          ['get', 'depth'],
+          0.5, depthColor(0.25),
+          1, depthColor(0.75),
+          2, depthColor(1.5),
+          3, depthColor(2.5),
+          4, depthColor(3.5),
+        ] as never,
+        'fill-opacity': 0.55,
+      },
+    });
+    this.layerIds.push(`${prefix}-graded`);
   }
 
   clear(): void {

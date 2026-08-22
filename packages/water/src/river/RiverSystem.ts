@@ -55,6 +55,11 @@ export class RiverSystem {
       removeSource: (id: string) => void;
       addLayer: (layer: unknown) => void;
       setPaintProperty: (id: string, prop: string, value: unknown) => void;
+      on?: (
+        type: string,
+        layerId: string,
+        handler: (ev: { features?: Array<{ properties?: Record<string, unknown> }> }) => void,
+      ) => void;
     };
   }['instance'] {
     return (this.map as unknown as {
@@ -65,6 +70,11 @@ export class RiverSystem {
         removeSource: (id: string) => void;
         addLayer: (layer: unknown) => void;
         setPaintProperty: (id: string, prop: string, value: unknown) => void;
+        on?: (
+          type: string,
+          layerId: string,
+          handler: (ev: { features?: Array<{ properties?: Record<string, unknown> }> }) => void,
+        ) => void;
       };
     }).instance;
   }
@@ -154,6 +164,20 @@ export class RiverSystem {
         },
       });
       this.layerIds.push(`${prefix}-points`);
+
+      // 点击点要素 → 触发 onFeatureSelect 监听（缺口 2 修复）
+      const featureById = new Map<string, WaterFeature>();
+      for (const f of points) featureById.set(f.id, f);
+      if (this.featureListeners.size > 0 && mlMap.on) {
+        mlMap.on('click', `${prefix}-points`, (ev) => {
+          const fid = ev.features?.[0]?.properties?.featureId as string | undefined;
+          if (!fid) return;
+          const feature = featureById.get(fid);
+          if (feature) {
+            for (const fn of this.featureListeners) fn(feature);
+          }
+        });
+      }
     }
   }
 

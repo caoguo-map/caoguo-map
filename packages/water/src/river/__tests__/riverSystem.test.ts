@@ -95,3 +95,35 @@ describe('RiverSystem 渲染层（修复：层级钻取重渲染崩溃 + 钻取�
     expect(up.has('r1')).toBe(true);
   });
 });
+
+describe('RiverSystem 点击选中（缺口 2 修复）', () => {
+  it('点击点要素触发 onFeatureSelect 监听', () => {
+    let captured: string | null = null;
+    const clickHandlers: Array<(ev: { features?: Array<{ properties?: Record<string, unknown> }> }) => void> = [];
+    const instance = {
+      sources: new Map<string, unknown>(),
+      layers: new Map<string, unknown>(),
+      addSource(id: string, src: unknown) { this.sources.set(id, src); },
+      removeSource(id: string) { this.sources.delete(id); },
+      getSource(id: string) { return this.sources.get(id); },
+      setData(id: string, d: unknown) { this.sources.set(id, d); },
+      addLayer(layer: { id: string }) { this.layers.set(layer.id, layer); },
+      removeLayer(id: string) { this.layers.delete(id); },
+      getLayer(id: string) { return this.layers.get(id); },
+      setPaintProperty() {},
+      on(_t: string, _l: string, h: (ev: { features?: Array<{ properties?: Record<string, unknown> }> }) => void) {
+        clickHandlers.push(h);
+      },
+    };
+    const map = { instance, removeLayer: instance.removeLayer } as never;
+
+    const river = new RiverSystem({ map: map as never, dataset, layerPrefix: 'cg-river' });
+    river.onFeatureSelect((f) => { captured = f.id; });
+    river.render();
+
+    // 模拟点击到 reservoir 点要素 (s1)
+    expect(clickHandlers.length).toBe(1);
+    clickHandlers[0]({ features: [{ properties: { featureId: 's1' } }] });
+    expect(captured).toBe('s1');
+  });
+});

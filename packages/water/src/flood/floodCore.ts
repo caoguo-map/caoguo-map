@@ -253,6 +253,59 @@ export function convexHull(points: [number, number][]): [number, number][] {
   return lower.concat(upper);
 }
 
+/**
+ * 生成真实水深分级的 GeoJSON（F-3 水深分级着色）
+ *
+ * 对每一格被淹没栅格生成一个方形面要素，带 `depth` 属性（水位 - 格海拔）。
+ * 若提供 demBounds（栅格对应的经纬度范围 [[minLng,minLat],[maxLng,maxLat]]），
+ * 方形坐标会换算为真实经纬度；否则保持栅格坐标 [col,row]。
+ * 该 FeatureCollection 配合 data-driven `fill-color`（见 FloodRender.renderGraded）使用。
+ */
+export function gradedFloodFeatureCollection(
+  dem: number[][],
+  flooded: Set<string>,
+  waterLevel: number,
+  demBounds?: [[number, number], [number, number]],
+): GeoJSON.FeatureCollection<GeoJSON.Polygon> {
+  const rows = dem.length;
+  const cols = rows > 0 ? dem[0].length : 0;
+  const features: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
+
+  // 栅格 [[minLng,minLat],[maxLng,maxLat]] → 经纬度换算
+  let toLngLat: (col: number, row: number) => [number, number];
+  if (demBounds && rows > 0 && cols > 0) {
+    const [[minX, minY], [maxX, maxY]] = demBounds;
+    const spanX = maxX - minX || 1;
+    const spanY = maxY - minY || 1;
+    toLngLat = (col, row) => [
+      minX + (col / (cols - 1)) * spanX,
+      maxY - (row / (rows - 1)) * spanY, // 纬度向上增大
+    ];
+  } else {
+    toLngLat = (col, row) => [col, row];
+  }
+
+  for (const cell of flooded) {
+    const [r, c] = cell.split(',').map(Number);
+    const depth = waterLevel - dem[r][c];
+    if (depth <= 0) continue;
+    // 格中心 ±0.5（栅格坐标），换算后构成方形
+    const positions: [number, number][] = [
+      [c - 0.5, r - 0.5],
+      [c + 0.5, r - 0.5],
+      [c + 0.5, r + 0.5],
+      [c - 0.5, r + 0.5],
+    ].map(([cc, rr]) => toLngLat(cc, rr));
+    positions.push(positions[0]); // 闭合
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Polygon', coordinates: [positions] },
+      properties: { depth },
+    });
+  }
+  return { type: 'FeatureCollection', features };
+}
+
 /** 淹没水深分级着色 */
 export function depthColor(depth: number): string {
   if (depth >= 3) return '#7f1d1d'; // 深红
