@@ -6,6 +6,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
+import { removeSourceSafe, upsertSource } from '@caoguo/maplibre';
 import { loadRateColor, overloadedDevices } from './loadCore';
 import type { GridTopologyDataset } from '../types';
 
@@ -75,7 +76,7 @@ export class LoadHeatmap {
       })),
     };
 
-    mlMap.addSource(`${prefix}-src`, geoJSON);
+    upsertSource(mlMap, `${prefix}-src`, geoJSON);
     mlMap.addLayer({
       id: `${prefix}-circle`,
       type: 'circle',
@@ -112,7 +113,7 @@ export class LoadHeatmap {
           properties: { deviceId: d.id, loadRate: d.properties?.loadRate ?? 0 },
         })),
       };
-      mlMap.addSource(`${prefix}-overload-src`, geoJSON);
+      upsertSource(mlMap, `${prefix}-overload-src`, geoJSON);
       mlMap.addLayer({
         id: `${prefix}-overload`,
         type: 'circle',
@@ -129,6 +130,12 @@ export class LoadHeatmap {
       this.map.removeLayer(id);
     }
     this.layerIds = [];
+    const mlMap = (this.map as unknown as {
+      instance: { getSource: (id: string) => unknown; removeSource: (id: string) => void };
+    }).instance;
+    for (const sid of [`${this.layerPrefix}-src`, `${this.layerPrefix}-overload-src`]) {
+      removeSourceSafe(mlMap, sid);
+    }
   }
 
   destroy(): void {

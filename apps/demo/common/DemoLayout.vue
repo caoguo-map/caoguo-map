@@ -22,6 +22,9 @@ defineProps<{ title?: string; subtitle?: string }>();
 <style scoped>
 .demo-layout {
   margin-top: 8px;
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .demo-head {
@@ -44,14 +47,16 @@ defineProps<{ title?: string; subtitle?: string }>();
   display: grid;
   grid-template-columns: 1.6fr 1fr;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .demo-map {
+  position: relative;
   border-radius: var(--cg-radius);
   overflow: hidden;
   border: 1px solid var(--cg-border);
   min-height: 480px;
+  min-width: 0;
   background: var(--cg-bg);
 }
 
@@ -59,6 +64,7 @@ defineProps<{ title?: string; subtitle?: string }>();
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
 }
 
 @media (max-width: 960px) {

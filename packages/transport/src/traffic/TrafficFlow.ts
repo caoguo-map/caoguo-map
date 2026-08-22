@@ -9,6 +9,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
+import { upsertSource } from '@caoguo/maplibre';
 import type { RoadNetworkDataset, RoadSpeedRecord } from '../types';
 import { predictCongestion, type CongestionPrediction } from './congestionPredict';
 
@@ -123,10 +124,10 @@ export class TrafficFlow {
       ];
     });
 
-    mlMap.addSource(`${prefix}-od-src`, {
+    upsertSource(mlMap, `${prefix}-od-src`, {
       type: 'FeatureCollection',
       features,
-    } as never);
+    });
     mlMap.addLayer({
       id: `${prefix}-od-line`,
       type: 'line',

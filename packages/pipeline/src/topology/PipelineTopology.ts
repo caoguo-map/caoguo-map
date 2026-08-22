@@ -11,6 +11,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
+import { upsertSource } from '@caoguo/maplibre';
 import type {
   PipelineTopologyDataset,
   ColorByMode,
@@ -151,8 +152,9 @@ export class PipelineTopology {
         })),
     };
 
-    mlMap.addSource(`${prefix}-pipes-src`, pipeGeoJSON);
-    mlMap.addSource(`${prefix}-nodes-src`, nodeGeoJSON);
+    // 幂等：层级/着色切换重渲染时 source 可能已存在，先判断避免抛 "already exists"
+    upsertSource(mlMap, `${prefix}-pipes-src`, pipeGeoJSON);
+    upsertSource(mlMap, `${prefix}-nodes-src`, nodeGeoJSON);
     mlMap.addLayer({
       id: `${prefix}-pipes-line`,
       type: 'line',

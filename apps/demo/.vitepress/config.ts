@@ -102,8 +102,8 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/caoguo-map/caoguo-map' },
     ],
     footer: {
-      message: '基于 MapLibre GL 构建 · MIT / Apache-2.0 开源',
-      copyright: 'Copyright © 2026 草果地图',
+      message: '草果地图 · 基于 MapLibre GL 构建 · MIT / Apache-2.0 开源',
+      copyright: 'Copyright © 2026 草果地图 Caoguo Map',
     },
   },
 });

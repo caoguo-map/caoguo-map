@@ -88,7 +88,7 @@ export function buildTiandituSources(
   const { base, label } = LAYER_MAP[type];
   const tileSize = opts.tileSize ?? 256;
   const maxzoom = opts.maxzoom ?? 18;
-  const attr = '© 天地图 GS(2023)3295号';
+  const attr = '© 天地图 GS(2023)3295号 · 草果地图';
   return [
     {
       id: `tianditu-${base}`,

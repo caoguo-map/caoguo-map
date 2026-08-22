@@ -11,6 +11,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
+import { upsertSource } from '@caoguo/maplibre';
 import type { RoadNetworkDataset, RoadColorBy, RoadNodeKind } from '../types';
 import { paintRoadBy, paintRoadWidthByClass } from '../style/paintRules';
 
@@ -107,8 +108,9 @@ export class RoadNetwork {
         })),
     };
 
-    mlMap.addSource(`${prefix}-edges-src`, edgeGeoJSON);
-    mlMap.addSource(`${prefix}-facility-src`, facilityGeoJSON);
+    // 幂等：层级/着色切换重渲染时 source 可能已存在，先判断避免抛 "already exists"
+    upsertSource(mlMap, `${prefix}-edges-src`, edgeGeoJSON);
+    upsertSource(mlMap, `${prefix}-facility-src`, facilityGeoJSON);
 
     mlMap.addLayer({
       id: `${prefix}-edges-line`,

@@ -3,6 +3,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
+import { upsertSource } from '@caoguo/maplibre';
 import type { TelecomTopologyDataset, StationColorBy } from '../types';
 import { paintStationBy, paintCoverageBySignal } from '../style/paintRules';
 
@@ -68,8 +69,9 @@ export class CellCoverage {
       })),
     };
 
-    mlMap.addSource(`${prefix}-coverage-src`, coverageGeoJSON);
-    mlMap.addSource(`${prefix}-station-src`, stationGeoJSON);
+    // 幂等：层级/着色切换重渲染时 source 可能已存在，先判断避免抛 "already exists"
+    upsertSource(mlMap, `${prefix}-coverage-src`, coverageGeoJSON);
+    upsertSource(mlMap, `${prefix}-station-src`, stationGeoJSON);
 
     if (coverageGeoJSON.features.length > 0) {
       mlMap.addLayer({

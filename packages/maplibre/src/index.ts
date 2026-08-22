@@ -92,6 +92,28 @@ export * from './offline';
 export * from './controls';
 export * from './shaders';
 export * from './lod';
+export * from './sourceUtils';
+
+/**
+ * 全局配置（由应用入口注入一次，所有 Map 实例共享）。
+ * 用于把敏感 token（如天地图 key）从库内部解耦到应用侧，
+ * 避免硬编码、避免库 dist 中无法替换 import.meta.env 的问题。
+ */
+export interface CaoguoMapGlobalConfig {
+  /** 天地图 token；未显式给 Map 传 tianditu 时自动生效 */
+  tiandituToken?: string;
+}
+
+const GLOBAL_KEY = '__caoguoMapConfig__';
+
+export function setGlobalConfig(cfg: CaoguoMapGlobalConfig): void {
+  const prev = getGlobalConfig();
+  (globalThis as Record<string, unknown>)[GLOBAL_KEY] = { ...prev, ...cfg };
+}
+
+export function getGlobalConfig(): CaoguoMapGlobalConfig {
+  return (globalThis as Record<string, unknown>)[GLOBAL_KEY] as CaoguoMapGlobalConfig ?? {};
+}
 
 export interface MapOptions {
   container: string | HTMLElement;
@@ -106,6 +128,19 @@ export interface MapOptions {
    * 设定后可通过 `transformToMap` 在入图前自动纠偏。
    */
   dataCRS?: CRS;
+  /**
+   * 天地图（Tianditu）底图选项。传入后，**默认底图从 OSM 切换为天地图**
+   * （国内权威底图，CGCS2000 / Web Mercator，适配国内网络与坐标系）。
+   * token 由调用方注入，缺失时抛出 MissingTokenError。
+   */
+  tianditu?: {
+    token: string;
+    type?: TiandituType;
+    lang?: 'zh' | 'en';
+    subdomains?: number[];
+    tileSize?: number;
+    maxzoom?: number;
+  };
 }
 
 /**
@@ -124,11 +159,29 @@ export class Map {
     if (!isWebGLAvailable()) {
       throw new WebGLUnavailableError();
     }
+
+    let style = osmRasterStyle() as StyleSpecification;
+    if (options.style) {
+      style = options.style as StyleSpecification;
+    } else if (options.tianditu) {
+      if (!options.tianditu.token) throw new MissingTokenError();
+      style = tiandituStyle(
+        options.tianditu.type ?? 'vector',
+        options.tianditu as TiandituOptions,
+      ) as StyleSpecification;
+    } else {
+      // 未显式指定底图时，若应用侧已注入天地图 token，则默认使用天地图（国内权威底图）。
+      const g = getGlobalConfig();
+      if (g.tiandituToken) {
+        style = tiandituStyle('vector', { token: g.tiandituToken } as TiandituOptions) as StyleSpecification;
+      }
+    }
+
     this._map = new maplibregl.Map({
       container: options.container,
       center: options.center ?? WUHAN_CENTER,
       zoom: options.zoom ?? WUHAN_ZOOM,
-      style: options.style ?? (osmRasterStyle() as StyleSpecification),
+      style,
       pitch: options.pitch ?? 0,
       bearing: options.bearing ?? 0,
       attributionControl: { compact: true },
@@ -218,7 +271,27 @@ export class Map {
   }
 
   addSource(id: string, source: object): void {
+    // 幂等：若同名 source 已存在（如层级切换重渲染时），先移除再重建，
+    // 避免抛 "Source already exists" 导致面板交互静默失败。
+    if (this._map.getSource(id)) {
+      try {
+        this._map.removeSource(id);
+      } catch {
+        // ignore
+      }
+    }
     this._map.addSource(id, source as never);
+  }
+
+  /** 安全移除 source（不存在时静默忽略） */
+  removeSource(id: string): void {
+    if (this._map.getSource(id)) {
+      try {
+        this._map.removeSource(id);
+      } catch {
+        // ignore
+      }
+    }
   }
 
   getSource(id: string): unknown {

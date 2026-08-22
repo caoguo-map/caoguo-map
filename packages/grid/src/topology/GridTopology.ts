@@ -10,6 +10,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
+import { removeSourceSafe, upsertSource } from '@caoguo/maplibre';
 import type {
   GridTopologyDataset,
   GridColorByMode,
@@ -119,8 +120,10 @@ export class GridTopology {
       })),
     };
 
-    mlMap.addSource(`${prefix}-lines-src`, lineGeoJSON);
-    mlMap.addSource(`${prefix}-devices-src`, deviceGeoJSON);
+    // 幂等：层级切换重渲染时 source 可能已存在（clear 不移除 source），
+    // 用 upsertSource 避免抛 "Source already exists" 导致面板交互静默失败。
+    upsertSource(mlMap, `${prefix}-lines-src`, lineGeoJSON);
+    upsertSource(mlMap, `${prefix}-devices-src`, deviceGeoJSON);
     mlMap.addLayer({
       id: `${prefix}-lines`,
       type: 'line',
@@ -185,6 +188,14 @@ export class GridTopology {
       this.map.removeLayer(id);
     }
     this.layerIds = [];
+    // 同时移除 source，否则重渲染时 addSource 会因已存在而抛错
+    const mlMap = (this.map as unknown as {
+      instance: { getSource: (id: string) => unknown; removeSource: (id: string) => void };
+    }).instance;
+    for (const suffix of ['lines-src', 'devices-src']) {
+      const sid = `${this.layerPrefix}-${suffix}`;
+      removeSourceSafe(mlMap, sid);
+    }
   }
 
   destroy(): void {

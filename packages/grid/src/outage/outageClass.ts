@@ -8,6 +8,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
+import { removeSourceSafe, upsertSource } from '@caoguo/maplibre';
 import { analyzeOutage, convexHull, centroid, type OutageResult, type OutageOptions } from './outageCore';
 import type { GridTopologyDataset } from '../types';
 
@@ -81,6 +82,12 @@ export class OutageAnalyzer {
       this.map.removeLayer(id);
     }
     this.layerIds = [];
+    const mlMap = (this.map as unknown as {
+      instance: { getSource: (id: string) => unknown; removeSource: (id: string) => void };
+    }).instance;
+    for (const sid of [`${this.layerPrefix}-hull-src`, `${this.layerPrefix}-lines-src`, `${this.layerPrefix}-important-src`]) {
+      removeSourceSafe(mlMap, sid);
+    }
   }
 
   destroy(): void {
@@ -123,7 +130,7 @@ export class OutageAnalyzer {
           },
         ],
       };
-      mlMap.addSource(`${prefix}-hull-src`, hullGeoJSON);
+      upsertSource(mlMap, `${prefix}-hull-src`, hullGeoJSON);
       mlMap.addLayer({
         id: `${prefix}-hull-fill`,
         type: 'fill',
@@ -157,7 +164,7 @@ export class OutageAnalyzer {
       }),
     };
     if (lineGeoJSON.features.length > 0) {
-      mlMap.addSource(`${prefix}-lines-src`, lineGeoJSON);
+      upsertSource(mlMap, `${prefix}-lines-src`, lineGeoJSON);
       mlMap.addLayer({
         id: `${prefix}-lines`,
         type: 'line',
@@ -178,7 +185,7 @@ export class OutageAnalyzer {
           properties: { name: u.name ?? u.id, reason: u.reason ?? '' },
         })),
       };
-      mlMap.addSource(`${prefix}-important-src`, userGeoJSON);
+      upsertSource(mlMap, `${prefix}-important-src`, userGeoJSON);
       mlMap.addLayer({
         id: `${prefix}-important`,
         type: 'circle',

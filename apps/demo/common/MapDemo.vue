@@ -34,6 +34,8 @@ const emit = defineEmits<{ ready: [MapInstance] }>();
 const el = ref<HTMLElement | null>(null);
 let map: InstanceType<typeof Map> | null = null;
 const webglError = ref(false);
+// 区分两类降级：'unavailable' 浏览器无 WebGL（构造即失败）/ 'lost' 运行时上下文丢失或渲染崩溃
+const webglErrorKind = ref<'unavailable' | 'lost'>('unavailable');
 
 function lineColorExpr(): unknown {
   if (props.colorBy) {
@@ -59,20 +61,38 @@ function applyHighlight() {
   if (mi.getLayer('demo-point-hl')) mi.setFilter('demo-point-hl', (['all', ['==', ['geometry-type'], 'Point'], highlightFilter()]) as never);
 }
 
-/** 地图渲染过程中抛出的致命错误（如 WebGL 上下文不可用）兜底到降级提示 */
+/** 地图渲染过程中抛出的致命错误（如 WebGL 上下文丢失）兜底到降级提示 */
 function handleFatal(e: ErrorEvent | Error) {
   const msg = (e instanceof ErrorEvent ? e.message : e.message) || '';
   if (/webgl|context|fire|redraw|Map\._render/i.test(msg)) {
+    webglErrorKind.value = 'lost';
     webglError.value = true;
   }
 }
 
+// 天地图授权 token：从 Vite 环境变量读取（不硬编码）。缺失时回退 OSM。
+const TIANDITU_TOKEN = (import.meta as { env?: Record<string, string> }).env?.VITE_TIANDITU_TOKEN;
+
 onMounted(() => {
   if (!el.value) return;
+  const opts: Record<string, unknown> = {
+    container: el.value,
+    center: props.center,
+    zoom: props.zoom,
+  };
+  if (TIANDITU_TOKEN) {
+    opts.tianditu = { token: TIANDITU_TOKEN, type: 'vector' };
+  } else {
+    console.warn(
+      '[MapDemo] 未配置 VITE_TIANDITU_TOKEN，暂回退 OpenStreetMap 底图。' +
+        '配置后将自动切换为天地图（国内权威底图）。',
+    );
+  }
   try {
-    map = new Map({ container: el.value, center: props.center, zoom: props.zoom });
+    map = new Map(opts as never);
   } catch (e) {
     if (e instanceof WebGLUnavailableError) {
+      webglErrorKind.value = 'unavailable';
       webglError.value = true;
       return;
     }
@@ -84,16 +104,19 @@ onMounted(() => {
     const canvas = map.instance.getCanvas();
     const ctx = canvas.getContext('webgl2') || canvas.getContext('webgl');
     if (!ctx) {
+      webglErrorKind.value = 'unavailable';
       webglError.value = true;
       return;
     }
   } catch {
+    webglErrorKind.value = 'unavailable';
     webglError.value = true;
     return;
   }
   window.addEventListener('error', handleFatal);
   map.on('error', (e) => {
     if (e && /webgl|context/i.test(String((e as { error?: Error }).error?.message ?? ''))) {
+      webglErrorKind.value = 'lost';
       webglError.value = true;
     }
   });
@@ -181,8 +204,14 @@ onUnmounted(() => {
       <div class="map-demo-fallback-icon">🗺️</div>
       <p class="map-demo-fallback-title">当前环境无法渲染地图</p>
       <p class="map-demo-fallback-desc">
-        检测到浏览器未启用 WebGL（常见于沙箱、无头环境或禁用了硬件加速）。
-        请在支持 WebGL 的桌面浏览器中打开本页以查看交互式地图。
+        <template v-if="webglErrorKind === 'unavailable'">
+          检测到浏览器未启用 WebGL（常见于沙箱、无头环境或禁用了硬件加速）。
+          请在支持 WebGL 的桌面浏览器中打开本页，并在系统/浏览器设置中开启硬件加速后重试。
+        </template>
+        <template v-else>
+          WebGL 渲染上下文已丢失或渲染过程中发生致命错误（可能因 GPU 重置、显存不足或驱动崩溃）。
+          请刷新页面恢复；若频繁出现，请检查显卡驱动或降低渲染负载（如关闭辉光等特效）。
+        </template>
       </p>
     </div>
   </div>
@@ -192,9 +221,11 @@ onUnmounted(() => {
 .map-demo-wrap {
   position: relative;
   width: 100%;
+  overflow: hidden;
 }
 
 .map-demo {
+  position: relative;
   width: 100%;
   height: 100%;
   min-height: 480px;

@@ -1,0 +1,19 @@
+/* 演示中心内容区域撑满，避免交互演示被 VitePress 默认 768px 内容容器限制 */
+.VPDoc .content-container {
+  max-width: 100% !important;
+}
+
+.VPDoc .container {
+  max-width: 100% !important;
+}
+
+/* 有侧边栏时，去掉内容区右侧默认留白，让 DemoLayout 更宽 */
+.VPDoc.has-sidebar .content {
+  padding-right: 0 !important;
+}
+
+/* 让纯文档容器内边距更协调 */
+.vp-doc {
+  padding-left: 24px;
+  padding-right: 24px;
+}

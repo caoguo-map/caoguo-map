@@ -86,7 +86,8 @@ export function paintLineWidthByVoltage(minWidth = 1.5, maxWidth = 6): PaintRule
   return [
     'interpolate',
     ['linear'],
-    ['coalesce', ['get', 'voltage'], '10'],
+    // 注意：数据中 voltage 为字符串（'10'/'500'），需先 to-number，否则 interpolate 求值为 NaN 导致线宽 0、管线不可见
+    ['coalesce', ['to-number', ['get', 'voltage'], 10], 10],
     10, minWidth,
     1000, maxWidth,
   ];

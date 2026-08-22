@@ -6,6 +6,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
+import { upsertSource } from '@caoguo/maplibre';
 import type { GasLeakParams, GasLeakResult } from './gaussianPlume';
 import { gaussianPlume } from './gaussianPlume';
 import type { FloodParams, FloodResult } from './floodFill';
@@ -127,7 +128,7 @@ export class LeakagePlume {
     };
 
     const id = `${this.layerPrefix}-flood-fill`;
-    if (!mlMap.getSource(id)) mlMap.addSource(id, data);
+    upsertSource(mlMap, id, data);
     try {
       mlMap.addLayer({
         id,
@@ -170,7 +171,7 @@ export class LeakagePlume {
 
     const sourceId = `${this.layerPrefix}-gas-src`;
     const layerId = `${this.layerPrefix}-gas-fill`;
-    if (!mlMap.getSource(sourceId)) mlMap.addSource(sourceId, data);
+    upsertSource(mlMap, sourceId, data);
     try {
       mlMap.addLayer({
         id: layerId,
@@ -195,18 +196,19 @@ export class LeakagePlume {
       // ignore
     }
 
-    // 标记泄漏点
+    // 标记泄漏点（幂等：模拟重渲染时 source 可能已存在）
     const ptId = `${this.layerPrefix}-source`;
-    mlMap.addSource(ptId, {
-      type: 'FeatureCollection',
+    const ptData = {
+      type: 'FeatureCollection' as const,
       features: [
         {
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [source.lng, source.lat] },
+          type: 'Feature' as const,
+          geometry: { type: 'Point' as const, coordinates: [source.lng, source.lat] },
           properties: {},
         },
       ],
-    });
+    };
+    upsertSource(mlMap, ptId, ptData);
     try {
       mlMap.addLayer({
         id: ptId,

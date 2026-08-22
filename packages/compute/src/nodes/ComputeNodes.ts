@@ -9,6 +9,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
+import { upsertSource } from '@caoguo/maplibre';
 import type { ComputeTopologyDataset, ComputeNodeColorBy } from '../types';
 import { paintNodeBy, paintLinkBy, paintLinkWidthByBandwidth } from '../style/paintRules';
 
@@ -96,8 +97,9 @@ export class ComputeNodes {
       })),
     };
 
-    mlMap.addSource(`${prefix}-links-src`, linkGeoJSON);
-    mlMap.addSource(`${prefix}-nodes-src`, nodeGeoJSON);
+    // 幂等：层级/着色切换重渲染时 source 可能已存在，先判断避免抛 "already exists"
+    upsertSource(mlMap, `${prefix}-links-src`, linkGeoJSON);
+    upsertSource(mlMap, `${prefix}-nodes-src`, nodeGeoJSON);
 
     mlMap.addLayer({
       id: `${prefix}-links-line`,

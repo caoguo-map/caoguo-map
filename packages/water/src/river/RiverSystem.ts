@@ -8,6 +8,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
+import { removeSourcesSafe, upsertSource } from '@caoguo/maplibre';
 import type { WaterDataset, WaterColorByMode, WaterFeature, RiverLevel } from '../types';
 import { paintBy, paintLineWidthByFlow } from '../style/paintRules';
 
@@ -46,16 +47,32 @@ export class RiverSystem {
     this.layerPrefix = options.layerPrefix ?? 'cg-river';
   }
 
+  private getMlMap(): {
+    instance: {
+      addSource: (id: string, source: unknown) => void;
+      getSource: (id: string) => unknown;
+      setData: (id: string, data: unknown) => void;
+      removeSource: (id: string) => void;
+      addLayer: (layer: unknown) => void;
+      setPaintProperty: (id: string, prop: string, value: unknown) => void;
+    };
+  }['instance'] {
+    return (this.map as unknown as {
+      instance: {
+        addSource: (id: string, source: unknown) => void;
+        getSource: (id: string) => unknown;
+        setData: (id: string, data: unknown) => void;
+        removeSource: (id: string) => void;
+        addLayer: (layer: unknown) => void;
+        setPaintProperty: (id: string, prop: string, value: unknown) => void;
+      };
+    }).instance;
+  }
+
   /** 渲染水系要素 */
   render(): void {
     this.clear();
-    const mlMap = (this.map as unknown as {
-      instance: {
-        addSource: (id: string, source: unknown) => void;
-        addLayer: (layer: unknown) => void;
-        getSource: (id: string) => unknown;
-      };
-    }).instance;
+    const mlMap = this.getMlMap();
     const prefix = this.layerPrefix;
 
     const features = this.visibleFeatures();
@@ -107,11 +124,12 @@ export class RiverSystem {
     };
 
     if (lineGeoJSON.features.length > 0) {
-      mlMap.addSource(`${prefix}-lines-src`, lineGeoJSON);
+      const srcId = `${prefix}-lines-src`;
+      upsertSource(mlMap, srcId, lineGeoJSON);
       mlMap.addLayer({
         id: `${prefix}-lines`,
         type: 'line',
-        source: `${prefix}-lines-src`,
+        source: srcId,
         paint: {
           'line-color': paintBy(this.colorBy) as never,
           'line-width': paintLineWidthByFlow() as never,
@@ -122,11 +140,12 @@ export class RiverSystem {
     }
 
     if (pointGeoJSON.features.length > 0) {
-      mlMap.addSource(`${prefix}-points-src`, pointGeoJSON);
+      const srcId = `${prefix}-points-src`;
+      upsertSource(mlMap, srcId, pointGeoJSON);
       mlMap.addLayer({
         id: `${prefix}-points`,
         type: 'circle',
-        source: `${prefix}-points-src`,
+        source: srcId,
         paint: {
           'circle-radius': 6,
           'circle-color': paintBy(this.colorBy) as never,
@@ -141,9 +160,7 @@ export class RiverSystem {
   /** 切换着色模式 */
   setColorBy(mode: WaterColorByMode): void {
     this.colorBy = mode;
-    const mlMap = (this.map as unknown as {
-      instance: { setPaintProperty: (id: string, prop: string, value: unknown) => void };
-    }).instance;
+    const mlMap = this.getMlMap();
     try {
       mlMap.setPaintProperty(`${this.layerPrefix}-lines`, 'line-color', paintBy(mode) as never);
       mlMap.setPaintProperty(`${this.layerPrefix}-points`, 'circle-color', paintBy(mode) as never);
@@ -184,6 +201,8 @@ export class RiverSystem {
       this.map.removeLayer(id);
     }
     this.layerIds = [];
+    const mlMap = this.getMlMap();
+    removeSourcesSafe(mlMap, [`${this.layerPrefix}-lines-src`, `${this.layerPrefix}-points-src`]);
   }
 
   destroy(): void {

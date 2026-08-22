@@ -28,6 +28,11 @@ const LOD_LEVELS: LodLevel<string>[] = [
 const el = ref<HTMLElement | null>(null);
 let map: InstanceType<typeof Map> | null = null;
 const webglError = ref(false);
+// 区分两类降级：'unavailable' 浏览器无 WebGL（构造即失败）/ 'lost' 运行时上下文丢失或渲染崩溃
+const webglErrorKind = ref<'unavailable' | 'lost'>('unavailable');
+
+// 天地图授权 token：从 Vite 环境变量读取（不硬编码）。缺失时回退 OSM。
+const TIANDITU_TOKEN = (import.meta as { env?: Record<string, string> }).env?.VITE_TIANDITU_TOKEN;
 let scale: ReturnType<Map['addScaleControl']> | null = null;
 let theme: ReturnType<Map['addThemeSwitcher']> | null = null;
 let lod: ReturnType<Map['addLodController']> | null = null;
@@ -52,16 +57,30 @@ function applyGlow() {
 function handleFatal(e: ErrorEvent | Error) {
   const msg = (e instanceof ErrorEvent ? e.message : e.message) || '';
   if (/webgl|context|fire|redraw|Map\._render/i.test(msg)) {
+    webglErrorKind.value = 'lost';
     webglError.value = true;
   }
 }
 
 onMounted(() => {
   if (!el.value) return;
+  const mapOpts: Record<string, unknown> = {
+    container: el.value,
+    center: WUHAN_CENTER,
+    zoom: 11,
+  };
+  if (TIANDITU_TOKEN) {
+    mapOpts.tianditu = { token: TIANDITU_TOKEN, type: 'vector' };
+  } else {
+    console.warn(
+      '[FeatureShowcase] 未配置 VITE_TIANDITU_TOKEN，暂回退 OpenStreetMap 底图。',
+    );
+  }
   try {
-    map = new Map({ container: el.value, center: WUHAN_CENTER, zoom: 11 });
+    map = new Map(mapOpts as never);
   } catch (e) {
     if (e instanceof WebGLUnavailableError) {
+      webglErrorKind.value = 'unavailable';
       webglError.value = true;
       return;
     }
@@ -72,16 +91,19 @@ onMounted(() => {
     const canvas = map.instance.getCanvas();
     const ctx = canvas.getContext('webgl2') || canvas.getContext('webgl');
     if (!ctx) {
+      webglErrorKind.value = 'unavailable';
       webglError.value = true;
       return;
     }
   } catch {
+    webglErrorKind.value = 'unavailable';
     webglError.value = true;
     return;
   }
   window.addEventListener('error', handleFatal);
   map.on('error', (e) => {
     if (e && /webgl|context/i.test(String((e as { error?: Error }).error?.message ?? ''))) {
+      webglErrorKind.value = 'lost';
       webglError.value = true;
     }
   });
@@ -155,8 +177,14 @@ onUnmounted(() => {
         <div class="fs-fallback-icon">🗺️</div>
         <p class="fs-fallback-title">当前环境无法渲染地图</p>
         <p class="fs-fallback-desc">
-          检测到浏览器未启用 WebGL（常见于沙箱、无头环境或禁用了硬件加速）。
-          请在支持 WebGL 的桌面浏览器中打开本页以查看交互式地图。
+          <template v-if="webglErrorKind === 'unavailable'">
+            检测到浏览器未启用 WebGL（常见于沙箱、无头环境或禁用了硬件加速）。
+            请在支持 WebGL 的桌面浏览器中打开本页，并在系统/浏览器设置中开启硬件加速后重试。
+          </template>
+          <template v-else>
+            WebGL 渲染上下文已丢失或渲染过程中发生致命错误（可能因 GPU 重置、显存不足或驱动崩溃）。
+            请刷新页面恢复；若频繁出现，请检查显卡驱动或降低渲染负载（如关闭辉光等特效）。
+          </template>
         </p>
       </div>
     </div>
