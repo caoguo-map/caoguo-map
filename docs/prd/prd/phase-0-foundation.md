@@ -115,7 +115,7 @@
 | F-1.2 | 天地图底图接入 | 预置天地图 WMTS 瓦片服务配置，开箱即用 | P0 | ✅ 已落地（`src/sources/tianditu`） |
 | F-1.3 | 自定义 Shader | 自定义 WebGL Shader 用于管线/路网/水系线条渲染 | P1 | 🟡 部分（辉光 CustomLayer 已落地，通用 Shader 框架待扩展） |
 | F-1.4 | 离线瓦片支持 | 加载本地 MVT 瓦片、GeoJSON、矢量切片 | P0 | ✅ 已落地（`src/offline` IndexedDB + 协议层） |
-| F-1.5 | 3D 地形渲染 | DEM 数据叠加，实现地形起伏 | P2 | ❌ 未落地（顺延后续） |
+| F-1.5 | 3D 地形渲染 | DEM 数据叠加，实现地形起伏 | P2 | ✅ 已落地（terrain.ts：applyTerrain/removeTerrain + Map.enableTerrain/disableTerrain，默认 Terrarium 公共 DEM 源） |
 | F-1.6 | 瓦片缓存策略 | Service Worker 缓存已加载瓦片 | P1 | ✅ 已落地（`src/offline/serviceWorker` + 空气隔离） |
 | F-1.7 | 自适应 LOD | 根据设备性能和缩放级别动态调整要素渲染精度 | P2 | ✅ 已落地（`src/lod`） |
 

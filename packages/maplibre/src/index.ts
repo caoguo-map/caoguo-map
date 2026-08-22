@@ -29,6 +29,7 @@ import { CustomLineLayer } from './shaders';
 import type { GlowLine } from './shaders';
 import { LodController } from './lod';
 import type { LodLevel, LodChangeEvent } from './lod';
+import { applyTerrain, removeTerrain } from './terrain';
 import type { ThemeName } from '@caoguo/theme';
 
 export type MapInstance = MlMap;
@@ -357,6 +358,34 @@ export class Map {
     const ctrl = new LodController<T>(this._map as never, levels, onLod);
     ctrl.evaluate(true);
     return ctrl;
+  }
+
+  /**
+   * 启用 3D 地形渲染（F-1.5）。
+   *
+   * 注入 raster-dem 高程源并调用 maplibre-gl 原生 `setTerrain`，使地图呈现地形起伏。
+   * DEM 瓦片默认使用公共 Terrarium 源（elevation-tiles-prod，Terrain-RGB 编码，支持 CORS），
+   * 可在 opts.tiles 覆盖为私有瓦片服务（如 MinIO / 本地 MBTiles 服务）。
+   *
+   * @param opts.exaggeration 地形夸张系数（默认 1.5）
+   * @param opts.tiles DEM 瓦片模板，{z}/{x}/{y} 占位
+   * @param opts.encoding 'terrarium'（默认，Mapzen）| 'mapbox'
+   */
+  enableTerrain(
+    opts: {
+      sourceId?: string;
+      tiles?: string[];
+      encoding?: 'terrarium' | 'mapbox';
+      exaggeration?: number;
+      maxzoom?: number;
+    } = {},
+  ): void {
+    applyTerrain(this._map, opts);
+  }
+
+  /** 关闭 3D 地形渲染（F-1.5），并移除 DEM 源 */
+  disableTerrain(sourceId = 'cg-dem'): void {
+    removeTerrain(this._map, sourceId);
   }
 
   get instance(): MlMap {
