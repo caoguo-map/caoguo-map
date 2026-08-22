@@ -1,6 +1,6 @@
 {
   "name": "@caoguo/maplibre-ai",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "草果地图 AI 工具链 - MapCopilot 代码生成 / GeoAI 数据入图 / NLPG 自然语言查询 / DeepSeek LLM 接入 / 性能诊断 / 样式生成器 v2",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",

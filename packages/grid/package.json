@@ -1,6 +1,6 @@
 {
   "name": "@caoguo/maplibre-grid",
-  "version": "0.0.2",
+  "version": "0.0.6",
   "description": "草果地图电网组件包 - 停电分析 / 负荷热力 / 拓扑钻取 / 供电路径追踪",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",

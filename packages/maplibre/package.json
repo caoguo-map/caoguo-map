@@ -1,6 +1,6 @@
 {
   "name": "@caoguo/maplibre",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "description": "草果地图引擎核心 — 基于 MapLibre GL 的国内坐标系/离线瓦片/辉光/LOD 一体化封装",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
