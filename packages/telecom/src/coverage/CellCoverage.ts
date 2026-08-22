@@ -6,6 +6,7 @@ import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { upsertSource } from '@caoguo/maplibre';
 import type { TelecomTopologyDataset, StationColorBy } from '../types';
 import { paintStationBy, paintCoverageBySignal } from '../style/paintRules';
+import type { NetworkHealth } from '../health/NetworkHealth';
 
 export interface CellCoverageOptions {
   map: CaoguoMap;
@@ -24,6 +25,7 @@ export class CellCoverage {
   private colorBy: StationColorBy;
   private layerPrefix: string;
   private layerIds: string[] = [];
+  private faultAnimId = 0;
 
   constructor(options: CellCoverageOptions) {
     this.map = options.map;
@@ -119,7 +121,83 @@ export class CellCoverage {
     }
   }
 
+  /**
+   * NH-2 告警分布地图：渲染故障基站为红色闪烁标记。
+   * 用 requestAnimationFrame 循环切换 circle-opacity 模拟告警闪烁。
+   */
+  renderFaultAlerts(health: NetworkHealth): void {
+    this.clearFaultAlerts();
+    const mlMap = (this.map as unknown as {
+      instance: {
+        addSource: (id: string, source: unknown) => void;
+        getSource: (id: string) => unknown;
+        addLayer: (layer: unknown) => void;
+        setPaintProperty?: (id: string, prop: string, value: unknown) => void;
+      };
+    }).instance;
+    const prefix = this.layerPrefix;
+
+    const alerts = health.faultAlerts();
+    if (alerts.length === 0) return;
+
+    const geoJSON: GeoJSON.FeatureCollection<GeoJSON.Point> = {
+      type: 'FeatureCollection',
+      features: alerts.map((a) => ({
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: [a.station.lng, a.station.lat] },
+        properties: { stationId: a.station.id, reason: a.reason },
+      })),
+    };
+
+    upsertSource(mlMap, `${prefix}-fault-src`, geoJSON);
+    mlMap.addLayer({
+      id: `${prefix}-fault-pt`,
+      type: 'circle',
+      source: `${prefix}-fault-src`,
+      paint: {
+        'circle-radius': 9,
+        'circle-color': '#ef4444',
+        'circle-stroke-width': 2,
+        'circle-stroke-color': '#fca5a5',
+        'circle-opacity': 1,
+      },
+    });
+    this.layerIds.push(`${prefix}-fault-pt`);
+
+    // 闪烁动画：在 0.25~1.0 之间脉动 opacity
+    let t = 0;
+    const tick = () => {
+      t += 0.08;
+      const opacity = 0.25 + (Math.sin(t) * 0.5 + 0.5) * 0.75;
+      if (mlMap.setPaintProperty) {
+        try {
+          mlMap.setPaintProperty(`${prefix}-fault-pt`, 'circle-opacity', opacity);
+        } catch {
+          // 层被移除后停止
+          return;
+        }
+      }
+      this.faultAnimId = requestAnimationFrame(tick);
+    };
+    this.faultAnimId = requestAnimationFrame(tick);
+  }
+
+  private clearFaultAlerts(): void {
+    if (this.faultAnimId) {
+      cancelAnimationFrame(this.faultAnimId);
+      this.faultAnimId = 0;
+    }
+    this.layerIds = this.layerIds.filter((id) => {
+      if (id.endsWith('-fault-pt')) {
+        this.map.removeLayer(id);
+        return false;
+      }
+      return true;
+    });
+  }
+
   clear(): void {
+    this.clearFaultAlerts();
     for (const id of this.layerIds) {
       this.map.removeLayer(id);
     }

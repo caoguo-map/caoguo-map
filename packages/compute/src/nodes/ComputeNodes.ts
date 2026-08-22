@@ -10,7 +10,7 @@
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { upsertSource } from '@caoguo/maplibre';
-import type { ComputeTopologyDataset, ComputeNodeColorBy } from '../types';
+import type { ComputeTopologyDataset, ComputeNodeColorBy, ComputeNode, ComputeNodeProperties } from '../types';
 import { paintNodeBy, paintLinkBy, paintLinkWidthByBandwidth } from '../style/paintRules';
 
 export interface ComputeNodesOptions {
@@ -20,6 +20,23 @@ export interface ComputeNodesOptions {
   nodeColorBy?: ComputeNodeColorBy;
   /** 层 ID 前缀 */
   layerPrefix?: string;
+  /** 节点点击回调（C-2 详情面板事件钩子） */
+  onNodeSelect?: (detail: ComputeNodeDetail) => void;
+}
+
+/** C-2 节点详情（算力/存储/利用率/GPU 状态聚合） */
+export interface ComputeNodeDetail {
+  nodeId: string;
+  name: string;
+  type: ComputeNode['type'];
+  totalCompute: string;
+  usedCompute: string;
+  gpuCount: number;
+  gpuUtilization: number;
+  storage: string;
+  networkBandwidth: string;
+  status: ComputeNodeProperties['status'];
+  region?: string;
 }
 
 /**
@@ -31,12 +48,34 @@ export class ComputeNodes {
   private nodeColorBy: ComputeNodeColorBy;
   private layerPrefix: string;
   private layerIds: string[] = [];
+  private onNodeSelect?: (detail: ComputeNodeDetail) => void;
 
   constructor(options: ComputeNodesOptions) {
     this.map = options.map;
     this.dataset = options.dataset;
     this.nodeColorBy = options.nodeColorBy ?? 'type';
     this.layerPrefix = options.layerPrefix ?? 'cg-compute';
+    this.onNodeSelect = options.onNodeSelect;
+  }
+
+  /** C-2 聚合单节点详情（纯函数，便于测试） */
+  getNodeDetail(nodeId: string): ComputeNodeDetail | null {
+    const n = this.dataset.nodes.find((x) => x.id === nodeId);
+    if (!n) return null;
+    const p = n.properties ?? {};
+    return {
+      nodeId: n.id,
+      name: n.name ?? n.id,
+      type: n.type,
+      totalCompute: p.totalCompute ?? '—',
+      usedCompute: p.usedCompute ?? '—',
+      gpuCount: p.gpuCount ?? 0,
+      gpuUtilization: p.gpuUtilization ?? 0,
+      storage: p.storage ?? '—',
+      networkBandwidth: p.networkBandwidth ?? '—',
+      status: p.status ?? 'online',
+      region: p.region,
+    };
   }
 
   /** 渲染节点 + 链路 */
@@ -47,6 +86,11 @@ export class ComputeNodes {
         addSource: (id: string, source: unknown) => void;
         addLayer: (layer: unknown) => void;
         getSource: (id: string) => unknown;
+        on?: (
+          type: string,
+          layerId: string,
+          handler: (ev: { features?: Array<{ properties?: Record<string, unknown> }> }) => void,
+        ) => void;
       };
     }).instance;
     const prefix = this.layerPrefix;
@@ -125,6 +169,17 @@ export class ComputeNodes {
       },
     });
     this.layerIds.push(`${prefix}-nodes-pt`);
+
+    // C-2 点击节点触发详情面板事件钩子
+    if (this.onNodeSelect && mlMap.on) {
+      mlMap.on('click', `${prefix}-nodes-pt`, (ev) => {
+        const nodeId = ev.features?.[0]?.properties?.nodeId as string | undefined;
+        if (nodeId) {
+          const detail = this.getNodeDetail(nodeId);
+          if (detail) this.onNodeSelect?.(detail);
+        }
+      });
+    }
   }
 
   /** 切换节点着色模式 */

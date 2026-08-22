@@ -29,7 +29,7 @@
 |------|-------------|------|
 | 引擎 | `@caoguo/maplibre` 已实现 8 大模块（CRS/天地图/离线瓦片/SW 缓存/控件/辉光/LOD/主题），测试 75 passed | 尚未发布到 npm（本任务处理中）；3D 地形、通用 Shader 框架未实现 |
 | 展示 | 落地页（V2.0）、文档站（29 页）、演示中心（D5 串联闭环）均已落地 | 无 |
-| AI 能力 | 仅 demo 有 Copilot / NLPG 占位 UI | MapCopilot / NLPG / GeoAI 三个 AI 模块均未实现（对应 D5/D6/D7） |
+| AI 能力 | demo 有 Copilot UI；`packages/ai` 已实现 MapCopilot / NLPG / GeoAI 三模块代码 | 接口联调待 swagger 就绪（D5/D6/D7 代码层已落地，见下方状态） |
 | 组件包 | `@caoguo/theme`（主题）、`@caoguo/maplibre-pipeline`（管网，Phase 1 交付物）已就位 | pipeline 包尚为半成品（burst 已实现，health/leakage/topology/nlpg 占位），build 待修复 |
 
 ### 1.3 本 PRD 解决的问题
@@ -90,9 +90,9 @@
 | D2 | 草果地图暗色/亮色主题样式 | JSON 文件 | 符合 MapLibre Style Spec，视觉效果达商业地图 80% | ✅ 已落地（caoguo-dark/light） |
 | D3 | 落地页 `map.hb.cn` | Web 站点 | 响应式设计，30 秒内传达产品价值 | ✅ 已落地（V2.0 含合作伙伴区） |
 | D4 | 技术文档站 `map.hb.cn/docs` | Web 站点 | 快速开始 + API 参考 + 部署指南 | ✅ 已落地（29 页） |
-| D5 | MapCopilot v1 | 功能模块 | 支持 5 类核心交互的代码生成 | ❌ 未落地（顺延 Phase 1） |
-| D6 | GeoAI 数据入图管线 | 功能模块 | 支持 CSV/Excel 地址自动空间化 | ❌ 未落地（顺延 Phase 1） |
-| D7 | NLPG v1 查询接口 | API 服务 | 自然语言 → PostGIS SQL → GeoJSON | ❌ 未落地（顺延 Phase 1） |
+| D5 | MapCopilot v1 | 功能模块 | 支持 5 类核心交互的代码生成 | ✅ 已落地（packages/ai copilot 模块：intentRouter 5 类意图、codegen）／接口联调待 swagger |
+| D6 | GeoAI 数据入图管线 | 功能模块 | 支持 CSV/Excel 地址自动空间化 | ✅ 已落地（packages/ai geoai 模块：ingestDataset 空间化）／联调待 swagger |
+| D7 | NLPG v1 查询接口 | API 服务 | 自然语言 → PostGIS SQL → GeoJSON | ✅ 已落地（packages/ai nlpg 模块：generateSQL）／联调待 swagger |
 | D8 | 演示 Demo #1（基础地图） | Web 应用 | 可交互的地图渲染演示 | ✅ 已落地（FeatureShowcase 串联闭环） |
 
 ---
