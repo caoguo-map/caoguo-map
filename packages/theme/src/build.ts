@@ -4,6 +4,9 @@ import type { StyleSpecification } from 'maplibre-gl';
 
 export type ThemeName = 'caoguo-dark' | 'caoguo-light';
 
+/** 完整底图样式类型（maplibre StyleSpecification 的别名，供行业主题派生使用） */
+export type ThemeStyleFull = StyleSpecification;
+
 /** 任意已注册主题名（内置基础主题 + 运行时 registerTheme 注入的行业主题） */
 export type AnyTheme = string;
 
