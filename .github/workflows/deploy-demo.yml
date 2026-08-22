@@ -47,6 +47,8 @@ jobs:
         run: pnpm -r --filter './packages/*' build
 
       - name: Build demo
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: pnpm --filter @caoguo/demo build
 
       - name: Upload artifact
