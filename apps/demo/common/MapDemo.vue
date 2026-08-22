@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue';
-import { Map, WUHAN_CENTER, WebGLUnavailableError, geoqRasterStyle, type MapInstance } from '@caoguo/maplibre';
+import { Map, WUHAN_CENTER, WebGLUnavailableError, localBasemapStyle, type MapInstance } from '@caoguo/maplibre';
 
 const props = withDefaults(
   defineProps<{
@@ -84,12 +84,12 @@ onMounted(() => {
     center: props.center,
     zoom: props.zoom,
   };
-  // 自定义 style 优先；否则统一使用国内可达的 GeoQ 栅格底图（默认兜底）。
+  // 自定义 style 优先；否则统一使用纯本地底图（零外部依赖，完全离线，永不空白）。
   // 行业配色由业务图层自身 paint 承担，不依赖境外矢量主题底图。
   if (props.style) {
     opts.style = props.style;
   } else {
-    opts.style = geoqRasterStyle();
+    opts.style = localBasemapStyle();
   }
   if (TIANDITU_TOKEN) {
     opts.tianditu = { token: TIANDITU_TOKEN, type: 'vector' };

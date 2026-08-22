@@ -5,7 +5,7 @@ import type {
 } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import { osmRasterStyle, geoqRasterStyle, WUHAN_CENTER, WUHAN_ZOOM } from './styles';
+import { osmRasterStyle, geoqRasterStyle, localBasemapStyle, WUHAN_CENTER, WUHAN_ZOOM } from './styles';
 import { createTransformer, type CRS, type LngLat } from './crs';
 import { toWgs84 } from './crs';
 import {
@@ -86,7 +86,7 @@ export function isWebGLAvailable(): boolean {
   }
 }
 
-export { maplibregl, WUHAN_CENTER, WUHAN_ZOOM, osmRasterStyle, geoqRasterStyle };
+export { maplibregl, WUHAN_CENTER, WUHAN_ZOOM, osmRasterStyle, geoqRasterStyle, localBasemapStyle };
 export * from './crs';
 export * from './sources';
 export * from './offline';
@@ -169,7 +169,7 @@ export class Map {
       throw new WebGLUnavailableError();
     }
 
-    let style = osmRasterStyle() as StyleSpecification;
+    let style = localBasemapStyle() as StyleSpecification;
     if (options.style) {
       style = options.style as StyleSpecification;
     } else if (options.tianditu) {

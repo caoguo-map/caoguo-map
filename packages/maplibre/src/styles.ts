@@ -61,3 +61,47 @@ export function geoqRasterStyle(): StyleSpecification {
 /** 兼容别名：国内可达栅格兜底底图。 */
 export const osmRasterStyle = geoqRasterStyle;
 
+/**
+ * 纯本地底图（零外部依赖，完全离线）。
+ * 暗色背景 + 全球经纬网，无需任何在线瓦片 / 字体服务。
+ * 用于：国内网络无法访问 OSM / GeoQ 等境外或受限瓦片源时，
+ * 保证演示中心地图永远可渲染（业务图层为自有 GeoJSON，叠加其上即可见）。
+ */
+function buildGraticule(step = 10): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = [];
+  for (let lon = -180; lon <= 180; lon += step) {
+    features.push({
+      type: 'Feature',
+      properties: { kind: 'meridian' },
+      geometry: { type: 'LineString', coordinates: [[lon, -85], [lon, 85]] },
+    });
+  }
+  for (let lat = -80; lat <= 80; lat += step) {
+    features.push({
+      type: 'Feature',
+      properties: { kind: 'parallel' },
+      geometry: { type: 'LineString', coordinates: [[-180, lat], [180, lat]] },
+    });
+  }
+  return { type: 'FeatureCollection', features };
+}
+
+export function localBasemapStyle(): StyleSpecification {
+  return {
+    version: 8,
+    sources: {
+      graticule: { type: 'geojson', data: buildGraticule() },
+    },
+    layers: [
+      { id: 'bg', type: 'background', paint: { 'background-color': '#0a0f1e' } },
+      {
+        id: 'graticule',
+        type: 'line',
+        source: 'graticule',
+        paint: { 'line-color': '#1e293b', 'line-width': 0.6, 'line-opacity': 0.6 },
+      },
+    ],
+  };
+}
+
+
