@@ -50,6 +50,49 @@ describe('NLPG 空间关系识别', () => {
     const s = detectSpatial('这个范围内');
     expect(s!.relation).toBe('buffer');
   });
+  it('识别包含（contains）', () => {
+    const s = detectSpatial('阀门覆盖了哪些片区');
+    expect(s!.relation).toBe('contains');
+  });
+  it('识别在…内（within）', () => {
+    const s = detectSpatial('该管段在围墙内部');
+    expect(s!.relation).toBe('within');
+  });
+  it('识别相交', () => {
+    const s = detectSpatial('与河流相交的管段');
+    expect(s!.relation).toBe('intersects');
+  });
+});
+
+describe('NLPG 空间关系 SQL 真实性（修复占位恒真）', () => {
+  const opts = { center: [114.3, 30.5] };
+
+  it('within 生成 ST_Within(geom, 参考几何) 而非自交', () => {
+    const q = generatePostGISQuery('该管段在围墙内部', opts);
+    expect(q.sql).toContain('ST_Within(geom,');
+    expect(q.sql).not.toMatch(/ST_Within\(geom,\s*geom\)/);
+  });
+
+  it('intersects 生成 ST_Intersects(geom, 参考几何)', () => {
+    const q = generatePostGISQuery('与某区域相交的管段', opts);
+    expect(q.sql).toContain('ST_Intersects(geom,');
+    expect(q.sql).not.toMatch(/ST_Intersects\(geom,\s*geom\)/);
+  });
+
+  it('buffer 生成基于参考点缓冲圆的 ST_Intersects', () => {
+    const q = generatePostGISQuery('这个范围内的管段', opts);
+    expect(q.sql).toContain('ST_Intersects(geom, ST_Buffer(ST_SetSRID(ST_MakePoint(114.3, 30.5), 4326), 1000))');
+  });
+
+  it('contains 生成 ST_Contains(参考几何, geom)', () => {
+    const q = generatePostGISQuery('阀门覆盖了哪些片区', opts);
+    expect(q.sql).toContain('ST_Contains(ST_Buffer(ST_SetSRID(ST_MakePoint(114.3, 30.5), 4326), 1000), geom)');
+  });
+
+  it('显式经纬度作为参考点被采用（contains）', () => {
+    const q = generatePostGISQuery('120,30 这个点包含的管段', opts);
+    expect(q.sql).toContain('ST_Contains(ST_Buffer(ST_SetSRID(ST_MakePoint(120, 30), 4326)');
+  });
 });
 
 describe('NLPG SQL 生成', () => {

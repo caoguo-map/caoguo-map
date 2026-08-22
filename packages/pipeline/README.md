@@ -32,29 +32,29 @@ Peer：`maplibre-gl@^4.7.1`。
 ### 爆管推演
 
 ```ts
-import { BurstSimulator, burstClass } from '@caoguo/maplibre-pipeline/burst';
+import { BurstSimulator } from '@caoguo/maplibre-pipeline/burst';
 
-const sim = new BurstSimulator({
-  dataset,           // TopologyDataset
-  burstNodeId: 'N123',
-  maxAffectedRadius: 500,  // 米
-});
-const result = sim.simulate();
+// 构造需要地图实例与拓扑数据集
+const sim = new BurstSimulator({ map: mapInstance, dataset });
+// 对指定爆管管段推演：返回影响节点、应关闭阀门、受影响用户
+const result = sim.simulate('P-001');
 console.log('影响节点数', result.affectedNodes.length);
 console.log('应关阀门', result.valvesToClose);
 ```
 
-### 泄漏扩散
+### 泄漏扩散（高斯烟羽 + 洪水淹没）
 
 ```ts
-import { LeakagePlume, gaussianPlume } from '@caoguo/maplibre-pipeline/leakage';
+import { LeakagePlume } from '@caoguo/maplibre-pipeline/leakage';
 
 const plume = new LeakagePlume({
+  map: mapInstance,
   source: { lng: 114.3, lat: 30.6, heightMeters: 2 },
   wind: { speedMps: 3, directionDeg: 45 },
-  stabilityClass: 'D', // Pasquill-Gifford
+  stabilityClass: 'D', // Pasquill-Gifford 稳定度等级
 });
-const contour = plume.simulate(3600); // 1 小时后的等浓度线
+// 推演 1 小时后等浓度线（高斯烟羽）或洪水淹没范围
+const contour = plume.simulate({ seconds: 3600, mode: 'gaussian' });
 ```
 
 ### 管线健康评分
@@ -63,8 +63,36 @@ const contour = plume.simulate(3600); // 1 小时后的等浓度线
 import { PipelineHealth } from '@caoguo/maplibre-pipeline/health';
 
 const health = new PipelineHealth({ dataset });
-const score = health.evaluate('P-001'); // 单管
-console.log(score.total, score.explain());
+const report = health.evaluate('P-001'); // 单管多维加权评分
+console.log('综合得分', report.score.total, '等级', report.score.level);
+// 维度明细
+for (const d of report.factors) console.log(d.dimension, d.weight, d.value);
+```
+
+### 自然语言查询 + 爆管联动
+
+```ts
+import { PipelineNlp } from '@caoguo/maplibre-pipeline/nlpg';
+import { BurstSimulator } from '@caoguo/maplibre-pipeline/burst';
+
+const nlp = new PipelineNlp({
+  burstSimulator: new BurstSimulator({ map: mapInstance, dataset }),
+  dataset,
+});
+// 识别为爆管意图时自动联动推演并缓存结果
+const res = nlp.query('朝阳门外大街燃气爆管');
+console.log('意图', res.intent);              // 'burst'
+console.log('推演结果', nlp.getLastBurst());  // { affectedNodes, valvesToClose, affectedUsers }
+```
+
+### 上游隔离阀查找（纯函数）
+
+```ts
+import { findUpstreamNode, buildAdjacency } from '@caoguo/maplibre-pipeline/graph';
+
+const adj = buildAdjacency(dataset);
+const valve = findUpstreamNode(adj, 'P-001', dataset, (n) => n.kind === 'valve');
+console.log('应关闭的上游阀门', valve?.id);
 ```
 
 ### 拓扑编辑器（与 @caoguo/maplibre 配合）
@@ -85,7 +113,7 @@ topo.mount();
 ```ts
 import { bfs } from '@caoguo/maplibre-pipeline/graph';
 import { healthLevel } from '@caoguo/maplibre-pipeline/style';
-import { pipelineNlp } from '@caoguo/maplibre-pipeline/nlpg';
+import { PipelineNlp, pipelineNlp } from '@caoguo/maplibre-pipeline/nlpg';
 ```
 
 可用子路径：`./graph`、`./topology`、`./burst`、`./leakage`、`./health`、`./nlpg`、`./style`、`./types`。
@@ -93,14 +121,14 @@ import { pipelineNlp } from '@caoguo/maplibre-pipeline/nlpg';
 ## 设计原则
 
 1. **算法纯函数 + 渲染薄壳**：所有算法可在 Node 环境单测。
-2. **可插拔**：每个组件独立可用，也可组合。
-3. **离线友好**：所有计算在前端完成。
-4. **可解释**：所有评分/推演结果附 `explain()`。
+2. **可插拔**：每个组件独立可用，也可组合（如 Topology + Burst + Health）。
+3. **离线友好**：所有计算在前端完成，无需后端依赖（Phase 1 MVP 离线优先）。
+4. **可解释**：评分/推演结果结构包含各维度明细，便于逐维追溯到依据。
 
 ## 浏览器 / 环境要求
 
 - 现代浏览器（Chrome 90+）
-- 核心算法模块可在 Node.js 测试（已含 54 个 vitest 用例）
+- 核心算法模块可在 Node.js 测试（已含 71 个 vitest 用例）
 
 ## 许可
 

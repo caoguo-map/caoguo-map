@@ -1,5 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { parsePipelineQuery } from '../pipelineNlp';
+import { PipelineNlp } from '../pipelineNlpClass';
+import type { PipelineTopologyDataset, PipelineNode, PipelinePipe } from '../../types';
+
+/** 极简数据集：s(源)-A-v1(阀)-B-t1(表) */
+function makeToy(): PipelineTopologyDataset {
+  const nodes: PipelineNode[] = [
+    { id: 's', kind: 'source', lng: 114.0, lat: 30.0 },
+    { id: 'v1', kind: 'valve', lng: 114.01, lat: 30.0 },
+    { id: 't1', kind: 'meter', lng: 114.02, lat: 30.0 },
+  ];
+  const pipes: PipelinePipe[] = [
+    { id: 'A', fromNode: 's', toNode: 'v1', type: 'pipe' },
+    { id: 'B', fromNode: 'v1', toNode: 't1', type: 'pipe' },
+  ];
+  return { nodes, pipes };
+}
 
 describe('nlpg/pipelineNlp', () => {
   it('识别爆管意图', () => {
@@ -64,5 +80,49 @@ describe('nlpg/pipelineNlp', () => {
   it('距离单位 km 转换为 m', () => {
     const r = parsePipelineQuery('1 公里内的医院');
     expect(r.filters.radius).toBe(1000);
+  });
+});
+
+describe('nlpg/PipelineNlp 联动推演（修复 stub）', () => {
+  it('爆管意图自动联动 BurstSimulator.simulate 并拿到结果', () => {
+    const ds = makeToy();
+    const calls: string[] = [];
+    const mockSim = {
+      simulate: (pipeId: string) => {
+        calls.push(pipeId);
+        return { pipeId, affectedNodes: [] };
+      },
+    };
+    const nlp = new PipelineNlp({ burstSimulator: mockSim, dataset: ds });
+    const res = nlp.query('朝阳门外大街发生燃气爆管');
+    expect(res.intent).toBe('burst');
+    // 未显式给出管段编号 → 回退到数据集首条管段 A
+    expect(calls).toEqual(['A']);
+    expect(nlp.getLastBurst()).toMatchObject({ pipeId: 'A' });
+  });
+
+  it('显式管段编号被解析并用于推演', () => {
+    const ds = makeToy();
+    const calls: string[] = [];
+    const mockSim = { simulate: (pipeId: string) => { calls.push(pipeId); return { pipeId }; } };
+    const nlp = new PipelineNlp({ burstSimulator: mockSim, dataset: ds });
+    nlp.query('管段 B 发生爆管');
+    expect(calls).toEqual(['B']);
+  });
+
+  it('非爆管意图不触发推演', () => {
+    const ds = makeToy();
+    let called = false;
+    const mockSim = { simulate: () => { called = true; return {}; } };
+    const nlp = new PipelineNlp({ burstSimulator: mockSim, dataset: ds });
+    nlp.query('查一下所有超过 30 年的铸铁管');
+    expect(called).toBe(false);
+  });
+
+  it('未关联推演器时不抛错', () => {
+    const nlp = new PipelineNlp();
+    const res = nlp.query('燃气爆管事故');
+    expect(res.intent).toBe('burst');
+    expect(nlp.getLastBurst()).toBeNull();
   });
 });

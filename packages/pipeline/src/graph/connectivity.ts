@@ -100,6 +100,10 @@ export function findPaths(
  * 沿拓扑向上游找到最近的指定类型节点（默认阀门）
  *
  * 用途：爆管推演自动定位隔离点（PRD §4.2.4 step 1）
+ *
+ * 说明：管网拓扑在无流向数据时是无向图。本实现从故障管段起点向上游
+ * 广度搜索，并避免沿"刚走过的同一管段"原路返回，从而向远离故障点的
+ * 上游方向收敛，命中 predicate（如阀门）即停。
  */
 export function findUpstreamNode(
   adj: AdjacencyList,
@@ -112,21 +116,16 @@ export function findUpstreamNode(
 
   const nodeById = new Map(dataset.nodes.map((n) => [n.id, n]));
 
-  // 起始：pipe 任意一端的"非故障方向" → 选择 fromNode 作为查找起点
+  // 起始：选择 fromNode 作为查找起点（故障管段上游侧）
   const startId = pipe.fromNode;
-  const startNode = nodeById.get(startId);
-  if (!startNode) return null;
+  if (!nodeById.has(startId)) return null;
 
-  // 反向游走：只允许沿"反向"（即 from 是 to，to 是 from）前进
-  const allowEdge = (e: AdjEdge, _from: string, to: string) => {
-    // 边界：pipe 同时含 startId 端则允许从 startId 反向走
-    const targetPipe = dataset.pipes.find((p) => p.id === e.pipeId);
-    if (!targetPipe) return false;
-    // 始终允许走（无向图）
-    return true;
+  // 向上游游走：禁止沿"刚走过的同一管段"原路返回，避免来回打转
+  const allowEdge = (e: AdjEdge, _from: string, _to: string) => {
+    return e.pipeId !== startPipeId;
   };
 
-  // BFS 到上层直到命中 predicate
+  // BFS 到上游直到命中 predicate
   const r = bfs(adj, startId, {
     allowEdge,
     until: (n) => {

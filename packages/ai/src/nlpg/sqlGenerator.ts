@@ -28,10 +28,12 @@ export interface AttributeCondition {
 export interface SpatialCondition {
   /** 空间关系 */
   relation: 'dwithin' | 'within' | 'intersects' | 'contains' | 'buffer';
-  /** 参考点 [lng, lat]（dwithin/buffer 用） */
+  /** 参考点 [lng, lat]：within/intersects/contains/buffer/dwithin 的参考几何中心 */
   point?: [number, number];
-  /** 距离（米，dwithin 用） */
+  /** 缓冲/距离半径（米，dwithin/buffer 及以参考点表达的 within·intersects·contains 用） */
   radius?: number;
+  /** 参考几何列名（进阶：与某字段几何做空间关系，缺省时用 point 构造缓冲圆） */
+  referenceColumn?: string;
   /** 目标几何字段 */
   geometryColumn: string;
 }
@@ -150,26 +152,42 @@ export function detectValue(text: string, field: string): string | number | null
 // 四、空间关系识别
 // ============================================================
 export function detectSpatial(text: string, geometryColumn = 'geom'): SpatialCondition | null {
-  // N 米/公里 内
+  // N 米/公里 内/附近/周边：dwithin（带参考半径）
   const nearby = text.match(/(\d+(?:\.\d+)?)\s*(米|m|公里|km|千米)\s*(?:内|以内|范围内|附近|周边)/);
   if (nearby) {
     let radius = parseFloat(nearby[1]);
     if (/公里|km|千米/.test(nearby[2])) radius *= 1000;
     return { relation: 'dwithin', radius, geometryColumn };
   }
-  // 缓冲/范围内
+  const point = detectReferencePoint(text);
+  // 缓冲/范围内：用参考点（或默认中心）构造缓冲圆 → ST_Intersects
   if (/缓冲区|缓冲|范围内|区域.{0,2}内/.test(text)) {
-    return { relation: 'buffer', geometryColumn };
+    return { relation: 'buffer', point, geometryColumn };
   }
-  // 包含
-  if (/包含|覆盖.{0,2}内|在.{0,2}内/.test(text)) {
-    return { relation: 'within', geometryColumn };
+  // 包含/覆盖（参考几何包含要素）：ST_Contains(refGeom, geom)
+  if (/包含|覆盖|涵盖|包围|圈住/.test(text)) {
+    return { relation: 'contains', point, geometryColumn };
   }
-  // 相交/叠加
+  // 在…内部/以内（要素在某几何内）：ST_Within(geom, refGeom)
+  if (/在.{0,2}内|内部|以内|之中/.test(text)) {
+    return { relation: 'within', point, geometryColumn };
+  }
+  // 相交/叠加：ST_Intersects(geom, refGeom)
   if (/相交|叠加|重叠|交叉/.test(text)) {
-    return { relation: 'intersects', geometryColumn };
+    return { relation: 'intersects', point, geometryColumn };
   }
   return null;
+}
+
+/** 从文本中识别"某点/坐标/某设施"作为参考几何中心；当前仅支持显式经纬度，否则返回 undefined（由 generate 补中心） */
+function detectReferencePoint(text: string): [number, number] | undefined {
+  const m = text.match(/([1-2]?\d{2,3}(?:\.\d+)?)\s*[,，]\s*(\d{1,3}(?:\.\d+)?)/);
+  if (m) {
+    const lng = parseFloat(m[1]);
+    const lat = parseFloat(m[2]);
+    if (lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90) return [lng, lat];
+  }
+  return undefined;
 }
 
 // ============================================================
@@ -185,14 +203,35 @@ function buildWhere(conditions: AttributeCondition[], spatial: SpatialCondition 
     parts.push(`${c.field} ${c.operator} ${quoteValue(c.value)}`);
   }
   if (spatial) {
-    if (spatial.relation === 'dwithin' && spatial.point && spatial.radius !== undefined) {
-      parts.push(`ST_DWithin(${spatial.geometryColumn}, ST_SetSRID(ST_MakePoint(${spatial.point[0]}, ${spatial.point[1]}), 4326), ${spatial.radius})`);
-    } else if (spatial.relation === 'buffer') {
-      parts.push(`ST_Intersects(${spatial.geometryColumn}, ST_Buffer(${spatial.geometryColumn}, 0))`);
-    } else if (spatial.relation === 'within') {
-      parts.push(`ST_Within(${spatial.geometryColumn}, ${spatial.geometryColumn})`);
-    } else if (spatial.relation === 'intersects') {
-      parts.push(`ST_Intersects(${spatial.geometryColumn}, ${spatial.geometryColumn})`);
+    const col = spatial.geometryColumn;
+    // 参考几何：优先 referenceColumn（字段几何），否则用 point 构造缓冲圆
+    const refGeom = spatial.referenceColumn
+      ? spatial.referenceColumn
+      : spatial.point
+        ? `ST_Buffer(ST_SetSRID(ST_MakePoint(${spatial.point[0]}, ${spatial.point[1]}), 4326), ${spatial.radius ?? 0})`
+        : null;
+    switch (spatial.relation) {
+      case 'dwithin':
+        if (spatial.point && spatial.radius !== undefined) {
+          parts.push(`ST_DWithin(${col}, ST_SetSRID(ST_MakePoint(${spatial.point[0]}, ${spatial.point[1]}), 4326), ${spatial.radius})`);
+        }
+        break;
+      case 'buffer':
+        // 缓冲区内：以参考几何/参考点缓冲圆判断相交
+        if (refGeom) parts.push(`ST_Intersects(${col}, ${refGeom})`);
+        break;
+      case 'within':
+        // 要素在参考几何内
+        if (refGeom) parts.push(`ST_Within(${col}, ${refGeom})`);
+        break;
+      case 'contains':
+        // 参考几何包含要素
+        if (refGeom) parts.push(`ST_Contains(${refGeom}, ${col})`);
+        break;
+      case 'intersects':
+        // 要素与参考几何相交
+        if (refGeom) parts.push(`ST_Intersects(${col}, ${refGeom})`);
+        break;
     }
   }
   return parts.length > 0 ? `WHERE ${parts.join(' AND ')}` : '';
@@ -214,9 +253,13 @@ export function generatePostGISQuery(text: string, opts: GenerateOptions = {}): 
 
   const table = detectTable(text);
   const spatial = detectSpatial(text, geometryColumn);
-  // 空间查询需要参考点：默认使用中心坐标
-  if (spatial && spatial.relation === 'dwithin' && !spatial.point) {
+  // 空间查询需要参考点：默认使用中心坐标（buffer/within/intersects/contains 以参考点缓冲圆表达）
+  if (spatial && !spatial.point) {
     spatial.point = center;
+  }
+  // buffer/within/intersects/contains 缺省半径时给一个合理缓冲半径
+  if (spatial && spatial.relation !== 'dwithin' && spatial.radius === undefined) {
+    spatial.radius = 1000;
   }
 
   // 属性条件提取

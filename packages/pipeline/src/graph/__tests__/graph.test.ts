@@ -6,7 +6,7 @@ import {
 } from '../adjacency';
 import { bfs, multiSourceBfs } from '../bfs';
 import { dfs, detectCycles } from '../dfs';
-import { findConnectedComponents, highlightConnectivity } from '../connectivity';
+import { findConnectedComponents, highlightConnectivity, findUpstreamNode } from '../connectivity';
 import { dijkstra } from '../shortestPath';
 import type {
   PipelineTopologyDataset,
@@ -182,6 +182,24 @@ describe('graph/connectivity', () => {
     expect(r.nodeIds.has('t1')).toBe(true);
     expect(r.nodeIds.has('v4')).toBe(false);
     expect(r.edgeIds.size).toBeGreaterThan(0);
+  });
+
+  it('findUpstreamNode 从下游管段找到最近阀门（不原路返回）', () => {
+    // C 管段 fromNode=v2(阀门) → toNode=t1(表)。上游方向应命中 v2 自身（起点即阀门）
+    const valve = findUpstreamNode(adj, 'C', ds, (n) => n.kind === 'valve');
+    expect(valve).not.toBeNull();
+    expect(valve!.kind).toBe('valve');
+  });
+
+  it('findUpstreamNode 从更远表段向上游收敛到阀门', () => {
+    // E 管段 fromNode=v3(阀门) → toNode=t2(表)，起点 v3 是阀门
+    const valve = findUpstreamNode(adj, 'E', ds, (n) => n.kind === 'valve');
+    expect(valve).not.toBeNull();
+    expect(valve!.id).toBe('v3');
+  });
+
+  it('findUpstreamNode 不存在的管段返回 null', () => {
+    expect(findUpstreamNode(adj, 'ZZZ', ds, (n) => n.kind === 'valve')).toBeNull();
   });
 });
 

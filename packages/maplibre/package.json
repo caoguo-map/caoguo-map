@@ -1,6 +1,6 @@
 {
   "name": "@caoguo/maplibre",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "草果地图引擎核心 — 基于 MapLibre GL 的国内坐标系/离线瓦片/辉光/LOD 一体化封装",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
@@ -61,6 +61,36 @@
       "types": "./dist/offline/index.d.ts",
       "import": "./dist/offline/index.js",
       "require": "./dist/offline/index.cjs"
+    },
+    "./controls": {
+      "types": "./dist/controls/index.d.ts",
+      "import": "./dist/controls/index.js",
+      "require": "./dist/controls/index.cjs"
+    },
+    "./crs": {
+      "types": "./dist/crs/index.d.ts",
+      "import": "./dist/crs/index.js",
+      "require": "./dist/crs/index.cjs"
+    },
+    "./lod": {
+      "types": "./dist/lod/index.d.ts",
+      "import": "./dist/lod/index.js",
+      "require": "./dist/lod/index.cjs"
+    },
+    "./shaders": {
+      "types": "./dist/shaders/index.d.ts",
+      "import": "./dist/shaders/index.js",
+      "require": "./dist/shaders/index.cjs"
+    },
+    "./terrain": {
+      "types": "./dist/terrain.d.ts",
+      "import": "./dist/terrain.js",
+      "require": "./dist/terrain.cjs"
+    },
+    "./sourceUtils": {
+      "types": "./dist/sourceUtils.d.ts",
+      "import": "./dist/sourceUtils.js",
+      "require": "./dist/sourceUtils.cjs"
     }
   },
   "files": [
