@@ -2,6 +2,15 @@ export { buildStyle, darkStyle, lightStyle, registerTheme, getRegisteredThemes, 
 export type { ThemeName, AnyTheme, BuildStyleOptions, ZoomGap, ZoomCoverageReport } from './build';
 export { useTheme } from './useTheme';
 export type { UseThemeOptions, UseThemeReturn } from './useTheme';
+/** 六张网行业主题真实配色：色板、行业主题注册与派生底图 */
+export {
+  INDUSTRY_META,
+  INDUSTRY_PALETTES,
+  buildIndustryStyle,
+  registerIndustryThemes,
+} from './themes/industries';
+export type { IndustryKey, IndustryMeta, IndustryTheme, Palette } from './themes/industries';
+
 /** 内置基础主题名（向后兼容常量）；运行时注册的行业主题请用 `getRegisteredThemes()` */
 export const themeNames = ['caoguo-dark', 'caoguo-light'] as const;
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.0.7
+
+### 功能完善
+- **六张网行业主题真实配色落地**：新增 `src/themes/industries.ts`，汇总管网 / 电网 / 水网 / 交通 / 算力 / 通信六张网真实语义色板（取自各业务包已落地的 `*Theme.ts` 常量），作为权威配色寄存器。
+- 新增 `INDUSTRY_META`：六张网元信息（themeId / 中文名 / 主色），六主色互不撞色。
+- 新增 `INDUSTRY_PALETTES`：每网含 `palette`（要素/类型语义色）、`ramp`（数值分级色，用于流量/负载/信号热力）、`status`（安全/预警/危险等状态色）。
+- 新增 `registerIndustryThemes()`：幂等注入六张网行业主题变体（基于 `caoguo-dark` 派生并在 `metadata` 注入 `cg:industry` / `cg:industry-label` / `cg:industry-primary`），使 `buildStyle({ theme: 'caoguo-ind-<key>' })` 可用。
+- 新增 `buildIndustryStyle(key, mode?)`：直接派生某张网行业底图（暗/亮）。
+
+### 文档
+- README 行业主题章节改为「已交付真实配色」，补充六张网主色/语义色一览表与 API 概览；CHANGELOG 新增 0.0.7。
+- `apps/docs/guide/themes.md` 行业主题章节同步更新为已交付（真实配色 + 注册用法）。
+
+### 测试
+- 测试 23 → 28：新增 `industries.test.ts`（5 例），覆盖六张网元信息完整性/主色不撞、色板 hex 合法性、注册表注入、`buildStyle({theme:'caoguo-ind-*'})` 合法 v8 style 与 metadata、`buildIndustryStyle` 暗/亮派生。
+
 ## 0.0.6
 
 ### 功能完善

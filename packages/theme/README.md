@@ -102,23 +102,56 @@ injectTheme('caoguo-dark');
 | `themeNames` | `readonly ['caoguo-dark', 'caoguo-light']` | 内置基础主题名常量（向后兼容；动态列表见 `getThemeList`） |
 | `getThemeList()` | `() => string[]` | 返回所有可用主题名（内置 + 运行时注册行业主题，去重） |
 | `registerTheme(name, style)` | `(name: string, style: StyleSpecification) => void` | 注册行业主题（六张网） |
+| `registerIndustryThemes()` | `() => void` | 一键注入六张网行业主题变体（幂等） |
+| `INDUSTRY_META` | `Record<IndustryKey, IndustryMeta>` | 六张网元信息（themeId / 中文名 / 主色） |
+| `INDUSTRY_PALETTES` | `Record<IndustryKey, IndustryTheme>` | 六张网权威色板（语义色 / 分级色 / 状态色） |
+| `buildIndustryStyle(key, mode?)` | `(key: IndustryKey, mode?: 'dark' \| 'light') => StyleSpecification` | 直接派生某张网行业底图 |
 | `getRegisteredThemes()` | `() => string[]` | 返回所有已注册主题名（含运行时注册的） |
 | `hasTheme(name)` | `(name: string) => boolean` | 判断是否为已知主题 |
 | `injectTheme(name, onChange?)` | `(name: string, onChange?: (name: string) => void) => void` | 给 `<html>` 设置 `data-theme`；切换时触发 `onChange` 并派发 `cg:themechange` 事件，便于联动地图 `setStyle` |
 | `useTheme(opts?)` | `(opts?: UseThemeOptions) => UseThemeReturn` | 轻量主题 composable：响应式 `theme` + `setTheme`/`toggle`，监听 `cg:themechange` 同步 |
 
-类型：`ThemeName`（内置）、`AnyTheme = string`（含行业主题）、`BuildStyleOptions`、`UseThemeOptions`、`UseThemeReturn`、`DEFAULT_GLYPHS`。
+类型：`ThemeName`（内置）、`AnyTheme = string`（含行业主题）、`BuildStyleOptions`、`UseThemeOptions`、`UseThemeReturn`、`DEFAULT_GLYPHS`、`IndustryKey`、`IndustryMeta`、`IndustryTheme`、`Palette`。
 
-## 行业主题（六张网）
+## 行业主题（六张网真实配色）
 
-`caoguo-pipeline`（管网，Phase 1）、`caoguo-grid`（电网，Phase 2）、`caoguo-water`（水网，Phase 2）、`caoguo-transport`（交通，Phase 3）、`caoguo-compute`（算力，Phase 3）、`caoguo-telecom`（通信，Phase 3）为规划中的行业主题，**当前未实现**。落地时通过 `registerTheme` 注入即可被 `buildStyle` 按名构造，无需改动内核：
+六张网（管网 / 电网 / 水网 / 交通 / 算力 / 通信）的真实语义配色已沉淀到本包。`INDUSTRY_PALETTES` 汇总了各业务包（`@caoguo/{grid,water,transport,compute,telecom,pipeline}`）既已落地的 `*Theme.ts` 颜色常量，作为权威色板供大屏换肤、图例与 demo 统一复用；`registerIndustryThemes()` 则将六张网行业主题变体注入注册表，使 `buildStyle({ theme: 'caoguo-ind-<key>' })` 可直接使用。
 
 ```ts
-import { registerTheme, buildStyle, getRegisteredThemes } from '@caoguo/theme';
-registerTheme('caoguo-pipeline', pipelineStyleSpec);
-const style = buildStyle({ theme: 'caoguo-pipeline' });
-console.log(getRegisteredThemes()); // [...'caoguo-pipeline']
+import {
+  INDUSTRY_PALETTES,   // 六张网权威色板（语义色 / 分级色 / 状态色）
+  INDUSTRY_META,       // 六张网元信息：themeId / 中文名 / 主色
+  registerIndustryThemes,
+  buildStyle,
+  buildIndustryStyle,
+} from '@caoguo/theme';
+
+// 1. 注册六张网行业主题（建议在应用启动时调用一次）
+registerIndustryThemes();
+
+// 2. 直接构造某张网的行业底图（基于 dark 派生，注入行业主色）
+const gridStyle = buildStyle({ theme: 'caoguo-ind-grid' });
+// 或显式取派生对象：
+const waterStyle = buildIndustryStyle('water', 'dark');
+
+// 3. 复用色板（替代各包各自硬编码颜色）
+console.log(INDUSTRY_PALETTES.grid.palette); // { uhv:'#ef4444', high:'#f59e0b', ... }
 ```
+
+### 六张网主色与语义色一览
+
+| 行业 | themeId | 主色 | 核心语义色（要素 / 类型） |
+|------|---------|------|---------------------------|
+| 管网 pipeline | `caoguo-ind-pipeline` | `#0891b2` | 输气 `#f97316` / 输油 `#fbbf24` / 供水 `#3b82f6` / 排水 `#0ea5e9` / 综合管廊 `#8b5cf6` |
+| 电网 grid | `caoguo-ind-grid` | `#f59e0b` | 特高压 `#ef4444` / 高压 `#f59e0b` / 中压 `#3b82f6` / 低压 `#22c55e` / 配电 `#a855f7` |
+| 水网 water | `caoguo-ind-water` | `#3b82f6` | 流域 `#0ea5e9` / 干流 `#3b82f6` / 支流 `#60a5fa` / 水库 `#0ea5e9` / 闸站 `#f59e0b` / 堤防 `#fbbf24` |
+| 交通 transport | `caoguo-ind-transport` | `#f97316` | 高速 `#f59e0b` / 国道 `#ef4444` / 省道 `#8b5cf6` / 城市道路 `#6b7280` / 轨道 `#22d3ee` |
+| 算力 compute | `caoguo-ind-compute` | `#8b5cf6` | 主节点 `#3b82f6` / 区域云 `#8b5cf6` / 骨干网 `#22d3ee` / 边缘 `#14b8a6` / 集群 `#f59e0b` |
+| 通信 telecom | `caoguo-ind-telecom` | `#10b981` | 光纤 `#22d3ee` / 5G `#10b981` / 微波 `#f59e0b` / 卫星 `#8b5cf6` / 基站 `#14b8a6` |
+
+每网还含 `ramp`（数值分级色，常用于流量 / 负载 / 信号热力）与 `status`（状态色，如安全 / 预警 / 危险）。完整取值见 `INDUSTRY_PALETTES`。
+
+> 行业底图变体基于 `caoguo-dark` 克隆并在 `metadata` 注入 `cg:industry` / `cg:industry-label` / `cg:industry-primary`，业务图层与大屏辉光可据此统一取色。如需替换真实矢量源，仍可用 `buildStyle({ theme, sourceUrl, glyphs })`。
 
 ## CSS 变量
 
