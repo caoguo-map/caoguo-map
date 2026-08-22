@@ -4,14 +4,14 @@
   "description": "草果地图 AI 工具链 - MapCopilot 代码生成 / GeoAI 数据入图 / NLPG 自然语言查询 / DeepSeek LLM 接入 / 性能诊断 / 样式生成器 v2",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
-  "homepage": "https://github.com/caoguo/map/blob/main/packages/ai/README.md",
+  "homepage": "https://github.com/caoguo-map/maplibre-ai/blob/main/packages/ai/README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/caoguo/map.git",
+    "url": "git+https://github.com/caoguo-map/maplibre-ai.git",
     "directory": "packages/ai"
   },
   "bugs": {
-    "url": "https://github.com/caoguo/map/issues"
+    "url": "https://github.com/caoguo-map/maplibre-ai/issues"
   },
   "keywords": [
     "maplibre",

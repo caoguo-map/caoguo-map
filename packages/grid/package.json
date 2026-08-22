@@ -4,14 +4,14 @@
   "description": "草果地图电网组件包 - 停电分析 / 负荷热力 / 拓扑钻取 / 供电路径追踪",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
-  "homepage": "https://github.com/caoguo/map/blob/main/packages/grid/README.md",
+  "homepage": "https://github.com/caoguo-map/maplibre-grid/blob/main/packages/grid/README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/caoguo/map.git",
+    "url": "git+https://github.com/caoguo-map/maplibre-grid.git",
     "directory": "packages/grid"
   },
   "bugs": {
-    "url": "https://github.com/caoguo/map/issues"
+    "url": "https://github.com/caoguo-map/maplibre-grid/issues"
   },
   "keywords": [
     "maplibre",

@@ -4,14 +4,14 @@
   "description": "草果地图算力网组件包 - 数据中心 / 边缘节点 / 光缆路由 / 延迟热力 / 供需预测",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
-  "homepage": "https://github.com/caoguo/map/blob/main/packages/compute/README.md",
+  "homepage": "https://github.com/caoguo-map/maplibre-compute/blob/main/packages/compute/README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/caoguo/map.git",
+    "url": "git+https://github.com/caoguo-map/maplibre-compute.git",
     "directory": "packages/compute"
   },
   "bugs": {
-    "url": "https://github.com/caoguo/map/issues"
+    "url": "https://github.com/caoguo-map/maplibre-compute/issues"
   },
   "keywords": [
     "maplibre",

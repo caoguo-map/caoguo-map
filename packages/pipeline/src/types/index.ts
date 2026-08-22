@@ -118,6 +118,10 @@ export interface PipeProperties {
   pressure?: number;
   /** 最高允许压力（MPa） */
   ratedPressure?: number;
+  /** 历史故障次数（健康评分 history 维，PRD §4.4.2） */
+  failureCount?: number;
+  /** 是否阴极保护（健康评分 protection 维，PRD §4.4.2） */
+  hasCathodicProtection?: boolean;
   /** 当前状态 */
   status?: PipeStatus;
   /** 埋深（m） */

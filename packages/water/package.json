@@ -4,14 +4,14 @@
   "description": "草果地图水网组件包 - 水系拓扑 / 洪水淹没 / 水库调度",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
-  "homepage": "https://github.com/caoguo/map/blob/main/packages/water/README.md",
+  "homepage": "https://github.com/caoguo-map/maplibre-water/blob/main/packages/water/README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/caoguo/map.git",
+    "url": "git+https://github.com/caoguo-map/maplibre-water.git",
     "directory": "packages/water"
   },
   "bugs": {
-    "url": "https://github.com/caoguo/map/issues"
+    "url": "https://github.com/caoguo-map/maplibre-water/issues"
   },
   "keywords": [
     "maplibre",

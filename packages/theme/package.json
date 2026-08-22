@@ -4,14 +4,14 @@
   "description": "草果地图主题样式 — 矢量主题构造 + 暗/亮双套配色 + CSS 变量体系",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
-  "homepage": "https://github.com/caoguo/map/blob/main/packages/theme/README.md",
+  "homepage": "https://github.com/caoguo-map/theme/blob/main/packages/theme/README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/caoguo/map.git",
+    "url": "git+https://github.com/caoguo-map/theme.git",
     "directory": "packages/theme"
   },
   "bugs": {
-    "url": "https://github.com/caoguo/map/issues"
+    "url": "https://github.com/caoguo-map/theme/issues"
   },
   "keywords": [
     "maplibre",

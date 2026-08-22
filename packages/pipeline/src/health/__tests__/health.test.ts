@@ -90,3 +90,27 @@ describe('health/riskHeatmap', () => {
     expect(avg[0].healthScore).toBe(60);
   });
 });
+
+describe('health 两维接入（failureCount / hasCathodicProtection）', () => {
+  const iso = (years: number) =>
+    new Date(Date.now() - years * 365 * 24 * 3600 * 1000).toISOString();
+
+  it('failureCount 越高 history 维分数越低', () => {
+    const a = scorePipeHealth({ material: 'steel', installDate: iso(10), failureCount: 0 });
+    const b = scorePipeHealth({ material: 'steel', installDate: iso(10), failureCount: 8 });
+    expect(b.dimensions.history.score).toBeLessThan(a.dimensions.history.score);
+  });
+
+  it('hasCathodicProtection=true 提升 protection 维分数', () => {
+    const a = scorePipeHealth({ material: 'steel', installDate: iso(10), hasCathodicProtection: false });
+    const b = scorePipeHealth({ material: 'steel', installDate: iso(10), hasCathodicProtection: true });
+    expect(b.dimensions.protection.score).toBeGreaterThan(a.dimensions.protection.score);
+  });
+
+  it('两维默认值（缺失字段）不破坏评分', () => {
+    // 数据集未提供时默认 failureCount=0 / hasCathodicProtection=false
+    const r = scorePipeHealth({ material: 'steel', installDate: iso(10) });
+    expect(r.dimensions.history.score).toBeGreaterThan(0);
+    expect(r.dimensions.protection.score).toBeGreaterThan(0);
+  });
+});

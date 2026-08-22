@@ -4,14 +4,14 @@
   "description": "草果地图管网组件包 - 爆管推演 / 泄漏扩散 / 健康评估 / 拓扑编辑器",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
-  "homepage": "https://github.com/caoguo/map/blob/main/packages/pipeline/README.md",
+  "homepage": "https://github.com/caoguo-map/maplibre-pipeline/blob/main/packages/pipeline/README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/caoguo/map.git",
+    "url": "git+https://github.com/caoguo-map/maplibre-pipeline.git",
     "directory": "packages/pipeline"
   },
   "bugs": {
-    "url": "https://github.com/caoguo/map/issues"
+    "url": "https://github.com/caoguo-map/maplibre-pipeline/issues"
   },
   "keywords": [
     "maplibre",

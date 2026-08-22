@@ -4,14 +4,14 @@
   "description": "草果地图交通网组件包 - 路网 / 交通流 / 拥堵预测 / 事件响应",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
-  "homepage": "https://github.com/caoguo/map/blob/main/packages/transport/README.md",
+  "homepage": "https://github.com/caoguo-map/maplibre-transport/blob/main/packages/transport/README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/caoguo/map.git",
+    "url": "git+https://github.com/caoguo-map/maplibre-transport.git",
     "directory": "packages/transport"
   },
   "bugs": {
-    "url": "https://github.com/caoguo/map/issues"
+    "url": "https://github.com/caoguo-map/maplibre-transport/issues"
   },
   "keywords": [
     "maplibre",

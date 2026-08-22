@@ -4,14 +4,14 @@
   "description": "草果地图引擎核心 — 基于 MapLibre GL 的国内坐标系/离线瓦片/辉光/LOD 一体化封装",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
-  "homepage": "https://github.com/caoguo/map/blob/main/packages/maplibre/README.md",
+  "homepage": "https://github.com/caoguo-map/maplibre/blob/main/packages/maplibre/README.md",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/caoguo/map.git",
+    "url": "git+https://github.com/caoguo-map/maplibre.git",
     "directory": "packages/maplibre"
   },
   "bugs": {
-    "url": "https://github.com/caoguo/map/issues"
+    "url": "https://github.com/caoguo-map/maplibre/issues"
   },
   "keywords": [
     "maplibre",

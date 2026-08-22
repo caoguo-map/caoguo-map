@@ -100,11 +100,25 @@ export function maxDepth(dem: number[][], flooded: Set<string>, waterLevel: numb
  * @param input 输入参数
  * @param seedCell 种子网格坐标（默认 [0,0]）
  */
+/**
+ * simulateFlood 可选扩展参数
+ * - affectedFeatures：需要统计"是否落在淹没范围内"的水系要素（建筑/泵站/河段等）。
+ *   提供时需同时给出 demBounds（栅格对应的经纬度范围），用于把要素经纬度映射到栅格坐标判定。
+ * - cellSizeM：单栅格边长（米），用于把"淹没格数"换算成真实面积（km²）。默认 30m。
+ * - demBounds：DEM 栅格对应的地理范围 [[minLng,minLat],[maxLng,maxLat]]，用于要素坐标映射。
+ */
+export interface SimulateFloodOptions {
+  affectedFeatures?: WaterFeature[];
+  cellSizeM?: number;
+  demBounds?: [[number, number], [number, number]];
+}
+
 export function simulateFlood(
   dataset: WaterDataset,
   dem: number[][],
   input: FloodInput,
-  seedCell: [number, number] = [0, 0]
+  seedCell: [number, number] = [0, 0],
+  options: SimulateFloodOptions = {}
 ): FloodResult {
   const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
 
@@ -132,7 +146,7 @@ export function simulateFlood(
   const flooded = inundateCells(dem, waterLevel, seedCell);
   const depth = maxDepth(dem, flooded, waterLevel);
 
-  // 5) 淹没多边形（简化：取淹没格的中心点集合 → 凸包近似）
+  // 5) 淹没多边形（取淹没格的中心点集合 → 凸包近似，栅格坐标 [col,row]）
   const cells: [number, number][] = [];
   for (const cell of flooded) {
     const [r, c] = cell.split(',').map(Number);
@@ -140,8 +154,18 @@ export function simulateFlood(
   }
   const inundationPolygon = convexHull(cells);
 
-  // 6) 受影响要素（简化为空，业务方按需叠加）
-  const affectedFeatures: WaterFeature[] = [];
+  // 6) 真实淹没面积：淹没格数 × 单格面积（km²）
+  const cellSizeM = options.cellSizeM ?? 30;
+  const cellAreaKm2 = (cellSizeM * cellSizeM) / 1e6;
+  const inundatedArea = flooded.size * cellAreaKm2;
+
+  // 7) 受影响要素：当提供要素 + 栅格地理范围时，按"要素任一顶点落入淹没凸包"统计
+  const affectedFeatures: WaterFeature[] =
+    options.affectedFeatures && options.demBounds
+      ? options.affectedFeatures.filter((f) =>
+          featureInFlood(f, options.demBounds!, dem, inundationPolygon),
+        )
+      : [];
 
   const durationMs = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0;
   return {
@@ -149,10 +173,61 @@ export function simulateFlood(
     runoff,
     inundationPolygon,
     maxDepth: depth,
-    inundatedArea: flooded.size, // 简化：网格数当作面积
+    inundatedArea,
     affectedFeatures,
     durationMs,
   };
+}
+
+/**
+ * 判断水系要素是否落在淹没范围内：
+ * 把要素几何坐标（经纬度）按 demBounds 线性映射到栅格坐标，再判定是否落入淹没凸包。
+ */
+function featureInFlood(
+  f: WaterFeature,
+  demBounds: [[number, number], [number, number]],
+  dem: number[][],
+  hull: [number, number][],
+): boolean {
+  const rows = dem.length;
+  const cols = rows > 0 ? dem[0].length : 0;
+  if (rows === 0 || cols === 0 || hull.length < 3) return false;
+
+  const [[minX, minY], [maxX, maxY]] = demBounds;
+  const spanX = maxX - minX || 1;
+  const spanY = maxY - minY || 1;
+
+  const lngLatToCell = (lng: number, lat: number): [number, number] => {
+    const col = ((lng - minX) / spanX) * (cols - 1);
+    const row = ((maxY - lat) / spanY) * (rows - 1); // 纬度向上增大
+    return [col, row];
+  };
+
+  const coords: [number, number][] = [];
+  if (f.geometry && f.geometry.length >= 2) {
+    for (const [lng, lat] of f.geometry) coords.push([lng, lat]);
+  } else {
+    coords.push([f.lng, f.lat]);
+  }
+
+  return coords.some(([lng, lat]) => {
+    const [col, row] = lngLatToCell(lng, lat);
+    return pointInPolygon([col, row], hull);
+  });
+}
+
+/** 射线法判定点是否在多边形内（polygon 为 [x,y][]） */
+function pointInPolygon(p: [number, number], polygon: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    const intersect =
+      yi > p[1] !== yj > p[1] &&
+      p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
 }
 
 /** 凸包（Andrew's monotone chain） */

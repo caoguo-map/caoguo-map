@@ -63,6 +63,7 @@ export class RoadNetwork {
     }).instance;
     const prefix = this.layerPrefix;
 
+    const baseSpeeds = new Map((this.dataset.speeds ?? []).map((s) => [s.edgeId, s.speed] as const));
     const nodeById = new Map(this.dataset.nodes.map((n) => [n.id, n] as const));
 
     const edgeGeoJSON: GeoJSON.FeatureCollection<GeoJSON.LineString> = {
@@ -86,7 +87,7 @@ export class RoadNetwork {
               edgeId: e.id,
               roadClass: e.roadClass,
               status: e.properties?.status ?? 'open',
-              speed: 60,
+              speed: baseSpeeds.get(e.id) ?? 60,
             },
           },
         ];
@@ -143,6 +144,7 @@ export class RoadNetwork {
   /** 更新实时速度数据并切换为路况模式 */
   setSpeeds(speeds: Array<{ edgeId: string; speed: number }>): void {
     const speedMap = new Map(speeds.map((s) => [s.edgeId, s.speed] as const));
+    const baseSpeeds = new Map((this.dataset.speeds ?? []).map((s) => [s.edgeId, s.speed] as const));
     const mlMap = (this.map as unknown as {
       instance: {
         getSource: (id: string) => unknown;
@@ -176,7 +178,7 @@ export class RoadNetwork {
               edgeId: e.id,
               roadClass: e.roadClass,
               status: e.properties?.status ?? 'open',
-              speed: speedMap.get(e.id) ?? 60,
+              speed: speedMap.get(e.id) ?? baseSpeeds.get(e.id) ?? 60,
             },
           },
         ];

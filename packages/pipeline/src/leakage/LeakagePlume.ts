@@ -1,8 +1,9 @@
 /**
- * LeakagePlume 组件类（占位 stub）
+ * LeakagePlume 组件类（地图集成层）
  *
- * Phase 1 MVP 完整功能待 M6 W1-W2 完成。
- * 当前 stub 仅暴露 API 接口和最小实现。
+ * 包装高斯烟羽扩散（gaussianPlume）与淹没范围（simulateFlood）纯函数，
+ * 维护 MapLibre 图层状态，对外暴露浓度云图 / 淹没范围渲染 API。
+ * 不依赖 Vue/React，可在任意框架实例化。
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';

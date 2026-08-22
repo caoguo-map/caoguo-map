@@ -84,3 +84,46 @@ describe('depthColor', () => {
     expect(depthColor(3)).toBe('#7f1d1d');
   });
 });
+
+describe('simulateFlood 真实面积与受影响要素', () => {
+  const dem = [
+    [10, 10, 10],
+    [10, 1, 1],
+    [10, 1, 10],
+  ];
+
+  it('inundatedArea = 淹没格数 × 单格面积(km²)', () => {
+    const r = simulateFlood({ features: [] }, dem, { rainfall: 100, curveNumber: 75 }, [1, 1], {
+      cellSizeM: 30,
+    });
+    // 淹没 3 格，单格 30m×30m = 9e-4 km²
+    expect(r.inundatedArea).toBeCloseTo(3 * 9e-4, 9);
+  });
+
+  it('默认 cellSizeM=30 时面积随淹没格数变化', () => {
+    const r = simulateFlood({ features: [] }, dem, { rainfall: 100, curveNumber: 75 }, [1, 1]);
+    expect(r.inundatedArea).toBeGreaterThan(0);
+    expect(r.inundatedArea).toBeCloseTo(3 * 9e-4, 9); // 3 格 × 30m²
+  });
+
+  it('affectedFeatures 统计落在淹没范围内的要素', () => {
+    const dataset: WaterDataset = {
+      features: [
+        { id: 'a', kind: 'pump', lng: 1.3, lat: 0.7 }, // 映射后落入淹没凸包内部
+        { id: 'b', kind: 'pump', lng: 99, lat: 99 }, // 远离淹没区
+      ],
+    };
+    const r = simulateFlood(dataset, dem, { rainfall: 100, curveNumber: 75 }, [1, 1], {
+      affectedFeatures: dataset.features,
+      demBounds: [[0, 0], [2, 2]],
+    });
+    const ids = r.affectedFeatures.map((f) => f.id);
+    expect(ids).toContain('a');
+    expect(ids).not.toContain('b');
+  });
+
+  it('未提供要素/范围时 affectedFeatures 为空', () => {
+    const r = simulateFlood({ features: [] }, dem, { rainfall: 100, curveNumber: 75 }, [1, 1]);
+    expect(r.affectedFeatures).toEqual([]);
+  });
+});

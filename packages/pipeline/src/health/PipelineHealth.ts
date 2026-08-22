@@ -55,10 +55,10 @@ export class PipelineHealth {
       const input: PipeHealthInput = {
         installDate: p.properties?.installDate,
         material: p.properties?.material,
-        failureCount: undefined,
+        failureCount: p.properties?.failureCount ?? 0,
         pressure: p.properties?.pressure,
         ratedPressure: p.properties?.ratedPressure,
-        hasCathodicProtection: undefined,
+        hasCathodicProtection: p.properties?.hasCathodicProtection ?? false,
         status: p.properties?.status,
       };
       return { pipeId: p.id, score: scorePipeHealth(input, weights) };
