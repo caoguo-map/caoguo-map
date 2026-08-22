@@ -24,7 +24,7 @@ import {
   type TileStoreBackend,
   type TileFormat,
 } from './offline';
-import { ScaleControl, ThemeSwitcher } from './controls';
+import { ScaleControl, ThemeSwitcher, LegendControl, ExportControl } from './controls';
 import { CustomLineLayer } from './shaders';
 import type { GlowLine } from './shaders';
 import { LodController } from './lod';
@@ -324,6 +324,28 @@ export class Map {
    */
   addThemeSwitcher(initial?: ThemeName): ThemeSwitcher {
     const ctrl = new ThemeSwitcher(this._map as never, { initial });
+    const container = (this._map as unknown as { getContainer: () => HTMLElement }).getContainer();
+    ctrl.addTo(container);
+    return ctrl;
+  }
+
+  /**
+   * 挂载图例控件（通用）：渲染数据驱动的色块/线段图例，说明专题图层语义。
+   * 返回控件实例，可调用 .setItems() 随图层切换更新、.remove() 卸载。
+   */
+  addLegendControl(options: { title?: string; items: { label: string; color: string; shape?: 'color' | 'line' }[] }): LegendControl {
+    const ctrl = new LegendControl(options);
+    const container = (this._map as unknown as { getContainer: () => HTMLElement }).getContainer();
+    ctrl.addTo(container);
+    return ctrl;
+  }
+
+  /**
+   * 挂载地图导出控件（通用）：点击按钮将当前视图导出为 PNG 下载。
+   * 返回控件实例，可调用 .remove() 卸载。
+   */
+  addExportControl(options: { filename?: string; buttonText?: string } = {}): ExportControl {
+    const ctrl = new ExportControl(this._map as never, options);
     const container = (this._map as unknown as { getContainer: () => HTMLElement }).getContainer();
     ctrl.addTo(container);
     return ctrl;
