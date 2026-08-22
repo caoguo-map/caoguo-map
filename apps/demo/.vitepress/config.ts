@@ -45,6 +45,10 @@ export default defineConfig({
         ],
       },
       {
+        text: '行业主题 · 六张网配色',
+        items: [{ text: '六张网行业主题配色', link: '/themes/' }],
+      },
+      {
         text: '地下管网 · Phase 1',
         items: [
           { text: 'P1 管网拓扑可视化', link: '/pipeline/topology' },
