@@ -97,6 +97,32 @@ function onMarqueeUp() {
   setSelection(base);
 }
 
+// ── 标尺（简版）：顶部/左侧刻度随 zoom 缩放、随滚动同步 ──
+const viewportRef = ref<HTMLElement | null>(null);
+const rulerScroll = ref({ x: 0, y: 0 });
+// 刻度步长：按 zoom 选取，保证屏幕上刻度间距在 40~120px
+const rulerStep = computed(() => {
+  const steps = [10, 25, 50, 100, 200, 500, 1000];
+  return steps.find((s) => s * state.zoom >= 40) ?? 1000;
+});
+const rulerH = computed(() => {
+  const w = state.config.canvas.width;
+  const arr: number[] = [];
+  for (let v = 0; v <= w; v += rulerStep.value) arr.push(v);
+  return arr;
+});
+const rulerV = computed(() => {
+  const h = state.config.canvas.height;
+  const arr: number[] = [];
+  for (let v = 0; v <= h; v += rulerStep.value) arr.push(v);
+  return arr;
+});
+function onViewportScroll() {
+  const el = viewportRef.value;
+  if (!el) return;
+  rulerScroll.value = { x: el.scrollLeft, y: el.scrollTop };
+}
+
 onBeforeUnmount(() => {
   window.removeEventListener('mousemove', onMarqueeMove);
   window.removeEventListener('mouseup', onMarqueeUp);
@@ -112,7 +138,30 @@ onBeforeUnmount(() => {
       <label class="cg-snap"><input type="checkbox" v-model="state.snapToGrid" /> 网格</label>
     </div>
 
-    <div class="cg-canvas-viewport">
+    <div class="cg-canvas-viewport" ref="viewportRef" @scroll="onViewportScroll">
+      <!-- 标尺（编辑态） -->
+      <template v-if="!state.preview">
+        <div class="cg-ruler cg-ruler-top">
+          <div class="cg-ruler-inner" :style="{ transform: `translateX(${-rulerScroll.x}px)` }">
+            <span
+              v-for="v in rulerH"
+              :key="'rh' + v"
+              class="cg-ruler-tick"
+              :style="{ left: v * state.zoom + 'px' }"
+            >{{ v }}</span>
+          </div>
+        </div>
+        <div class="cg-ruler cg-ruler-left">
+          <div class="cg-ruler-inner" :style="{ transform: `translateY(${-rulerScroll.y}px)` }">
+            <span
+              v-for="v in rulerV"
+              :key="'rv' + v"
+              class="cg-ruler-tick"
+              :style="{ top: v * state.zoom + 'px' }"
+            >{{ v }}</span>
+          </div>
+        </div>
+      </template>
       <div
         ref="canvasRef"
         class="cg-canvas"
@@ -189,4 +238,16 @@ onBeforeUnmount(() => {
 .cg-guide { position: absolute; z-index: 41; pointer-events: none; background: #f472b6; }
 .cg-guide-v { top: 0; bottom: 0; width: 1px; margin-left: -0.5px; }
 .cg-guide-h { left: 0; right: 0; height: 1px; margin-top: -0.5px; }
+/* 标尺（简版）：顶部/左侧固定条，刻度随 zoom 缩放 */
+.cg-ruler {
+  position: absolute; z-index: 30; overflow: hidden; pointer-events: none;
+  background: rgba(8, 12, 22, 0.92); color: #8b93a7;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.cg-ruler-top { top: 0; left: 0; right: 0; height: 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.cg-ruler-left { top: 0; left: 0; bottom: 0; width: 30px; border-right: 1px solid rgba(255, 255, 255, 0.08); }
+.cg-ruler-inner { position: relative; width: 100%; height: 100%; }
+.cg-ruler-tick { position: absolute; font-size: 9px; opacity: 0.85; white-space: nowrap; }
+.cg-ruler-top .cg-ruler-tick { top: 2px; transform: translateX(2px); padding-left: 2px; border-left: 1px solid rgba(255, 255, 255, 0.25); height: 5px; }
+.cg-ruler-left .cg-ruler-tick { left: 2px; transform: translateY(2px); padding-top: 0; border-top: 1px solid rgba(255, 255, 255, 0.25); width: 5px; }
 </style>

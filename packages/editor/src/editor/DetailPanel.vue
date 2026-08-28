@@ -107,31 +107,31 @@ const extraFields = computed<[string, unknown][]>(() => {
   height: 100%;
   box-sizing: border-box;
   padding: 12px;
-  color: #e0e6f0;
+  color: var(--cg-text, #e0e6f0);
   font-size: 12px;
   overflow: auto;
 }
-.cg-detail-state { padding: 24px; text-align: center; color: #5b6478; }
+.cg-detail-state { padding: 24px; text-align: center; color: var(--cg-ph, #5b6478); }
 .cg-detail-error { color: #f87171; }
 .cg-detail-head { display: flex; align-items: center; gap: 8px; }
 .cg-detail-title { font-size: 14px; font-weight: 600; flex: 1; }
 .cg-detail-badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; }
-.cg-detail-meta { display: flex; flex-direction: column; gap: 2px; margin: 10px 0; color: #9aa3b8; }
+.cg-detail-meta { display: flex; flex-direction: column; gap: 2px; margin: 10px 0; color: var(--cg-text-sub, #9aa3b8); }
 .cg-detail-trend { margin: 10px 0; }
 .cg-trend-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
-.cg-trend-label { font-size: 11px; color: #8b93a7; }
+.cg-trend-label { font-size: 11px; color: var(--cg-text-sub, #8b93a7); }
 .cg-trend-last { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.cg-trend-svg { width: 100%; height: 40px; display: block; background: rgba(255, 255, 255, 0.03); border-radius: 6px; }
+.cg-trend-svg { width: 100%; height: 40px; display: block; background: var(--cg-panel, rgba(255, 255, 255, 0.03)); border-radius: 6px; }
 .cg-detail-fields { display: flex; flex-direction: column; gap: 6px; }
 .cg-detail-field {
   display: flex; justify-content: space-between; gap: 8px;
-  padding: 6px 8px; background: rgba(255, 255, 255, 0.04); border-radius: 6px;
+  padding: 6px 8px; background: var(--cg-panel, rgba(255, 255, 255, 0.04)); border-radius: 6px;
 }
-.cg-detail-k { color: #8b93a7; }
-.cg-detail-v { color: #e0e6f0; }
+.cg-detail-k { color: var(--cg-text-sub, #8b93a7); }
+.cg-detail-v { color: var(--cg-text, #e0e6f0); }
 .cg-detail-empty {
   height: 100%; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 8px; color: #5b6478;
+  justify-content: center; gap: 8px; color: var(--cg-ph, #5b6478);
 }
 .cg-detail-empty p { margin: 0; }
 </style>

@@ -44,6 +44,19 @@ function tryParse(text: string): unknown {
   }
 }
 
+/** 本地图片上传：转 base64 dataURL 写入 config（大屏产物自包含，无外链依赖） */
+function onImageFile(field: Field, ev: Event) {
+  const input = ev.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    set(field.key, String(reader.result));
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
 // 已有设备图层（供 deviceLayerId 等下拉选择，避免手填不友好）
 const deviceLayerOptions = computed(() =>
   (activeScene.value?.layers ?? [])
@@ -55,7 +68,7 @@ const deviceLayerOptions = computed(() =>
 interface Field {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'color' | 'select' | 'checkbox' | 'textarea' | 'deviceLayer';
+  type: 'text' | 'number' | 'color' | 'select' | 'checkbox' | 'textarea' | 'deviceLayer' | 'imageUpload';
   options?: { label: string; value: string }[];
   hint?: string;
 }
@@ -77,7 +90,7 @@ const FIELD_MAP: Record<string, Field[]> = {
     { key: 'align', label: '对齐', type: 'select', options: [{ label: '左', value: 'left' }, { label: '中', value: 'center' }, { label: '右', value: 'right' }] },
   ],
   image: [
-    { key: 'src', label: '图片地址', type: 'text' },
+    { key: 'src', label: '图片（本地转 base64 / 填 URL）', type: 'imageUpload' },
     { key: 'fit', label: '填充', type: 'select', options: [{ label: '覆盖', value: 'cover' }, { label: '包含', value: 'contain' }] },
   ],
   clock: [
@@ -212,6 +225,11 @@ function onInput(field: Field, ev: Event) {
       </select>
       <input v-else-if="f.type === 'checkbox'" type="checkbox" :checked="bool(f.key)" @change="onInput(f, $event)" class="cg-check" />
       <textarea v-else-if="f.type === 'textarea'" :value="str(f.key)" rows="3" :placeholder="f.hint" @change="onInput(f, $event)" />
+      <span v-else-if="f.type === 'imageUpload'" class="cg-img-field">
+        <input type="text" :value="str(f.key)" :placeholder="f.hint" @change="onInput(f, $event)" />
+        <input type="file" accept="image/*" @change="onImageFile(f, $event)" />
+        <img v-if="str(f.key)" :src="str(f.key)" class="cg-img-preview" alt="" />
+      </span>
       <input v-else-if="f.type === 'number'" type="number" :value="num(f.key)" @change="onInput(f, $event)" />
       <input v-else-if="f.type === 'color'" type="color" :value="str(f.key) || '#4ade80'" @change="onInput(f, $event)" />
       <input v-else type="text" :value="str(f.key)" :placeholder="f.hint" @change="onInput(f, $event)" />
@@ -232,4 +250,7 @@ function onInput(field: Field, ev: Event) {
 }
 .cg-field textarea { resize: vertical; font-family: monospace; }
 .cg-check { width: 16px; height: 16px; align-self: flex-start; }
+.cg-img-field { display: flex; flex-direction: column; gap: 6px; }
+.cg-img-field input[type='file'] { font-size: 11px; color: #8b93a7; }
+.cg-img-preview { width: 100%; max-height: 80px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.04); }
 </style>
