@@ -1,0 +1,47 @@
+name: CI
+
+# 本仓库为 monorepo packages/editor 的拆分镜像。
+# package.json 中的 @caoguo/* 依赖声明为 workspace:*，仅在 monorepo 内可解析；
+# 此处在 CI 中将其重写为 npm 已发布版本后再安装构建。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Rewrite workspace deps to published versions
+        run: |
+          node -e "
+          const fs = require('fs');
+          const j = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const pinned = { '@caoguo/maplibre': '^0.0.8', '@caoguo/theme': '^0.0.12' };
+          for (const sec of ['dependencies', 'devDependencies', 'peerDependencies']) {
+            if (!j[sec]) continue;
+            for (const d of Object.keys(j[sec])) {
+              if (j[sec][d] === 'workspace:*' && pinned[d]) j[sec][d] = pinned[d];
+            }
+          }
+          fs.writeFileSync('package.json', JSON.stringify(j, null, 2) + '\n');
+          "
+
+      - name: Install
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
