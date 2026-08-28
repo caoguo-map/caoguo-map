@@ -25,6 +25,7 @@
 | packages/ai | caoguo-map/maplibre-ai |
 | packages/compute | caoguo-map/maplibre-compute |
 | packages/grid | caoguo-map/maplibre-grid |
+| packages/editor | caoguo-map/map-editor |
 | packages/pipeline | caoguo-map/maplibre-pipeline |
 | packages/telecom | caoguo-map/maplibre-telecom |
 | packages/transport | caoguo-map/maplibre-transport |
@@ -50,9 +51,16 @@ for pkg in maplibre theme; do
   SPLIT=$(git subtree split --prefix=packages/$pkg main)
   git push --force git@github.com:caoguo-map/$pkg.git "$SPLIT:main"
 done
+
+# editor 包（独立命名，无 maplibre 前缀）
+echo "===== packages/editor -> caoguo-map/map-editor ====="
+SPLIT=$(git subtree split --prefix=packages/editor main)
+git push git@github.com:caoguo-map/map-editor.git "${SPLIT}:refs/heads/main"
 ```
 
-> 若远程仓库为空（刚建好、无提交），普通 `git subtree push` 即可，不必 `--force`。
+> **空仓库坑（zsh + git）**：远程仓库刚建、无任何 refs 时，`git push <remote> <sha>:main` 会失败
+> （源是裸 SHA，git 无法推断 `refs/heads/` 前缀），必须写全限定 refspec `<sha>:refs/heads/main`；
+> 且 zsh 会把 `$SPLIT:r` 里的 `:r` 当参数展开修饰符吃掉，**必须用 `${SPLIT}` 花括号写法**。
 > 远程已有无关历史时必须 `--force`（会丢弃远程现有提交）。
 
 ---
