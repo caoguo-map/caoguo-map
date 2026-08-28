@@ -11,6 +11,8 @@ import { readThresholdRule, evalThreshold, thresholdColor, ThresholdLevel } from
 
 const props = defineProps<{ node: ComponentNode }>();
 const cfg = computed(() => props.node.config as Record<string, any>);
+// 未显式配置颜色时回退，避免拼接出 'undefined88' 之类非法样式
+const baseColor = computed(() => (typeof cfg.value.color === 'string' && cfg.value.color ? cfg.value.color : '#3b82f6'));
 const { state, uiTabs, setTab } = useEditor();
 const { commit: commitHistory } = useHistory();
 
@@ -276,7 +278,8 @@ const cardValue = computed(() => {
 const cardLevel = computed(() => {
   const rule = readThresholdRule(cfg.value);
   if (!rule.field) return 'none';
-  return evalThreshold(rule, typeof cardValue.value === 'number' ? cardValue.value : undefined);
+  const v = Number(cardValue.value);
+  return evalThreshold(rule, Number.isFinite(v) ? v : undefined);
 });
 const cardColor = computed(() => thresholdColor(cardLevel.value as ThresholdLevel) ?? '#e5e7eb');
 
@@ -289,6 +292,7 @@ onMounted(() => {
 });
 onUnmounted(() => {
   if (liveTimer) clearInterval(liveTimer);
+  if (livePulseTimer) clearTimeout(livePulseTimer);
 });
 const agoText = computed(() => {
   if (!lastUpdate.value) return '';
@@ -298,9 +302,11 @@ const agoText = computed(() => {
   return `${Math.round(s / 60)}分前`;
 });
 const livePulse = ref(false);
+let livePulseTimer: ReturnType<typeof setTimeout> | null = null;
 watch(lastUpdate, () => {
   livePulse.value = true;
-  setTimeout(() => (livePulse.value = false), 800);
+  if (livePulseTimer) clearTimeout(livePulseTimer);
+  livePulseTimer = setTimeout(() => (livePulse.value = false), 800);
 });
 
 // 仪表盘当前值：binding 聚合值（avg/sum/max/min/count）优先，否则用静态配置
@@ -366,13 +372,13 @@ const alertItems = computed(() => {
     </div>
 
     <!-- 数据指标卡（支持本地阈值规则着色） -->
-    <div v-else-if="node.type === 'data-card'" class="cg-data-card" :style="{ borderColor: (cardLevel !== 'none' ? cardColor : cfg.color) + '88' }">
+    <div v-else-if="node.type === 'data-card'" class="cg-data-card" :style="{ borderColor: (cardLevel !== 'none' ? cardColor : baseColor) + '88' }">
       <div class="cg-dc-label">
         {{ cfg.label }}
         <span v-if="cardLevel === 'warn'" class="cg-dc-badge warn">预警</span>
         <span v-else-if="cardLevel === 'crit'" class="cg-dc-badge crit">告警</span>
       </div>
-      <div class="cg-dc-value" :style="{ color: cardLevel !== 'none' ? cardColor : cfg.color }">{{ cardValue }}<span class="cg-dc-unit">{{ cfg.unit }}</span></div>
+      <div class="cg-dc-value" :style="{ color: cardLevel !== 'none' ? cardColor : baseColor }">{{ cardValue }}<span class="cg-dc-unit">{{ cfg.unit }}</span></div>
     </div>
 
     <!-- 统计行 -->
@@ -398,7 +404,7 @@ const alertItems = computed(() => {
         <span>{{ cfg.label }}<span v-if="cardLevel === 'warn'" class="cg-dc-badge warn">预警</span><span v-else-if="cardLevel === 'crit'" class="cg-dc-badge crit">告警</span></span>
         <span>{{ Math.round((cfg.value / (cfg.max || 100)) * 100) }}%</span>
       </div>
-      <div class="cg-pc-track"><div class="cg-pc-fill" :style="{ width: Math.min(100, (cfg.value / (cfg.max || 100)) * 100) + '%', background: cardLevel !== 'none' ? cardColor : cfg.color }"></div></div>
+      <div class="cg-pc-track"><div class="cg-pc-fill" :style="{ width: Math.min(100, (cfg.value / (cfg.max || 100)) * 100) + '%', background: cardLevel !== 'none' ? cardColor : baseColor }"></div></div>
     </div>
 
     <!-- 土壤剖面 -->

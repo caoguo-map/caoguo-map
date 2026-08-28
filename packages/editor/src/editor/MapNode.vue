@@ -213,9 +213,12 @@ onBeforeUnmount(() => {
   wrapperRef.value = null;
 });
 
-// 设备数据变化 → 重绘 marker
+// 设备数据变化 → 重绘 marker（含阈值字段值变化，确保本地阈值着色随实时数据刷新）
 watch(
-  () => devices.value.map((d) => `${d.id}:${d.lng},${d.lat}:${d.status}`).join('|'),
+  () => {
+    const f = layerCfg.value.thrField as string | undefined;
+    return devices.value.map((d) => `${d.id}:${d.lng},${d.lat}:${d.status}:${f ? d[f] : ''}`).join('|');
+  },
   () => {
     const inst = wrapperRef.value?.getMap();
     if (inst) renderMarkers();

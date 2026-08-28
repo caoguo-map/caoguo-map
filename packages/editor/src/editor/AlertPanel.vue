@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onUnmounted } from 'vue';
 import { useAlerts } from '../store/useAlerts';
 
 const { alerts, critCount, warnCount, locate, soundEnabled, toggleSound } = useAlerts();
@@ -48,6 +48,9 @@ watch(alerts, (list, prev) => {
     if (flashTimer) clearTimeout(flashTimer);
     flashTimer = setTimeout(() => (flash.value = false), 1200);
   }
+});
+onUnmounted(() => {
+  if (flashTimer) clearTimeout(flashTimer);
 });
 </script>
 

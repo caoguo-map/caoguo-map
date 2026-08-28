@@ -35,9 +35,9 @@ export function collectSceneAlerts(scene: Scene, deviceStore: { getDevices(id: s
         if (rule.field) {
           const devs = deviceStore.getDevices(n.id);
           for (const d of devs) {
-            const v = d[rule.field];
-            if (typeof v !== 'number') continue;
-            const level = evalThreshold(rule, v);
+            const num = Number(d[rule.field]);
+            if (!Number.isFinite(num)) continue;
+            const level = evalThreshold(rule, num);
             if (level === 'none') continue;
             out.push({
               key: `${scene.key}:${n.id}:${d.id}:${rule.field}`,
@@ -46,7 +46,7 @@ export function collectSceneAlerts(scene: Scene, deviceStore: { getDevices(id: s
               deviceId: d.id,
               deviceName: d.name ?? d.id,
               field: rule.field,
-              value: v,
+              value: num,
               level,
             });
           }
@@ -67,7 +67,7 @@ export function useAlerts() {
 
   // ── 主动订阅：覆盖所有场景的设备图层（不仅激活场景），确保告警面板能跨场景汇总 ──
   // 对每个 device-layer 按其节点 id 作为 store key 订阅数据源；场景/绑定变化则增量同步。
-  const subs = new Map<string, () => void>();
+  const subs = new Map<string, { unsub: () => void; key: string }>();
   function allDeviceLayers(): EditorNode[] {
     const out: EditorNode[] = [];
     const walk = (nodes?: EditorNode[]) => {
@@ -81,33 +81,32 @@ export function useAlerts() {
     return out;
   }
   function syncSubscriptions() {
-    const needed = new Map<string, DataSource>();
+    const needed = new Map<string, { ds: DataSource; key: string }>();
     for (const layer of allDeviceLayers()) {
       const ds = resolveForNode(layer as EditorNode);
-      if (ds) needed.set(layer.id, ds);
+      if (ds) needed.set(layer.id, { ds, key: conn.keyOf(ds) });
     }
     // 移除已不存在的设备图层订阅
-    for (const [id, unsub] of subs) {
+    for (const [id, rec] of subs) {
       if (!needed.has(id)) {
-        unsub();
+        rec.unsub();
         subs.delete(id);
         setDevices(id, []);
       }
     }
-    // 新增未订阅的设备图层
-    for (const [id, ds] of needed) {
-      if (!subs.has(id)) {
-        subs.set(
-          id,
-          conn.subscribe(ds, (list: DeviceItem[]) => setDevices(id, list)),
-        );
+    // 新增 / 数据源变更（同一 layer id 切换绑定源）的设备图层：重订阅
+    for (const [id, { ds, key }] of needed) {
+      const existing = subs.get(id);
+      if (!existing || existing.key !== key) {
+        if (existing) existing.unsub();
+        subs.set(id, { unsub: conn.subscribe(ds, (list: DeviceItem[]) => setDevices(id, list)), key });
       }
     }
   }
   syncSubscriptions();
   watch(() => state.config.scenes, syncSubscriptions, { deep: true });
   onUnmounted(() => {
-    for (const unsub of subs.values()) unsub();
+    for (const rec of subs.values()) rec.unsub();
     subs.clear();
   });
 
