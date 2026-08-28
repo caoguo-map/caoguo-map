@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import type { ComponentNode } from '../types';
+import { useEditor } from '../store/useEditor';
 
 const props = defineProps<{ node: ComponentNode }>();
+const { goBackScene, canGoBack } = useEditor();
 
 const cfg = computed(() => ({
   title: '智慧草果数字大屏',
@@ -32,7 +34,7 @@ onUnmounted(() => {
 <template>
   <div class="cg-status-bar" :style="{ background: cfg.bgColor, color: cfg.titleColor }">
     <div class="cg-sb-left">
-      <button v-if="cfg.showBack" class="cg-sb-back" type="button">‹ 返回</button>
+      <button v-if="cfg.showBack && canGoBack()" class="cg-sb-back" type="button" @click="goBackScene()">‹ 返回</button>
       <span v-if="cfg.title" class="cg-sb-title">{{ cfg.title }}</span>
     </div>
     <div v-if="cfg.showClock" class="cg-sb-clock">

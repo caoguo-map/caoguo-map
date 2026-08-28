@@ -4,6 +4,7 @@ import Toolbar from './Toolbar.vue';
 import LeftPanel from './LeftPanel.vue';
 import Canvas from './Canvas.vue';
 import PropertyPanel from './PropertyPanel.vue';
+import AlertPanel from './AlertPanel.vue';
 import { useEditor } from '../store/useEditor';
 import { useHistory } from '../store/useHistory';
 import { genId } from '../components';
@@ -85,6 +86,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey));
     <!-- 预览模式：仅画布，全屏可交互 -->
     <div v-if="state.preview" class="cg-preview">
       <Canvas />
+      <AlertPanel />
     </div>
   </div>
 </template>

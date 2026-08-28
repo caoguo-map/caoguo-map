@@ -156,3 +156,34 @@ export function speedSnapshotAt(
   }
   return snap;
 }
+
+
+/**
+ * TF-3 图表数据转换：`EdgeTrend` → ECharts / Chart.js 直接可用的结构。
+ *
+ * x 轴为 `HH:mm` 时间标签（由 timestamps 格式化），双序列（速度/流量），
+ * 并附拥堵等级序列（可用于着色或 tooltip）。
+ */
+export function edgeTrendToChartDataset(
+  trend: EdgeTrend,
+  edgeId: string
+): {
+  edgeId: string;
+  xAxis: string[];
+  series: Array<{ name: string; data: number[] }>;
+  congestionTrend: CongestionLevel[];
+} {
+  const fmt = (t: number) => {
+    const d = new Date(t);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  };
+  return {
+    edgeId,
+    xAxis: trend.timestamps.map(fmt),
+    series: [
+      { name: '速度 (km/h)', data: trend.speeds },
+      { name: '流量 (辆/h)', data: trend.flows },
+    ],
+    congestionTrend: trend.congestionTrend,
+  };
+}

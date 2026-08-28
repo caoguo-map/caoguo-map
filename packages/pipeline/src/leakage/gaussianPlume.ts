@@ -138,6 +138,50 @@ export function gaussianPlume(
   };
 }
 
+/**
+ * 泄漏扩散的时间切片（PRD phase-1-pipeline §4.3.3 L-2 扩散动画的数据层）
+ *
+ * 简化模型：假设泄漏源持续稳定释放，烟羽前缘以风速向下风向推进
+ *   front(t) = windSpeed × t
+ * 在 t 时刻只有 `[0, front(t)]` 范围内的浓度场已经建立，
+ * 因此把 `gaussianPlume` 的计算范围截断到 front(t)，得到该时刻的等值线快照。
+ * 逐帧调用本函数即可组成扩散动画（渲染层见 `LeakagePlume.playGasAnimation`）。
+ *
+ * **适用边界**：本模型不表达「泄漏停止后的浓度衰减」，不做烟团抬升、地形与建筑物遮挡修正，
+ * 仅用于演示级扩散过程可视化，**不可用于应急浓度评估**。
+ *
+ * @param elapsedSec 泄漏开始后经过的秒数（< 一个网格步长时返回空快照）
+ */
+export function plumeAtTime(
+  source: { lng: number; lat: number },
+  params: GasLeakParams,
+  elapsedSec: number,
+): GasLeakResult {
+  const step = params.gridStep ?? 50;
+  const range = params.range ?? 5000;
+  const thresholds = params.thresholds ?? [0.001, 0.005, 0.01];
+  const front = params.windSpeed * elapsedSec;
+
+  // 前缘尚未推进到一个网格步长：视为扩散尚未开始（空快照）
+  if (!Number.isFinite(front) || front < step) {
+    return {
+      source,
+      windDirection: params.windDirection,
+      windSpeed: params.windSpeed,
+      stability: params.stability ?? 'D',
+      contours: thresholds.map((t) => ({ threshold: t, polygon: [], closed: false })),
+      maxDownwindDistance: 0,
+    };
+  }
+
+  const effectiveRange = Math.min(range, front);
+  const snapshot = gaussianPlume(source, { ...params, range: effectiveRange });
+  return {
+    ...snapshot,
+    maxDownwindDistance: Math.min(snapshot.maxDownwindDistance, effectiveRange),
+  };
+}
+
 /** 把 (r, y) 极坐标点转换为 (lng, lat) */
 function polyToLngLat(
   source: { lng: number; lat: number },

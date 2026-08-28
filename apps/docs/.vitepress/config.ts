@@ -68,6 +68,28 @@ export default defineConfig({
         ],
       },
       {
+        text: '行业组件 API',
+        collapsed: false,
+        items: [
+          { text: '三维变电站 Station3D', link: '/api/station3d' },
+          { text: '电网实时数据 GridRealtime', link: '/api/realtime-grid' },
+          { text: '容量热力图 CapacityHeatmap', link: '/api/capacity' },
+          { text: '公共交通客流 OD', link: '/api/transit-od' },
+          { text: '算力供需预测', link: '/api/compute-predict' },
+          { text: '水网运营扩展', link: '/api/water-ops' },
+          { text: '行业包扩展（卡片/诊断/分配/绕行）', link: '/api/industry-extensions' },
+        ],
+      },
+      {
+        text: '主题与编辑器',
+        collapsed: false,
+        items: [
+          { text: '主题 ThemeStore', link: '/api/theme-store' },
+          { text: 'LLM Provider', link: '/api/llm-provider' },
+          { text: '大屏渲染运行时', link: '/api/editor-runtime' },
+        ],
+      },
+      {
         text: '示例',
         items: [
           { text: '基础地图', link: '/examples/basic-map' },

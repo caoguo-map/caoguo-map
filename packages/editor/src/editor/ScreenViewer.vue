@@ -48,7 +48,7 @@ function goto(index: number) {
   const list = sceneList.value;
   if (!list.length) return;
   const next = ((index % list.length) + list.length) % list.length;
-  switchScene(list[next].key);
+  switchScene(list[next].key, false);
   progress.value = 1;
   lastTs = 0;
 }
@@ -115,7 +115,7 @@ onMounted(() => {
     return;
   }
   setConfig(cfg);
-  switchScene(cfg.scenes[0]?.key ?? '');
+  switchScene(cfg.scenes[0]?.key ?? '', false);
   state.preview = true;
   applyFit();
   if (props.embedded && rootRef.value && typeof ResizeObserver !== 'undefined') {

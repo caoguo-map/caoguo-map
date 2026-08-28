@@ -9,7 +9,25 @@
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { removeSourcesSafe, upsertSource } from '@caoguo/maplibre';
-import type { WaterDataset, WaterColorByMode, WaterFeature, RiverLevel } from '../types';
+import type {
+  WaterDataset,
+  WaterColorByMode,
+  WaterFeature,
+  WaterFeatureKind,
+  RiverLevel,
+} from '../types';
+import { getReservoirDetail, getReservoirDetails } from './reservoirCard';
+import { renderCardHtml } from '@caoguo/maplibre';
+import type { RenderCardOptions } from '@caoguo/maplibre';
+import {
+  applyMetricPatch,
+  isOverWarning,
+  parseWaterMessage,
+  stationSummary,
+  METRIC_STATION_KINDS,
+  RAINFALL_COLORS,
+} from './stationMetrics';
+import type { WaterMetricPatch, StationSummary } from './stationMetrics';
 import { paintBy, paintLineWidthByFlow } from '../style/paintRules';
 
 export interface RiverSystemOptions {
@@ -234,9 +252,198 @@ export class RiverSystem {
     this.featureListeners.clear();
   }
 
+  // ============================================================
+  // 站点实时指标（PRD R-5）
+  // ============================================================
+
+  /**
+   * R-5 应用实时指标：把雨量/水位/流量 patch 写回数据集并立即重绘。
+   *
+   * 传输层由调用方决定（轮询 / WebSocket / MQTT / 手动注入），
+   * 消息解析见 `parseWaterMessage()`，本方法只负责落库与刷新。
+   *
+   * @returns 实际发生变化的要素 id 列表
+   */
+  updateStationMetrics(patches: WaterMetricPatch[]): string[] {
+    const changed: string[] = [];
+    for (const patch of patches) {
+      const idx = this.dataset.features.findIndex((f) => f.id === patch.featureId);
+      if (idx < 0) continue;
+      const next = applyMetricPatch(this.dataset.features[idx], patch);
+      if (!next) continue;
+      this.dataset.features[idx] = next;
+      changed.push(next.id);
+    }
+    if (changed.length > 0) this.render();
+    return changed;
+  }
+
+  /**
+   * R-5 解析实时消息（精简键 `{f,wl,rf,fr,ts}` 或完整键），非法消息返回 null。
+   * 与 `updateStationMetrics()` 配合使用：`river.updateStationMetrics([parseWaterMessage(raw)!])`
+   */
+  parseStationMessage(raw: string | Record<string, unknown>): WaterMetricPatch | null {
+    return parseWaterMessage(raw);
+  }
+
+  /**
+   * R-5 渲染站点实时指标图层：水位站/雨量站按降雨等级着色，超警戒站点红色高亮。
+   * @returns 渲染的要素数
+   */
+  renderStationMetrics(): number {
+    const prefix = this.layerPrefix;
+    const stations = this.dataset.features.filter((f) =>
+      METRIC_STATION_KINDS.includes(f.kind)
+    );
+    if (stations.length === 0) {
+      this.removeLayerSafely(`${prefix}-station-pt`);
+      return 0;
+    }
+
+    const features = stations.map((f) => ({
+      type: 'Feature' as const,
+      geometry: { type: 'Point' as const, coordinates: [f.lng, f.lat] },
+      properties: {
+        featureId: f.id,
+        kind: f.kind,
+        name: f.name ?? f.id,
+        waterLevel: f.properties?.waterLevel ?? 0,
+        warningLevel: f.properties?.warningLevel ?? 0,
+        rainfall: f.properties?.rainfall ?? 0,
+        overWarning: isOverWarning(f) ? 1 : 0,
+      },
+    }));
+
+    upsertSource(this.getMlMap(), `${prefix}-station-src`, {
+      type: 'FeatureCollection',
+      features,
+    } as never);
+    this.addLayerOnce(`${prefix}-station-pt`, {
+      id: `${prefix}-station-pt`,
+      type: 'circle',
+      source: `${prefix}-station-src`,
+      paint: {
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['get', 'rainfall'],
+          0, 4,
+          10, 5,
+          25, 6.5,
+          50, 8,
+        ],
+        // 超警戒最优先（红），否则按降雨等级配色
+        'circle-color': [
+          'case',
+          ['==', ['get', 'overWarning'], 1], RAINFALL_COLORS.overWarning,
+          [
+            'step',
+            ['get', 'rainfall'],
+            RAINFALL_COLORS.none,
+            0.01, RAINFALL_COLORS.light,
+            10, RAINFALL_COLORS.moderate,
+            25, RAINFALL_COLORS.heavy,
+            50, RAINFALL_COLORS.torrential,
+          ],
+        ],
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': '#ffffff',
+      },
+    });
+    return stations.length;
+  }
+
+  /** 清除站点实时指标图层 */
+  clearStationMetrics(): void {
+    this.removeLayerSafely(`${this.layerPrefix}-station-pt`);
+  }
+
+  /** 站点实时指标汇总（超警戒数 / 最大降雨量） */
+  stationSummary(): StationSummary {
+    return stationSummary(this.dataset.features);
+  }
+
+  // ============================================================
+  // 水库/闸站卡片数据层（PRD R-2）
+  // ============================================================
+
+  /**
+   * 构建水库/闸站详情与卡片字段（R-2 数据层，实现见 `reservoirCard.ts` 纯函数）。
+   * @returns 要素不存在时返回 undefined
+   */
+  getReservoirDetail(featureId: string) {
+    return getReservoirDetail(this.dataset, featureId);
+  }
+
+  /**
+   * 批量构建水库/闸站详情（多水库联合调度场景，PRD §4.3 DO-1）
+   * @param kinds 要素类型（默认 `['reservoir', 'gate']`）
+   */
+  getReservoirDetails(kinds?: WaterFeatureKind[]) {
+    return getReservoirDetails(this.dataset, kinds);
+  }
+
+  /**
+   * 超警戒水位的水库/水位站（防汛值守用）
+   */
+  overWarningFeatures() {
+    return getReservoirDetails(this.dataset, ['reservoir', 'waterStation']).filter(
+      (d) => d.cardInfo.overWarning
+    );
+  }
+
+  /**
+   * 生成水库/闸站卡片 HTML（R-2 的零依赖 DOM 外壳）。
+   * 超警戒时标题左侧出现红色强调条。
+   */
+  renderReservoirCardHtml(featureId: string, opts?: RenderCardOptions): string | undefined {
+    const d = this.getReservoirDetail(featureId);
+    if (!d) return undefined;
+    const rows = [
+      ...(d.cardInfo.storageLabel ? [{ label: '蓄水率', value: d.cardInfo.storageLabel }] : []),
+      ...(d.cardInfo.capacityLabel ? [{ label: '库容', value: d.cardInfo.capacityLabel }] : []),
+      ...(d.cardInfo.levelLabel ? [{ label: '水位', value: d.cardInfo.levelLabel }] : []),
+      { label: '上下游', value: `上 ${d.upstreamCount} · 同级 ${d.siblingCount}` },
+    ];
+    return renderCardHtml(
+      {
+        title: d.cardInfo.title,
+        subtitle: d.cardInfo.subtitle,
+        statusLabel: d.cardInfo.statusLabel,
+        statusColor: d.cardInfo.overWarning ? '#f87171' : '#4ade80',
+        accentColor: d.cardInfo.overWarning ? '#ef4444' : undefined,
+        rows,
+        images: d.cardInfo.images,
+        maintenance: d.cardInfo.maintenance,
+      },
+      opts
+    );
+  }
+
   onFeatureSelect(fn: FeatureListener): () => void {
     this.featureListeners.add(fn);
     return () => this.featureListeners.delete(fn);
+  }
+
+  /** 幂等加层：图层已存在时忽略，避免重渲染抛错 */
+  private addLayerOnce(id: string, layer: Record<string, unknown>): void {
+    try {
+      this.getMlMap().addLayer(layer);
+      this.layerIds.push(id);
+    } catch {
+      // 图层已存在（重渲染）：只确保 id 被记录
+      if (!this.layerIds.includes(id)) this.layerIds.push(id);
+    }
+  }
+
+  /** 移除单个图层（不存在时静默） */
+  private removeLayerSafely(id: string): void {
+    try {
+      this.map.removeLayer(id);
+    } catch {
+      // ignore
+    }
+    this.layerIds = this.layerIds.filter((x) => x !== id);
   }
 
   private visibleFeatures(): WaterFeature[] {

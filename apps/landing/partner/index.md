@@ -5,7 +5,9 @@ title: 合作伙伴 · 草果地图
 
 <script setup lang="ts">
 import SiteNav from '../components/SiteNav.vue';
+import PartnerStories from '../components/PartnerStories.vue';
 import PartnerCalculator from '../components/PartnerCalculator.vue';
+import SupportSection from '../components/SupportSection.vue';
 import SiteFooter from '../components/SiteFooter.vue';
 
 const modes = [
@@ -42,7 +44,9 @@ const modes = [
     </div>
   </section>
 
-  <section id="calc" class="cg-section">
+  <PartnerStories />
+
+<section id="calc" class="cg-section">
     <div class="cg-container">
       <span class="cg-eyebrow">利润计算器</span>
       <h2 class="cg-h2">输入项目参数，<span class="cg-gradient-text">实时测算</span></h2>
@@ -70,7 +74,9 @@ const modes = [
     </div>
   </section>
 
-  <section id="contact" class="cg-section">
+  <SupportSection />
+
+<section id="contact" class="cg-section">
     <div class="cg-container partner-contact">
       <span class="cg-eyebrow">联系我们</span>
       <h2 class="cg-h2">聊聊你的<span class="cg-gradient-text">合作方案</span></h2>

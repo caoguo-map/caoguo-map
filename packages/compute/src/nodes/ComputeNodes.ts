@@ -10,6 +10,7 @@
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { upsertSource } from '@caoguo/maplibre';
+import { renderNodeDetailHtml } from './panels';
 import type { ComputeTopologyDataset, ComputeNodeColorBy, ComputeNode, ComputeNodeProperties } from '../types';
 import { paintNodeBy, paintLinkBy, paintLinkWidthByBandwidth } from '../style/paintRules';
 
@@ -79,6 +80,15 @@ export class ComputeNodes {
   }
 
   /** 渲染节点 + 链路 */
+  /**
+   * C-2 节点详情卡片 HTML（零依赖外壳，复用 @caoguo/maplibre renderCardHtml）。
+   */
+  renderNodeDetailHtml(nodeId: string, opts?: import('@caoguo/maplibre').RenderCardOptions): string | null {
+    const d = this.getNodeDetail(nodeId);
+    if (!d) return null;
+    return renderNodeDetailHtml(d, opts);
+  }
+
   render(): void {
     this.clear();
     const mlMap = (this.map as unknown as {

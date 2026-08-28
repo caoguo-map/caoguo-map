@@ -24,3 +24,5 @@ docker/.env
 .vscode/
 .idea/
 .codebuddy
+# 误入的构建参数目录（如 tsup --no-clean 被当作路径写入）
+--no-clean/

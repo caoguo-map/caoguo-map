@@ -96,6 +96,18 @@ title: 演示中心
         <p>负荷率着色 + 过载预警 + 24h 预测。</p>
         <span class="dc-go">进入 →</span>
       </a>
+      <a class="dc-card cg-card" href="/grid/station3d">
+        <span class="dc-tag" style="--c:#f59e0b">G4</span>
+        <h3>三维变电站</h3>
+        <p>fill-extrusion 体块 + 4 种视角预设。</p>
+        <span class="dc-go">进入 →</span>
+      </a>
+      <a class="dc-card cg-card" href="/grid/realtime">
+        <span class="dc-tag" style="--c:#f59e0b">G5</span>
+        <h3>实时数据接入</h3>
+        <p>传输层可插拔，实时驱动负荷热力图。</p>
+        <span class="dc-go">进入 →</span>
+      </a>
     </div>
   </section>
 
@@ -144,6 +156,12 @@ title: 演示中心
         <p>影响范围 + 绕行方案 + 时间线。</p>
         <span class="dc-go">进入 →</span>
       </a>
+      <a class="dc-card cg-card" href="/transport/transit">
+        <span class="dc-tag" style="--c:#22d3ee">T4</span>
+        <h3>公共交通客流 OD</h3>
+        <p>站点吞吐热力 + OD 连线 + 线路优化建议。</p>
+        <span class="dc-go">进入 →</span>
+      </a>
     </div>
   </section>
 
@@ -184,6 +202,12 @@ title: 演示中心
         <span class="dc-tag" style="--c:#4ade80">T2</span>
         <h3>网络健康度面板</h3>
         <p>在线率统计 + 故障告警。</p>
+        <span class="dc-go">进入 →</span>
+      </a>
+      <a class="dc-card cg-card" href="/telecom/capacity">
+        <span class="dc-tag" style="--c:#4ade80">T3</span>
+        <h3>容量热力图</h3>
+        <p>容量利用率 / 用户负载热力 + 超载预警。</p>
         <span class="dc-go">进入 →</span>
       </a>
     </div>

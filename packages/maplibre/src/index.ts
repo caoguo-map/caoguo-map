@@ -94,6 +94,8 @@ export * from './controls';
 export * from './shaders';
 export * from './lod';
 export * from './sourceUtils';
+// 设备卡片通用字段解析（grid / pipeline / water 共用）
+export * from './cardFields';
 
 /**
  * 全局配置（由应用入口注入一次，所有 Map 实例共享）。

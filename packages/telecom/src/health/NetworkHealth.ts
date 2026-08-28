@@ -10,6 +10,9 @@
 
 import type { TelecomTopologyDataset, BaseStation, Carrier } from '../types';
 
+import { diagnoseFaultStation, diagnoseFaults } from './faultDiagnosis';
+import type { FaultDiagnosis, FaultDiagnosisSummary, FaultDiagnosisOptions } from './faultDiagnosis';
+
 /** 在线率统计结果 */
 export interface OnlineRateStats {
   /** 分组键（如运营商名/区域/类型） */
@@ -79,13 +82,35 @@ export class NetworkHealth {
       .map((s) => ({ station: s, reason: this.guessFaultReason(s) }));
   }
 
-  /** NH-4 故障根因分析（启发式） */
-  private guessFaultReason(s: BaseStation): string {
-    const p = s.properties ?? {};
-    if (p.throughputMbps !== undefined && p.throughputMbps < 10) return '吞吐量异常偏低';
-    if (p.userCount !== undefined && p.userCount > 500) return '用户过载';
-    if (p.powerDbm !== undefined && p.powerDbm < 30) return '发射功率异常';
-    return '未知故障';
+  /**
+   * NH-4 故障根因分析（启发式，兼容旧签名）
+   *
+   * 内部委托 `diagnoseFaultStation()` 的多因子证据链，返回主因文案。
+   * **需要完整证据链（全部命中因子 + 置信度）时请用 `faultDiagnosis()` / `diagnoseFaults()`。**
+   */
+  guessFaultReason(s: BaseStation): string {
+    return diagnoseFaultStation(s, { clusterFaultRegions: this.clusterFaultRegions() }).primary
+      .label;
+  }
+
+  /** NH-4 单站完整诊断（全部命中因子 + 证据 + 置信度） */
+  faultDiagnosis(stationId: string, opts?: FaultDiagnosisOptions): FaultDiagnosis | undefined {
+    const station = this.dataset.baseStations.find((s) => s.id === stationId);
+    if (!station) return undefined;
+    return diagnoseFaultStation(station, {
+      ...opts,
+      clusterFaultRegions: this.clusterFaultRegions(opts),
+    });
+  }
+
+  /** NH-4 批量诊断（含区域聚集检测与按根因计数） */
+  diagnoseFaults(opts?: FaultDiagnosisOptions): FaultDiagnosisSummary {
+    return diagnoseFaults(this.dataset.baseStations, opts);
+  }
+
+  /** 判定为区域性故障的区域集合（内部复用） */
+  private clusterFaultRegions(opts?: FaultDiagnosisOptions): Set<string> {
+    return new Set(diagnoseFaults(this.dataset.baseStations, opts).clusterRegions.map((c) => c.region));
   }
 
   /** NH-3 故障趋势：按日期聚合故障数（传入带时间戳的故障记录） */

@@ -1,12 +1,22 @@
-# 草果地图 · 大屏组件库 — 功能说明 PRD
+# 草果地图 · 大屏组件库 — 功能说明 PRD（**已归档**）
+
+> ## ⚠️ 本文档已归档，不再单独维护
+>
+> **决策（2026-08-28，方案 A）**：组件库**随 `@caoguo/map-editor` 交付**，不设独立包。
+> **组件库的唯一事实源是 [`visual-editor.md` §14「组件库」](./visual-editor.md)**（交付形态、落地状态、规划中项、未来独立发包路径）。
+>
+> 本文档保留作为**目标设计存档**（组件地图、场景速查、Props 设计等），其中：
+> - **落地状态一律以 `visual-editor.md` §14.2 为准**，本文档 §2.0 起的标注仅作历史记录；
+> - §2.1 起描述的组件 API 为**目标设计**，当前并未实现为可复用组件，**不可对外承诺**。
 
 | 项目 | 说明 |
 |------|------|
-| **产品名称** | @caoguo/map-components |
+| **产品名称** | 大屏组件库（**当前无独立包**，组件随 `@caoguo/map-editor` 交付；唯一事实源见 `visual-editor.md` §14） |
 | **定位** | 基于 Vue 3 的智慧大屏地图组件库 |
 | **核心价值** | 让前端工程师 30 分钟内搭出行业地图大屏 |
-| **文档版本** | V1.0 |
+| **文档版本** | V1.2（**已归档**：方案 A 决策落地，状态与交付形态移交给 `visual-editor.md` §14） |
 | **编写日期** | 2026-08-22 |
+| **归档日期** | 2026-08-28 |
 
 ---
 
@@ -44,10 +54,39 @@
 
 ## 二、组件总览
 
+### 2.0 交付形态与落地状态（V1.1 补充，2026-08-28）
+
+> **重要更正**：本 PRD 初稿按独立包 `@caoguo/map-components` 描述组件库，但**该包在仓库中并不存在**（`packages/` 下无此目录，全仓 `package.json` 检索无此包名）。组件实际以两种形态存在于 `@caoguo/map-editor` 内部：
+
+| 形态 | 组件 | 位置 | 可独立复用 |
+|------|------|------|-----------|
+| 独立 `.vue` 组件 | `MapNode`（地图）、`DeviceList`、`DetailPanel`、`FilterTabs`、`StatusBar` | `packages/editor/src/editor/` | ❌ 包入口未导出，且依赖编辑器 store（`useEditor` / `useDeviceData`），脱离 `Editor` 无法使用 |
+| 按 `type` 内联渲染 | `data-card` / `stat-row` / `data-grid` / `progress-card` / `soil-profile` / `alert-list` / `trend-chart` / `bar-chart` / `pie-chart` / `gauge-chart` / `wind-rose` / 容器类 | `ComponentView.vue` 的 `v-if` 分支 | ❌ 无独立组件文件，仅编辑器与运行时内部渲染 |
+
+**组件落地状态对照**
+
+| PRD 组件 | 实现位置 | 状态 |
+|----------|----------|------|
+| `CaoguoMap`（独立地图容器） | — | ❌ 未落地（编辑器内为 `MapNode.vue`，非对外组件） |
+| `DeviceLayer`（独立标记图层组件） | — | ❌ 未落地（编辑器内 `device-layer` 是图层数据，由 `MapNode` 渲染） |
+| `MenuScreen`（菜单首页） | — | ❌ 未落地 |
+| `DeviceList` / `DetailPanel` / `FilterTabs` / `StatusBar` | `editor/*.vue` | 🟡 已实现但**未对外导出** |
+| `DataCard` / `DataGrid` / `ProgressCard` / `SoilProfile` / `AlertList` / `StatRow` | `ComponentView.vue` | 🟡 已实现但**无独立组件** |
+| `TrendChart` / `BarChart` / `GaugeChart` / `PieChart` / `WindRose` | `ComponentView.vue` | 🟡 已实现但**无独立组件** |
+| 主题 `dark.css` / `light.css` | `@caoguo/theme` → `styles/tokens.css` | ✅ 已落地（CSS 变量，随 `data-theme` 切换） |
+| 主题 `agriculture.css` | — | ❌ 未落地（农业场景改用编辑器模板 `templates/agriculture.json` + 行业主题色板） |
+
+**决策（2026-08-28）：采用方案 A。**
+
+- ✅ **方案 A（已采用）**：组件库**并入 `visual-editor.md` §14「组件库」**，明确"组件随 `@caoguo/map-editor` 交付"；`CaoguoMap` / `DeviceLayer` / `MenuScreen` 标注为**规划中**。本文档同步归档，落地状态与交付形态以 §14 为唯一事实源。
+- ⏸ **方案 B（暂不执行）**：新建 `packages/components` 并独立发包 `@caoguo/map-components`。留待出现"只用组件、不装编辑器"的真实需求时再启动，路径见 `visual-editor.md` §14.4。
+
+> **请勿对外承诺本 PRD 中的组件 API**。下文（§2.1 起）为**目标设计**，当前并未实现为可复用组件；实际可用能力见 `visual-editor.md` §14。
+
 ### 2.1 组件地图
 
 ```
-@caoguo/map-components
+@caoguo/map-editor（内部实现，未独立发包）
 │
 ├── 🗺️ 地图组件
 │   └── CaoguoMap              地图容器（一行创建地图）
@@ -85,26 +124,26 @@
 
 ### 2.2 按使用场景速查
 
-| 我想做什么 | 用哪个组件 |
-|-----------|-----------|
-| 在页面上放一个地图 | `CaoguoMap` |
-| 在地图上显示设备标记 | `DeviceLayer` |
-| 做一个游戏式菜单选择场景 | `MenuScreen` |
-| 做一个设备列表（左边栏） | `DeviceList` |
-| 做一个设备详情（右边栏） | `DetailPanel` |
-| 按设备类型筛选 | `FilterTabs` |
-| 底部显示在线数/更新时间 | `StatusBar` |
-| 显示一个数据指标（压力/流量/温度） | `DataCard` |
-| 显示多个数据指标的网格 | `DataGrid` |
-| 显示进度条（农机作业进度） | `ProgressCard` |
-| 显示土壤含水率剖面 | `SoilProfile` |
-| 显示告警列表 | `AlertList` |
-| 显示横排统计数字 | `StatRow` |
-| 画趋势折线图 | `TrendChart` |
-| 画柱状图 | `BarChart` |
-| 画仪表盘（电量/负载率） | `GaugeChart` |
-| 画饼图（设备状态占比） | `PieChart` |
-| 画风向玫瑰图（气象站） | `WindRose` |
+| 我想做什么 | 用哪个组件 | 状态 |
+|-----------|-----------|------|
+| 在页面上放一个地图 | `CaoguoMap` | ❌ 未落地（无独立包） |
+| 在地图上显示设备标记 | `DeviceLayer` | ❌ 未落地（无独立包） |
+| 做一个游戏式菜单选择场景 | `MenuScreen` | ❌ 未落地（无独立包） |
+| 做一个设备列表（左边栏） | `DeviceList` | 🟡 已实现（编辑器内部，未导出） |
+| 做一个设备详情（右边栏） | `DetailPanel` | 🟡 已实现（编辑器内部，未导出） |
+| 按设备类型筛选 | `FilterTabs` | 🟡 已实现（编辑器内部，未导出） |
+| 底部显示在线数/更新时间 | `StatusBar` | 🟡 已实现（编辑器内部，未导出） |
+| 显示一个数据指标（压力/流量/温度） | `DataCard` | 🟡 已实现（编辑器内部，未导出） |
+| 显示多个数据指标的网格 | `DataGrid` | 🟡 已实现（编辑器内部，未导出） |
+| 显示进度条（农机作业进度） | `ProgressCard` | 🟡 已实现（编辑器内部，未导出） |
+| 显示土壤含水率剖面 | `SoilProfile` | 🟡 已实现（编辑器内部，未导出） |
+| 显示告警列表 | `AlertList` | 🟡 已实现（编辑器内部，未导出） |
+| 显示横排统计数字 | `StatRow` | 🟡 已实现（编辑器内部，未导出） |
+| 画趋势折线图 | `TrendChart` | 🟡 已实现（编辑器内部，未导出） |
+| 画柱状图 | `BarChart` | 🟡 已实现（编辑器内部，未导出） |
+| 画仪表盘（电量/负载率） | `GaugeChart` | 🟡 已实现（编辑器内部，未导出） |
+| 画饼图（设备状态占比） | `PieChart` | 🟡 已实现（编辑器内部，未导出） |
+| 画风向玫瑰图（气象站） | `WindRose` | 🟡 已实现（编辑器内部，未导出） |
 
 ---
 

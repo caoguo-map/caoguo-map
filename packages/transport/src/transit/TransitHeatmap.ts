@@ -1,5 +1,5 @@
 /**
- * `<TransitHeatmap>` 公共交通客流 OD 可视化（PRD §2.4）
+ * `<TransitHeatmap>` 公共交通客流 OD 可视化（PRD phase-3 §3.4）
  *
  * 在 MapLibre 上渲染：
  *  - 站点热力点：半径/颜色按站点吞吐（board+alight）归一化

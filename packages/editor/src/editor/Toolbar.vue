@@ -135,7 +135,7 @@ function onAddMapLayer() { commit(); addLayer('map'); }
   <header class="cg-toolbar">
     <div class="cg-brand">🗺️ 草果地图编辑器</div>
 
-    <select class="cg-scene-sel" :value="state.activeSceneKey" @change="switchScene(($event.target as HTMLSelectElement).value)">
+    <select class="cg-scene-sel" :value="state.activeSceneKey" @change="switchScene(($event.target as HTMLSelectElement).value, false)">
       <option v-for="s in state.config.scenes" :key="s.key" :value="s.key">{{ s.title }}</option>
     </select>
     <button class="cg-btn" @click="onAddScene">+ 场景</button>

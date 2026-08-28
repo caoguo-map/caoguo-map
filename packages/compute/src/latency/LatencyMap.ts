@@ -18,6 +18,8 @@ import {
   LATENCY_LEVEL_FILL,
   type IdwAnchor,
 } from './idw';
+import type { LatencyTrendOptions, LatencyTrendSeries } from './trend';
+import { latencyTrendSeries } from './trend';
 
 /** 延迟等级（等值线/热力分区） */
 export type LatencyLevel = 'excellent' | 'good' | 'fair' | 'poor';
@@ -109,6 +111,18 @@ export class LatencyMap {
     const max = Math.max(...series);
     const avg = series.reduce((a, b) => a + b, 0) / series.length;
     return { count: series.length, min, max, avg };
+  }
+
+  /**
+   * LM-3 延迟趋势**序列**（逐点数据，供折线图直接消费）。
+   * `trend()` 只给统计摘要，本方法返回带时间戳的采样点（实现见 `trend.ts` 纯函数）。
+   */
+  trendSeries(
+    records: LatencyRecord[],
+    linkId: string,
+    opts?: LatencyTrendOptions
+  ): LatencyTrendSeries {
+    return latencyTrendSeries(records, linkId, opts);
   }
 
   /**

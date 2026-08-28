@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, nextTick, toRef, onMounted, onUnmounted } from 'vue';
+import { computed, ref, nextTick, toRef, onMounted, onUnmounted, watch } from 'vue';
 import type { ComponentNode } from '../types';
 import { useEditor } from '../store/useEditor';
 import { useHistory } from '../store/useHistory';
@@ -7,6 +7,7 @@ import { useDeviceStore } from '../store/useDeviceStore';
 import { useDataSources } from '../store/useDataSources';
 import { useDeviceData } from '../store/useDeviceData';
 import { deviceColor, DEVICE_STATUS_LABEL } from '../devices';
+import { readThresholdRule, evalThreshold, thresholdColor, ThresholdLevel } from '../thresholds';
 
 const props = defineProps<{ node: ComponentNode }>();
 const cfg = computed(() => props.node.config as Record<string, any>);
@@ -16,7 +17,7 @@ const { commit: commitHistory } = useHistory();
 // ── 图表类从数据源取数（数据契约归一化：DeviceItem[]）──
 const CHART_TYPES = ['trend-chart', 'bar-chart', 'pie-chart', 'gauge-chart', 'wind-rose'];
 const isChart = computed(() => CHART_TYPES.includes(props.node.type));
-const { devices } = useDeviceData(toRef(props, 'node') as any);
+const { devices, lastUpdate } = useDeviceData(toRef(props, 'node') as any);
 const { getDevices } = useDeviceStore();
 const dss = useDataSources();
 
@@ -27,7 +28,9 @@ const bindingDs = computed(() => {
 });
 const boundRows = computed<Record<string, any>[]>(() => {
   const b = bindingDs.value;
-  return b ? (getDevices(b.source) as Record<string, any>[]) : [];
+  const raw = b ? (getDevices(b.source) as Record<string, any>[]) : [];
+  const f = useDeviceStore().store.filterStatus;
+  return f === 'all' ? raw : raw.filter((r) => r.status === f);
 });
 const boundAgg = computed<{ series?: { name: string; value: number }[]; value?: number } | null>(() => {
   const b = bindingDs.value;
@@ -269,6 +272,36 @@ const cardValue = computed(() => {
   if (b && typeof b.value === 'number') return Math.round(b.value * 100) / 100;
   return cfg.value.value;
 });
+// 本地阈值规则着色：依据 thrField/thrWarn/thrCrit 对当前值判定告警级别
+const cardLevel = computed(() => {
+  const rule = readThresholdRule(cfg.value);
+  if (!rule.field) return 'none';
+  return evalThreshold(rule, typeof cardValue.value === 'number' ? cardValue.value : undefined);
+});
+const cardColor = computed(() => thresholdColor(cardLevel.value as ThresholdLevel) ?? '#e5e7eb');
+
+// ── 实时刷新视觉反馈：数据源刷新时显示「实时 · N秒前」并短暂脉动 ──
+const showLive = computed(() => !!bindingDs.value && !!lastUpdate.value);
+const liveNow = ref(Date.now());
+let liveTimer: ReturnType<typeof setInterval> | null = null;
+onMounted(() => {
+  liveTimer = setInterval(() => (liveNow.value = Date.now()), 1000);
+});
+onUnmounted(() => {
+  if (liveTimer) clearInterval(liveTimer);
+});
+const agoText = computed(() => {
+  if (!lastUpdate.value) return '';
+  const s = Math.round((liveNow.value - lastUpdate.value) / 1000);
+  if (s < 2) return '刚刚';
+  if (s < 60) return `${s}秒前`;
+  return `${Math.round(s / 60)}分前`;
+});
+const livePulse = ref(false);
+watch(lastUpdate, () => {
+  livePulse.value = true;
+  setTimeout(() => (livePulse.value = false), 800);
+});
 
 // 仪表盘当前值：binding 聚合值（avg/sum/max/min/count）优先，否则用静态配置
 const gaugeValue = computed(() => {
@@ -288,8 +321,10 @@ const gaugeAngle = computed(() => {
 const { store: deviceStore } = useDeviceStore();
 const alertItems = computed(() => {
   const layerId = cfg.value.deviceLayerId as string | undefined;
+  const f = deviceStore.filterStatus;
   const list = layerId ? deviceStore.devicesByLayer[layerId] ?? [] : [];
   return list
+    .filter((d) => (f === 'all' ? true : d.status === f))
     .filter((d) => d.status === 'warning' || d.status === 'fault' || d.status === 'offline')
     .slice(0, Number(cfg.value.maxItems) || 10)
     .map((d) => ({ name: d.name, status: d.status }));
@@ -298,6 +333,11 @@ const alertItems = computed(() => {
 
 <template>
   <div class="cg-view">
+    <!-- 实时刷新反馈：数据源刷新时显示「实时 · N秒前」并短暂脉动 -->
+    <div v-if="showLive" class="cg-live" :class="{ pulse: livePulse }">
+      <span class="cg-live-dot" /> 实时 · {{ agoText }}
+    </div>
+
     <!-- 文本（双击编辑） -->
     <div
       v-if="node.type === 'text'"
@@ -325,10 +365,14 @@ const alertItems = computed(() => {
       <span v-else class="cg-ph">图片</span>
     </div>
 
-    <!-- 数据指标卡 -->
-    <div v-else-if="node.type === 'data-card'" class="cg-data-card" :style="{ borderColor: cfg.color + '55' }">
-      <div class="cg-dc-label">{{ cfg.label }}</div>
-      <div class="cg-dc-value" :style="{ color: cfg.color }">{{ cardValue }}<span class="cg-dc-unit">{{ cfg.unit }}</span></div>
+    <!-- 数据指标卡（支持本地阈值规则着色） -->
+    <div v-else-if="node.type === 'data-card'" class="cg-data-card" :style="{ borderColor: (cardLevel !== 'none' ? cardColor : cfg.color) + '88' }">
+      <div class="cg-dc-label">
+        {{ cfg.label }}
+        <span v-if="cardLevel === 'warn'" class="cg-dc-badge warn">预警</span>
+        <span v-else-if="cardLevel === 'crit'" class="cg-dc-badge crit">告警</span>
+      </div>
+      <div class="cg-dc-value" :style="{ color: cardLevel !== 'none' ? cardColor : cfg.color }">{{ cardValue }}<span class="cg-dc-unit">{{ cfg.unit }}</span></div>
     </div>
 
     <!-- 统计行 -->
@@ -348,10 +392,13 @@ const alertItems = computed(() => {
       <span v-if="!(cfg.items && cfg.items.length)" class="cg-ph">数据网格</span>
     </div>
 
-    <!-- 进度条 -->
+    <!-- 进度条（支持本地阈值规则着色） -->
     <div v-else-if="node.type === 'progress-card'" class="cg-progress">
-      <div class="cg-pc-head"><span>{{ cfg.label }}</span><span>{{ Math.round((cfg.value / (cfg.max || 100)) * 100) }}%</span></div>
-      <div class="cg-pc-track"><div class="cg-pc-fill" :style="{ width: Math.min(100, (cfg.value / (cfg.max || 100)) * 100) + '%', background: cfg.color }"></div></div>
+      <div class="cg-pc-head">
+        <span>{{ cfg.label }}<span v-if="cardLevel === 'warn'" class="cg-dc-badge warn">预警</span><span v-else-if="cardLevel === 'crit'" class="cg-dc-badge crit">告警</span></span>
+        <span>{{ Math.round((cfg.value / (cfg.max || 100)) * 100) }}%</span>
+      </div>
+      <div class="cg-pc-track"><div class="cg-pc-fill" :style="{ width: Math.min(100, (cfg.value / (cfg.max || 100)) * 100) + '%', background: cardLevel !== 'none' ? cardColor : cfg.color }"></div></div>
     </div>
 
     <!-- 土壤剖面 -->
@@ -461,7 +508,18 @@ const alertItems = computed(() => {
 </template>
 
 <style scoped>
-.cg-view { width: 100%; height: 100%; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; }
+.cg-view { width: 100%; height: 100%; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; position: relative; }
+.cg-live {
+  position: absolute; top: 4px; right: 6px; z-index: 5;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; color: #4ade80; padding: 2px 7px;
+  background: rgba(74, 222, 128, 0.12); border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 999px; pointer-events: none; letter-spacing: 0.3px;
+  transition: box-shadow 0.3s, background 0.3s;
+}
+.cg-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+.cg-live.pulse { background: rgba(74, 222, 128, 0.28); box-shadow: 0 0 12px rgba(74, 222, 128, 0.6); animation: cgPulse 0.8s ease-out; }
+@keyframes cgPulse { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
 .cg-ph { margin: auto; font-size: 12px; color: var(--cg-ph); }
 .cg-text { width: 100%; line-height: 1.3; word-break: break-all; outline: none; cursor: text; }
 .cg-text.editing { cursor: text; box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.6); border-radius: 3px; }
@@ -473,6 +531,10 @@ const alertItems = computed(() => {
 .cg-dc-label { font-size: 12px; color: var(--cg-text-sub); }
 .cg-dc-value { font-size: 24px; font-weight: 700; margin-top: 4px; }
 .cg-dc-unit { font-size: 12px; margin-left: 3px; opacity: 0.8; }
+.cg-dc-badge { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+.cg-dc-badge.warn { color: #fbbf24; background: rgba(251, 191, 36, 0.16); border: 1px solid rgba(251, 191, 36, 0.4); }
+.cg-dc-badge.crit { color: #f87171; background: rgba(248, 113, 113, 0.16); border: 1px solid rgba(248, 113, 113, 0.4); }
+.cg-pc-head .cg-dc-badge { margin-left: 8px; }
 .cg-stat-row { margin: auto; display: flex; gap: 16px; width: 100%; justify-content: space-around; flex-wrap: wrap; }
 .cg-sr-item { display: flex; flex-direction: column; align-items: center; }
 .cg-sr-value { font-size: 20px; font-weight: 700; color: #4ade80; }

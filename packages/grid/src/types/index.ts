@@ -1,3 +1,5 @@
+import type { MaintenanceRecord } from '@caoguo/maplibre';
+
 /**
  * 草果地图电网组件包 - 类型定义
  *
@@ -141,6 +143,10 @@ export interface GridDeviceDetail extends GridDevice {
     statusLabel: string;
     levelLabel: string;
     capacityLabel?: string;
+    /** 设备图片（从 `properties.extra.images` 读取，无则空数组） */
+    images: string[];
+    /** 维护/检修记录（从 `properties.extra.maintenance` 读取，已过滤非法项） */
+    maintenance: MaintenanceRecord[];
   };
 }
 

@@ -76,6 +76,46 @@ export class LoadHeatmap {
       })),
     };
 
+    // LH-2 线路负荷着色：有 loadRate 的线路按负荷率着色（绿→黄→红）
+    const nodeById = new Map(this.dataset.devices.map((d) => [d.id, d] as const));
+    const lineFeatures = this.dataset.lines.flatMap((l) => {
+      const rate = l.properties?.loadRate;
+      if (rate === undefined) return [];
+      const from = nodeById.get(l.fromDevice);
+      const to = nodeById.get(l.toDevice);
+      if (!from || !to) return [];
+      return [
+        {
+          type: 'Feature' as const,
+          geometry: {
+            type: 'LineString' as const,
+            coordinates: [
+              [from.lng, from.lat],
+              [to.lng, to.lat],
+            ] as [number, number][],
+          },
+          properties: { lineId: l.id, loadRate: rate, color: loadRateColor(rate) },
+        },
+      ];
+    });
+    if (lineFeatures.length > 0) {
+      upsertSource(mlMap, `${prefix}-lines-src`, {
+        type: 'FeatureCollection',
+        features: lineFeatures,
+      } as never);
+      mlMap.addLayer({
+        id: `${prefix}-lines`,
+        type: 'line',
+        source: `${prefix}-lines-src`,
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': ['interpolate', ['linear'], ['get', 'loadRate'], 0.3, 2, 0.8, 5],
+          'line-opacity': 0.85,
+        },
+      });
+      this.layerIds.push(`${prefix}-lines`);
+    }
+
     upsertSource(mlMap, `${prefix}-src`, geoJSON);
     mlMap.addLayer({
       id: `${prefix}-circle`,

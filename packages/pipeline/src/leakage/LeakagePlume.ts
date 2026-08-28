@@ -9,7 +9,8 @@
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { upsertSource } from '@caoguo/maplibre';
 import type { GasLeakParams, GasLeakResult } from './gaussianPlume';
-import { gaussianPlume } from './gaussianPlume';
+import { gaussianPlume, plumeAtTime } from './gaussianPlume';
+import { overlayUsers } from './overlay';
 import type { FloodParams, FloodResult } from './floodFill';
 import { simulateFlood } from './floodFill';
 import type { DemGrid } from './floodFill';
@@ -44,6 +45,7 @@ export class LeakagePlume {
   private layerIds: string[] = [];
   private listeners = new Set<Listener>();
   private lastResult: GasLeakResult | FloodResult | null = null;
+  private gasRafId: number | null = null;
 
   constructor(options: LeakagePlumeOptions) {
     this.map = options.map;
@@ -62,6 +64,89 @@ export class LeakagePlume {
     this.renderGas(result);
     for (const l of this.listeners) l(result);
     return result;
+  }
+
+  /**
+   * L-2 泄漏扩散动画：用 rAF 逐帧推进烟羽前缘（前缘距离 = 风速 × 已泄漏时长）。
+   *
+   * 数据层为纯函数 `plumeAtTime`，动画层只负责按时间轴取快照并重绘，
+   * 因此**在无 rAF 的环境（Node / SSR / 测试）下自动退化为静态快照**，不报错。
+   *
+   * @param source 泄漏点
+   * @param params 扩散参数（thresholds 沿用构造参数）
+   * @param opts.durationSec 动画对应的「泄漏时长」（默认 600 秒 = 10 分钟）
+   * @param opts.durationMs  动画实际播放时长（默认 5000ms）
+   * @param opts.loop        到达终态后是否循环（默认 false，停在终态）
+   * @param opts.raf         注入 rAF（测试用；默认全局 requestAnimationFrame）
+   * @returns t=0 时刻的快照（动画为异步推进）
+   */
+  playGasAnimation(
+    source: { lng: number; lat: number },
+    params: Omit<GasLeakParams, 'thresholds'>,
+    opts: {
+      durationSec?: number;
+      durationMs?: number;
+      loop?: boolean;
+      raf?: (cb: (t: number) => void) => number;
+    } = {}
+  ): GasLeakResult {
+    const full: GasLeakParams = { ...params, thresholds: this.thresholds };
+    const simulateSec = opts.durationSec ?? 600;
+    const playMs = opts.durationMs ?? 5000;
+
+    const first = plumeAtTime(source, full, 0);
+    this.lastResult = first;
+    this.renderGas(first);
+
+    const raf = opts.raf ?? globalThis.requestAnimationFrame?.bind(globalThis);
+    // 浏览器环境无 rAF（如测试）时不启动动画，保留起始快照
+    if (!raf) return first;
+
+    this.stopGasAnimation();
+    let start: number | null = null;
+    const tick = (now: number) => {
+      if (start === null) start = now;
+      const elapsed = now - start;
+      const phase = (elapsed % (opts.loop ? playMs * 2 : playMs)) / playMs;
+      // 0→1 推进；loop 时 1→2 段回退（烟羽收缩后重来）
+      const p = opts.loop ? (phase < 1 ? phase : 2 - phase) : Math.min(phase, 1);
+      const snapshot = plumeAtTime(source, full, p * simulateSec);
+      this.lastResult = snapshot;
+      this.renderGas(snapshot);
+      for (const l of this.listeners) l(snapshot);
+
+      if (!opts.loop && phase >= 1) {
+        this.gasRafId = null;
+        return;
+      }
+      this.gasRafId = raf(tick);
+    };
+    this.gasRafId = raf(tick);
+    return first;
+  }
+
+  /**
+   * L-4 叠加分析：把危险区域（最后一次推演的**最低阈值等值线**，覆盖范围最大）
+   * 与用户/建筑点要素做空间叠加，输出影响统计。
+   *
+   * @param users 用户/建筑点要素（来自 `dataset.users` 或业务系统注入）
+   * @returns 无推演结果或等值线为空时返回 undefined
+   */
+  overlayUsers(users: import('../types').PipelineUser[] | undefined) {
+    const result = this.lastResult;
+    if (!result || !('contours' in result) || result.contours.length === 0) return undefined;
+    const widest = result.contours.reduce((a, b) =>
+      b.threshold < a.threshold ? b : a
+    );
+    return overlayUsers(widest.polygon, users);
+  }
+
+  /** 停止扩散动画（保留当前帧，不清空图层） */  /** 停止扩散动画（保留当前帧，不清空图层） */
+  stopGasAnimation(): void {
+    if (this.gasRafId !== null) {
+      globalThis.cancelAnimationFrame?.(this.gasRafId);
+      this.gasRafId = null;
+    }
   }
 
   /** 供水爆管淹没模拟 */
@@ -83,6 +168,7 @@ export class LeakagePlume {
 
   /** 销毁组件 */
   destroy(): void {
+    this.stopGasAnimation();
     this.clear();
     this.listeners.clear();
     this.lastResult = null;

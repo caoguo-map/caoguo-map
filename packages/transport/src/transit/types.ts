@@ -1,5 +1,5 @@
 /**
- * 公共交通（公交/地铁）OD 数据模型（PRD §2.4 `<TransitHeatmap>`）
+ * 公共交通（公交/地铁）OD 数据模型（PRD phase-3 §3.4 `<TransitHeatmap>`）
  */
 
 /** 站点（公交/地铁站点，含经纬度） */

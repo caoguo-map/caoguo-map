@@ -1,5 +1,5 @@
 /**
- * 公共交通 OD 纯函数（PRD §2.4 `<TransitHeatmap>`）
+ * 公共交通 OD 纯函数（PRD phase-3 §3.4 `<TransitHeatmap>`）
  *
  *  - aggregateOd：把原始 OD 记录聚合为「站点吞吐」与「OD 连线权重」
  *  - predictOd：客流预测（简单增长率外推 + 置信度）

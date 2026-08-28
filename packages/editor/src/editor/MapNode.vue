@@ -12,10 +12,11 @@ import { useDeviceData } from '../store/useDeviceData';
 import { useDeviceStore } from '../store/useDeviceStore';
 import { ICON_PATHS, type IconName } from '../icons';
 import { deviceIcon, deviceColor } from '../devices';
+import { readThresholdRule, resolveDeviceColor } from '../thresholds';
 import type { ComponentNode, MapLayer } from '../types';
 
 const props = defineProps<{ node: ComponentNode }>();
-const { activeScene, selectedId, state } = useEditor();
+const { activeScene, selectedId, state, switchScene } = useEditor();
 const { setSelectedDevice, store: deviceStore } = useDeviceStore();
 
 // 同场景内的设备图层（取第一个）
@@ -41,10 +42,9 @@ function svgMarkup(iconName: string, color: string, size: number): string {
   );
 }
 
-function buildMarkerElement(dev: { type: string; status: string; name?: string }): HTMLDivElement {
+function buildMarkerElement(dev: { type: string; status: string; name?: string }, color: string, pulse: boolean): HTMLDivElement {
   // 消费设备图层配置：markerSize（此前硬编码 36）/ pulseOnWarning / schemas 类型定制图标与标签
   const size = Number(layerCfg.value.markerSize) || 36;
-  const color = deviceColor(dev.status);
   const el = document.createElement('div');
   el.className = 'cg-dev-marker';
   el.style.width = size + 'px';
@@ -68,7 +68,7 @@ function buildMarkerElement(dev: { type: string; status: string; name?: string }
   } else {
     el.innerHTML = svgMarkup(deviceIcon(dev.type), color, size - 12);
   }
-  if (layerCfg.value.pulseOnWarning !== false && (dev.status === 'warning' || dev.status === 'fault')) {
+  if (layerCfg.value.pulseOnWarning !== false && pulse) {
     el.style.animation = 'cg-marker-pulse 1.4s infinite';
   }
   el.title = schema?.label ?? dev.name ?? '';
@@ -85,19 +85,50 @@ function renderMarkers() {
   if (!inst) return;
   clearMarkers();
   const filter = deviceStore.filterStatus;
+  const thrRule = readThresholdRule(layerCfg.value);
   const list = filter === 'all' ? devices.value : devices.value.filter((d) => d.status === filter);
   for (const d of list) {
     if (typeof d.lng !== 'number' || typeof d.lat !== 'number') continue;
-    const el = buildMarkerElement(d);
+    // 本地阈值规则着色优先于后端 status 着色
+    const color = resolveDeviceColor(thrRule, d, deviceColor(d.status));
+    const pulse =
+      d.status === 'warning' ||
+      d.status === 'fault' ||
+      color === '#f87171' ||
+      color === '#fbbf24';
+    const el = buildMarkerElement(d, color, pulse);
     el.addEventListener('click', (e) => {
       e.stopPropagation();
-      setSelectedDevice(d.id);
-      if (deviceLayer.value) selectedId.value = deviceLayer.value.id;
+      // 下钻：若设备图层配置了 drillDownSceneKey，则跳转到子场景并聚焦该设备；否则走原详情面板联动
+      const drillKey = (deviceLayer.value?.config as Record<string, any> | undefined)?.drillDownSceneKey;
+      if (drillKey && state.config.scenes.some((s) => s.key === drillKey)) {
+        setSelectedDevice(d.id);
+        switchScene(drillKey);
+      } else {
+        setSelectedDevice(d.id);
+        if (deviceLayer.value) selectedId.value = deviceLayer.value.id;
+      }
     });
     const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
       .setLngLat([d.lng, d.lat])
       .addTo(inst);
     markersRef.value.push(marker);
+  }
+}
+
+/** 切换/选中设备后，将地图视窗平移聚焦到该设备坐标（下钻进入子场景时使用） */
+function flyToDevice(id: string | null) {
+  const wrapper = wrapperRef.value as any;
+  if (!wrapper || !id) return;
+  const ml = wrapper.getMap?.();
+  if (!ml) return;
+  const d = devices.value.find((x) => x.id === id);
+  if (d && typeof d.lng === 'number' && typeof d.lat === 'number') {
+    ml.flyTo?.({
+      center: [d.lng, d.lat],
+      zoom: Math.max((ml.getZoom?.() as number) ?? 12, 14),
+      duration: 800,
+    });
   }
 }
 
@@ -142,6 +173,8 @@ function mountMap() {
   map.on('load', () => {
     applyInteractionMode();
     renderMarkers();
+    // 若进入该场景时已选中设备（如下钻进入），聚焦到该设备
+    flyToDevice(deviceStore.selectedDeviceId);
   });
 }
 
@@ -165,6 +198,14 @@ function applyInteractionMode() {
 }
 
 onMounted(mountMap);
+
+// 选中设备变化 → 平移聚焦（支持告警面板跨场景定位）
+watch(
+  () => deviceStore.selectedDeviceId,
+  (id) => {
+    if (state.preview) flyToDevice(id);
+  },
+);
 
 onBeforeUnmount(() => {
   clearMarkers();
@@ -202,6 +243,15 @@ watch(
 // 筛选状态变化 → 重绘 marker（按状态显隐）
 watch(
   () => deviceStore.filterStatus,
+  () => {
+    const inst = wrapperRef.value?.getMap();
+    if (inst) renderMarkers();
+  },
+);
+
+// 本地阈值规则变化 → 重新着色 marker
+watch(
+  () => [layerCfg.value.thrField, layerCfg.value.thrWarn, layerCfg.value.thrCrit] as const,
   () => {
     const inst = wrapperRef.value?.getMap();
     if (inst) renderMarkers();

@@ -103,12 +103,88 @@ export class BurstSimulator {
       maxAlternatives: overrideOpts?.maxAlternatives ?? 2,
     });
     this.lastResult = result;
+    this.pushHistory(pipeId, result);
     this.render(result);
     for (const l of this.listeners) l(result);
     return result;
   }
 
   /** 清空所有受影响区域图层 */
+  // ============================================================
+  // B-7 推演历史（内存态；持久化由集成方实现，见 historyEntries()）
+  // ============================================================
+
+  /** 单条历史 */
+  private historyStack: Array<{ pipeId: string; at: number; result: BurstSimulateResult }> = [];
+  /** 历史栈上限（默认 20，超出淘汰最旧） */
+  private historyLimit = 20;
+
+  private pushHistory(pipeId: string, result: BurstSimulateResult): void {
+    this.historyStack.push({ pipeId, at: Date.now(), result });
+    if (this.historyStack.length > this.historyLimit) {
+      this.historyStack.shift();
+    }
+  }
+
+  /** B-7 历史条目列表（旧 → 新），供上层渲染回溯列表 */
+  historyEntries(): Array<{ index: number; pipeId: string; at: number; result: BurstSimulateResult }> {
+    return this.historyStack.map((h, index) => ({ index, pipeId: h.pipeId, at: h.at, result: h.result }));
+  }
+
+  /** B-7 回放第 index 条历史（重渲染到地图并返回结果） */
+  restoreHistory(index: number): BurstSimulateResult | undefined {
+    const entry = this.historyStack[index];
+    if (!entry) return undefined;
+    this.lastResult = entry.result;
+    this.render(entry.result);
+    for (const l of this.listeners) l(entry.result);
+    return entry.result;
+  }
+
+  /** 设置历史栈上限 */
+  setHistoryLimit(limit: number): void {
+    this.historyLimit = Math.max(1, limit);
+    while (this.historyStack.length > this.historyLimit) this.historyStack.shift();
+  }
+
+  /**
+   * B-7 导出历史为 JSON 字符串（持久化介质无关：文件/IndexedDB/后端由集成方落盘）。
+   * 结果含完整推演数据，可直接 `importHistory()` 还原。
+   */
+  exportHistory(): string {
+    return JSON.stringify(
+      this.historyStack.map((h) => ({ pipeId: h.pipeId, at: h.at, result: h.result }))
+    );
+  }
+
+  /**
+   * B-7 从 JSON 还原历史栈（替换现有历史）。
+   * @returns 还原的条目数；格式非法时抛错
+   */
+  importHistory(json: string): number {
+    const parsed: unknown = JSON.parse(json);
+    if (!Array.isArray(parsed)) throw new Error('推演历史格式非法：期望数组');
+    const restored = parsed.flatMap((e) => {
+      if (!e || typeof e !== 'object') return [];
+      const rec = e as Record<string, unknown>;
+      if (typeof rec.pipeId !== 'string' || !rec.result) return [];
+      return [
+        {
+          pipeId: rec.pipeId,
+          at: typeof rec.at === 'number' ? rec.at : 0,
+          result: rec.result as BurstSimulateResult,
+        },
+      ];
+    });
+    this.historyStack = restored;
+    return restored.length;
+  }
+
+  /** 清空历史（不影响当前地图图层） */
+  clearHistory(): void {
+    this.historyStack = [];
+  }
+
   clear(): void {
     for (const id of this.layerIds) {
       this.map.removeLayer(id);
@@ -121,6 +197,7 @@ export class BurstSimulator {
     this.clear();
     this.listeners.clear();
     this.lastResult = null;
+    this.historyStack = [];
   }
 
   /** 订阅推演结果 */

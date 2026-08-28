@@ -15,7 +15,7 @@ export const COMPONENT_REGISTRY: ComponentDef[] = [
   { type: 'status-bar', label: '状态栏', icon: 'status-bar', category: 'basic', defaultSize: { w: 1920, h: 52 }, defaultConfig: { title: '智慧草果数字大屏', showClock: true, showBack: true, bgColor: 'rgba(10,15,28,0.9)', titleColor: '#ffffff' } },
 
   // ── 设备组件 ──
-  { type: 'device-layer', label: '设备图层', icon: 'device-layer', category: 'device', defaultSize: { w: 1920, h: 1080 }, isLayer: true, defaultConfig: { markerSize: 36, pulseOnWarning: true, clickToDetail: true, defaultFocus: 'none', schemas: {} } },
+  { type: 'device-layer', label: '设备图层', icon: 'device-layer', category: 'device', defaultSize: { w: 1920, h: 1080 }, isLayer: true, defaultConfig: { markerSize: 36, pulseOnWarning: true, clickToDetail: true, defaultFocus: 'none', drillDownSceneKey: '', schemas: {} } },
   { type: 'device-list', label: '设备列表', icon: 'device-list', category: 'device', defaultSize: { w: 280, h: 1028 }, defaultConfig: { deviceLayerId: '', showFilter: true, showStatusDot: true } },
   { type: 'detail-panel', label: '设备详情', icon: 'detail-panel', category: 'device', defaultSize: { w: 380, h: 1028 }, defaultConfig: { deviceLayerId: '', showTrendChart: true, trendColor: '#4ade80' } },
   { type: 'filter-tabs', label: '筛选标签', icon: 'filter-tabs', category: 'device', defaultSize: { w: 400, h: 48 }, defaultConfig: { deviceLayerId: '', options: [] } },

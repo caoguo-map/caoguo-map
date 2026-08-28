@@ -3,7 +3,7 @@
 | 项目 | 说明 |
 |------|------|
 | **产品名称** | 草果地图 · 基础引擎与共性服务层 |
-| **文档版本** | V1.1（在 V1.0 基础上补全标准 PRD 章节并对齐 Phase-0 真实进度） |
+| **文档版本** | V1.2（V1.1 基础上：修正 3D 地形状态矛盾、补齐控件/数据源工具/全局配置功能点、补全 theme 公开 API 与行业主题命名口径） |
 | **编写日期** | 2026-08-21 |
 | **阶段** | Phase 0（M1-M3） |
 | **目标读者** | 技术负责人、前端工程师、后端工程师 |
@@ -27,10 +27,10 @@
 
 | 维度 | Phase-0 现状 | 缺口 |
 |------|-------------|------|
-| 引擎 | `@caoguo/maplibre` 已实现 8 大模块（CRS/天地图/离线瓦片/SW 缓存/控件/辉光/LOD/主题），测试 75 passed | 尚未发布到 npm（本任务处理中）；3D 地形、通用 Shader 框架未实现 |
+| 引擎 | `@caoguo/maplibre` 已实现 11 大模块（CRS/天地图/离线瓦片/SW 缓存/控件/辉光/LOD/主题/3D 地形/数据源工具/全局配置），已发布 npm `@caoguo/maplibre@0.0.8` | 通用 Shader 框架待扩展（当前仅「管线辉光」一个垂直场景，见 F-1.3） |
 | 展示 | 落地页（V2.0）、文档站（29 页）、演示中心（D5 串联闭环）均已落地 | 无 |
 | AI 能力 | demo 有 Copilot UI；`packages/ai` 已实现 MapCopilot / NLPG / GeoAI 三模块代码 | 接口联调待 swagger 就绪（D5/D6/D7 代码层已落地，见下方状态） |
-| 组件包 | `@caoguo/theme`（主题）、`@caoguo/maplibre-pipeline`（管网，Phase 1 交付物）已就位 | pipeline 包尚为半成品（burst 已实现，health/leakage/topology/nlpg 占位），build 待修复 |
+| 组件包 | `@caoguo/theme`（主题）、`@caoguo/maplibre-pipeline`（管网：爆管/泄漏/健康/拓扑/NLPG 全模块）已就位并发布 npm | 各业务包的 UI 面板类功能点普遍为「数据层已就绪、UI 由集成方实现」（详见 phase-1/2/3 状态标注） |
 
 ### 1.3 本 PRD 解决的问题
 
@@ -86,7 +86,7 @@
 
 | # | 交付物 | 类型 | 验收标准 | 状态 |
 |---|--------|------|---------|------|
-| D1 | `@caoguo/maplibre` npm 包 | 代码包 | 可通过 `npm install` 安装，API 文档完整 | 🟡 已实现、待发布 npm |
+| D1 | `@caoguo/maplibre` npm 包 | 代码包 | 可通过 `npm install` 安装，API 文档完整 | ✅ 已落地（已发布 `@caoguo/maplibre@0.0.8`，2026-08-28 核对） |
 | D2 | 草果地图暗色/亮色主题样式 | JSON 文件 | 符合 MapLibre Style Spec，视觉效果达商业地图 80% | ✅ 已落地（caoguo-dark/light） |
 | D3 | 落地页 `map.hb.cn` | Web 站点 | 响应式设计，30 秒内传达产品价值 | ✅ 已落地（V2.0 含合作伙伴区） |
 | D4 | 技术文档站 `map.hb.cn/docs` | Web 站点 | 快速开始 + API 参考 + 部署指南 | ✅ 已落地（29 页） |
@@ -118,6 +118,9 @@
 | F-1.5 | 3D 地形渲染 | DEM 数据叠加，实现地形起伏 | P2 | ✅ 已落地（terrain.ts：applyTerrain/removeTerrain + Map.enableTerrain/disableTerrain，默认 Terrarium 公共 DEM 源） |
 | F-1.6 | 瓦片缓存策略 | Service Worker 缓存已加载瓦片 | P1 | ✅ 已落地（`src/offline/serviceWorker` + 空气隔离） |
 | F-1.7 | 自适应 LOD | 根据设备性能和缩放级别动态调整要素渲染精度 | P2 | ✅ 已落地（`src/lod`） |
+| F-1.8 | 内置控件体系 | 比例尺+实时坐标（`ScaleControl`）、主题切换（`ThemeSwitcher`）、图例（`LegendControl`）、导出（`ExportControl`） | P1 | ✅ 已落地（`src/controls`） |
+| F-1.9 | 数据源工具 | `upsertSource` 幂等写入，重复渲染不抛 `Source already exists` | P1 | ✅ 已落地（`src/sourceUtils`） |
+| F-1.10 | 全局配置 | `setGlobalConfig` / `getGlobalConfig` 统一注入默认 token、瓦片源等 | P2 | ✅ 已落地（`src/index`） |
 
 #### 5.1.3 技术方案
 
@@ -155,27 +158,51 @@
 
 #### 5.2.1 需求描述
 
-提供两套预设主题 + 六张网行业主题，满足不同场景的视觉需求。
+提供两套预设主题 + 六张网行业主题，满足不同场景的视觉需求。行业主题同时输出**权威色板**（`INDUSTRY_PALETTES`），供大屏换肤、图例与 demo 统一取色，避免各业务包各自硬编码。
 
 #### 5.2.2 样式清单
 
-| 样式 | 用途 | 色调 | 状态 |
-|------|------|------|------|
-| `caoguo-dark` | 通用暗色主题（大屏/指挥中心） | 深蓝底 + 亮色要素 | ✅ 已落地 |
-| `caoguo-light` | 通用亮色主题（日常使用） | 白底 + 深色要素 | ✅ 已落地 |
-| `caoguo-pipeline` | 管网专用（Phase 1 出） | 暗色底 + 管线着色 | 🟡 已实现（pipeline 包 style），Phase 1 交付 |
-| `caoguo-grid` | 电网专用（Phase 2 出） | — | 🟡 Phase 2 |
-| `caoguo-water` | 水网专用（Phase 2 出） | — | 🟡 Phase 2 |
-| `caoguo-transport` | 交通专用（Phase 3 出） | — | 🟡 Phase 3 |
-| `caoguo-compute` | 算力网专用（Phase 3 出） | — | 🟡 Phase 3 |
-| `caoguo-telecom` | 通信专用（Phase 3 出） | — | 🟡 Phase 3 |
+| PRD 命名 | 实现主题 ID | 用途 | 色调 | 状态 |
+|----------|-------------|------|------|------|
+| `caoguo-dark` | `caoguo-dark` | 通用暗色主题（大屏/指挥中心） | 深蓝底 + 亮色要素 | ✅ 已落地 |
+| `caoguo-light` | `caoguo-light` | 通用亮色主题（日常使用） | 白底 + 深色要素 | ✅ 已落地 |
+| `caoguo-pipeline` | `caoguo-ind-pipeline` | 管网专用 | 暗色底 + 管线着色（主色 `#0891b2`） | ✅ 已落地 |
+| `caoguo-grid` | `caoguo-ind-grid` | 电网专用 | 暗色底 + 电压等级色（主色 `#f59e0b`） | ✅ 已落地 |
+| `caoguo-water` | `caoguo-ind-water` | 水网专用 | 暗色底 + 水系色（主色 `#3b82f6`） | ✅ 已落地 |
+| `caoguo-transport` | `caoguo-ind-transport` | 交通专用 | 暗色底 + 道路等级色（主色 `#f97316`） | ✅ 已落地 |
+| `caoguo-compute` | `caoguo-ind-compute` | 算力网专用 | 暗色底 + 节点类型色（主色 `#8b5cf6`） | ✅ 已落地 |
+| `caoguo-telecom` | `caoguo-ind-telecom` | 通信专用 | 暗色底 + 运营商色（主色 `#10b981`） | ✅ 已落地 |
 
-#### 5.2.3 验收标准
+> **命名口径（V1.2 修正）**：六张网行业主题在 PRD 早期草稿中写作 `caoguo-grid` / `caoguo-water` …，实现统一为 **`caoguo-ind-<key>`**（`INDUSTRY_META[key].themeId`）。调用前需先执行 `registerIndustryThemes()` 注册（幂等），否则 `hasTheme()` 返回 false、取不到主题。
+
+#### 5.2.3 公开 API（`@caoguo/theme`）
+
+| 导出 | 类型 | 说明 |
+|------|------|------|
+| `darkStyle` / `lightStyle` | `StyleSpecification` | 预构造的暗色/亮色主题 |
+| `buildStyle(opts?)` | 函数 | 自定义构造（支持对象式 `buildStyle({theme, sourceUrl, glyphs, notoFonts})` 与旧式位置参数） |
+| `buildIndustryStyle(key, mode?)` | 函数 | 直接派生某张网行业底图（基于 dark 克隆并注入行业主色） |
+| `registerIndustryThemes()` | 函数 | 一键注入六张网行业主题变体（幂等） |
+| `registerTheme(name, style)` | 函数 | 注册自定义主题 |
+| `getThemeList()` / `getRegisteredThemes()` / `hasTheme(name)` | 函数 | 主题注册表查询 |
+| `injectTheme(name, onChange?)` | 函数 | 给 `<html>` 设置 `data-theme`，切换时派发 `cg:themechange` 联动地图 `setStyle` |
+| `useTheme(opts?)` | composable | 响应式 `theme` + `setTheme`/`toggle`，自动监听 `cg:themechange` |
+| `createThemeStore()` / `globalThemeStore` / `setTheme` | 函数 | 轻量主题 store（非 Vue 场景） |
+| `checkZoomCoverage(style)` | 函数 | 缩放层级静态校验，返回 `ZoomCoverageReport`（配合 PRD「3-18 无断裂」验收） |
+| `INDUSTRY_META` / `INDUSTRY_PALETTES` | 常量 | 六张网元信息（themeId/中文名/主色）与权威色板（语义色/分级色/状态色） |
+| `themeNames` | 常量 | 内置基础主题名 `['caoguo-dark','caoguo-light']`（动态列表用 `getThemeList()`） |
+
+CSS 变量：`import '@caoguo/theme/dist/tokens.css'` 提供 `--cg-bg` / `--cg-fg` / `--cg-accent` 等，随 `data-theme` 切换。
+
+#### 5.2.4 验收标准
 
 - [x] 暗色/亮色主题覆盖完整的地图要素（水系、道路、建筑、行政边界、注记）—— 矢量主题 dark/light JSON 已实现
-- [ ] 缩放级别 3-18 层级样式无断裂 —— 底层免费 demo 瓦片仅覆盖有限层级，未全层级验证
 - [x] 中文字体渲染清晰（使用思源黑体 Noto Sans SC）—— `buildStyle` 支持 `notoFonts` 覆盖
 - [x] 样式文件符合 MapLibre Style Spec v8 —— `style.test.ts` 结构合法性覆盖
+- [x] 六张网行业主题与权威色板已落地 —— `registerIndustryThemes()` + `INDUSTRY_PALETTES`
+- [x] 主题切换无闪烁且可联动地图 —— `injectTheme` 派发 `cg:themechange`
+- [x] 缩放层级 3-18 静态校验通过 —— `checkZoomCoverage()`，包内测试对每套主题逐层校验（background/water 全程可见、z≥8 有主干道或注记、z≥13 出现建筑层）
+- [ ] 真机渲染「3-18 无断裂」—— 静态校验不等价于真机验证，底层免费 demo 瓦片仅覆盖有限层级，**需以实际瓦片源在浏览器验收**
 
 ---
 
@@ -245,7 +272,7 @@ API 参考
 ├── Source 数据源                                  ✅
 ├── Control 控件                                  ✅（scale 已落地）
 ├── Event 事件                                    ✅
-└── NLPG 查询                                     🟡（能力未实现）
+└── NLPG 查询                                     ✅（`@caoguo/maplibre-ai/nlpg`，含 API 文档页）
 
 行业方案（六张网）                                  🟡（Phase 1-3 随能力开发）
 部署运维

@@ -75,6 +75,48 @@ export function predictLoadSeries(
   );
 }
 
+/** 负荷预测序列的单个点（带时间戳，供图表层直接消费） */
+export interface LoadForecastPoint {
+  /** 时间戳（ms） */
+  t: number;
+  /** 预测负荷（MW） */
+  load: number;
+  /** 标记：恒为 true，便于与实测序列区分渲染（如实线/虚线） */
+  predicted: true;
+}
+
+/**
+ * 未来 N 小时负荷预测序列（**带时间戳**，PRD §3.3.2 LH-2 的图表数据层）
+ *
+ * `predictLoadSeries` 只返回裸数值数组，无法直接画时间序列图；
+ * 本函数补齐时间轴（默认从当前时间起，逐点 +1 小时）。
+ *
+ * @param input.startTime 起点时间戳（默认 `Date.now()`）
+ * @param input.stepMs    步长（默认 3600_000 = 1 小时）
+ * @param input.eventFactor 特殊事件修正因子
+ */
+export function forecastLoadSeries(input: {
+  base: number;
+  temps: number[];
+  isHoliday?: boolean;
+  eventFactor?: number;
+  startTime?: number;
+  stepMs?: number;
+}): LoadForecastPoint[] {
+  const stepMs = input.stepMs ?? 3_600_000;
+  const start = input.startTime ?? Date.now();
+  return input.temps.map((t, i) => ({
+    t: start + (i + 1) * stepMs,
+    load: predictLoad({
+      base: input.base,
+      temperature: t,
+      ...(input.isHoliday !== undefined ? { isHoliday: input.isHoliday } : {}),
+      ...(input.eventFactor !== undefined ? { eventFactor: input.eventFactor } : {}),
+    }),
+    predicted: true as const,
+  }));
+}
+
 /** 台区负荷聚合（按区域汇总平均负荷率） */
 export function aggregateLoadByRegion(
   dataset: GridTopologyDataset
@@ -91,4 +133,39 @@ export function aggregateLoadByRegion(
     map.set(region, cur);
   }
   return map;
+}
+
+
+/**
+ * LH-4 图表数据转换：预测序列（可混合实测）→ ECharts / Chart.js 直接可用的结构。
+ *
+ * @param forecast `forecastLoadSeries()` 的结果
+ * @param actual 可选的实测序列（与预测同时间轴对齐绘制）
+ */
+export function loadForecastToChartDataset(
+  forecast: LoadForecastPoint[],
+  actual?: Array<{ t: number; load: number }>
+): {
+  xAxis: string[];
+  series: Array<{ name: string; data: Array<number | null> }>;
+} {
+  const fmt = (t: number) => {
+    const d = new Date(t);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  };
+
+  // 时间轴 = 预测 ∪ 实测，升序去重
+  const tSet = new Set<number>([...forecast.map((p) => p.t), ...(actual ?? []).map((a) => a.t)]);
+  const axis = [...tSet].sort((a, b) => a - b);
+  const idx = new Map(axis.map((t, i) => [t, i] as const));
+
+  const forecastData: Array<number | null> = axis.map(() => null);
+  for (const p of forecast) forecastData[idx.get(p.t)!] = Math.round(p.load * 100) / 100;
+
+  const actualData: Array<number | null> = axis.map(() => null);
+  for (const a of actual ?? []) actualData[idx.get(a.t)!] = Math.round(a.load * 100) / 100;
+
+  const series = [{ name: '预测负荷 (MW)', data: forecastData }];
+  if (actual && actual.length > 0) series.push({ name: '实测负荷 (MW)', data: actualData });
+  return { xAxis: axis.map(fmt), series };
 }

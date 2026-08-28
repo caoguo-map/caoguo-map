@@ -9,6 +9,7 @@
 import type {
   RoadClass,
   RoadStatus,
+  RoadNodeKind,
   IncidentType,
   IncidentSeverity,
   CongestionLevel,
@@ -112,6 +113,33 @@ export function classifySpeed(speed: number): CongestionLevel {
 }
 
 /** 道路等级 → 默认线宽（高速粗，城市细） */
+/**
+ * 设施标注配色（PRD phase-3 §3.1.3 T-3）
+ * 收费站/服务区/枢纽/停车场用不同颜色区分，便于地图上快速识别。
+ */
+export const FACILITY_COLORS: Record<RoadNodeKind, string> = {
+  toll: '#f59e0b',
+  rest_area: '#34d399',
+  service_area: '#22d3ee',
+  parking: '#a78bfa',
+  intersection: '#94a3b8',
+  camera: '#38bdf8',
+  rescue: '#f97316',
+  hospital: '#ef4444',
+};
+
+/** 设施类型中文名 */
+export const FACILITY_LABELS: Record<RoadNodeKind, string> = {
+  toll: '收费站',
+  rest_area: '休息区',
+  service_area: '服务区',
+  parking: '停车场',
+  intersection: '路口',
+  camera: '摄像头',
+  rescue: '救援站',
+  hospital: '医院',
+};
+
 export const ROAD_CLASS_WIDTHS: Record<RoadClass, number> = {
   highway: 5,
   national: 4,

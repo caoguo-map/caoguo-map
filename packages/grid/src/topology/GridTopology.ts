@@ -22,6 +22,8 @@ import type {
 } from '../types';
 import { DEVICE_LEVEL } from '../types';
 import { paintBy, paintLineWidthByVoltage } from '../style/paintRules';
+import { readCardFields, renderCardHtml } from '@caoguo/maplibre';
+import type { RenderCardOptions } from '@caoguo/maplibre';
 import { buildGridAdjacency, gridBfs, deviceById } from '../graph/gridGraph';
 
 export interface GridTopologyOptions {
@@ -342,9 +344,45 @@ export class GridTopology {
         subtitle: `${kindLabel(device.kind)} · ${device.properties?.code ?? device.id}`,
         statusLabel,
         levelLabel,
-        capacityLabel,
+        ...(capacityLabel ? { capacityLabel } : {}),
+        // 图片与维护记录从 properties.extra 读取（跨包统一口径，见 @caoguo/maplibre cardFields）
+        ...readCardFields(device.properties?.extra),
       },
     };
+  }
+
+  /**
+   * 生成设备卡片 HTML（G-2 的零依赖 DOM 外壳，实现在 `@caoguo/maplibre cardFields`）。
+   * `el.innerHTML = topo.renderCardHtml(id)` 即可用；`style:'class'` 模式配合自定义 CSS。
+   */
+  renderCardHtml(deviceId: string, opts?: RenderCardOptions): string | undefined {
+    const d = this.getDeviceDetail(deviceId);
+    if (!d) return undefined;
+    const statusColor =
+      d.properties?.status === 'fault'
+        ? '#f87171'
+        : d.properties?.status === 'maintenance'
+          ? '#fbbf24'
+          : '#4ade80';
+    return renderCardHtml(
+      {
+        title: d.cardInfo.title,
+        subtitle: d.cardInfo.subtitle,
+        statusLabel: d.cardInfo.statusLabel,
+        statusColor,
+        rows: [
+          { label: '电压等级', value: d.cardInfo.levelLabel },
+          ...(d.cardInfo.capacityLabel
+            ? [{ label: '额定容量', value: d.cardInfo.capacityLabel }]
+            : []),
+          { label: '关联线路', value: `${d.connectedLines} 条` },
+          { label: '下游用户', value: `${d.downstreamUserCount} 户` },
+        ],
+        images: d.cardInfo.images,
+        maintenance: d.cardInfo.maintenance,
+      },
+      opts
+    );
   }
 
   /** 估算从某设备向下的供电用户数（沿线路下游方向 BFS） */

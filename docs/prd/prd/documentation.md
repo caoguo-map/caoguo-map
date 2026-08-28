@@ -217,6 +217,19 @@ docs/
 | `api/layer.md` | 图层 API（circle/line/fill/symbol/heatmap/raster 概览） | ✅ 已落地 |
 | `api/source.md` | T3 天地图 WMTS + GeoJSON/矢量/栅格数据源概览 | ✅ 已落地 |
 | `api/offline.md` | T4 离线瓦片（IndexedDB + 协议层短路）+ T5 SW 拦截（Cache API + 空气隔离） | ✅ 已落地 |
+| `api/control.scale.md` | 比例尺 + 实时坐标控件 | ✅ 已落地 |
+| `api/camera.md` | 相机与视图控制 | ✅ 已落地 |
+| `api/event.md` | 事件系统（含 `on(event, layerId, cb)` 重载） | ✅ 已落地 |
+| `api/theme-store.md` | 主题 store（`createThemeStore` / `injectTheme` / CSS 变量） | ✅ 已落地 |
+| `api/llm-provider.md` | LLM Provider（DeepSeek + OpenAI 兼容端点） | ✅ 已落地 |
+| `api/station3d.md` | 电网三维变电站 `Station3D` + 视角切换（PRD G-6） | ✅ 已落地 |
+| `api/realtime-grid.md` | 电网实时数据接入 `GridRealtime` + 传输层接口（PRD LH-3） | ✅ 已落地 |
+| `api/capacity.md` | 通信网容量热力图 `CapacityHeatmap` + 预警纯函数（PRD CH-1～CH-4） | ✅ 已落地（2026-08-28） |
+| `api/transit-od.md` | 公共交通客流 OD `TransitHeatmap` + 预测/优化建议（PRD §3.4） | ✅ 已落地（2026-08-28） |
+| `api/compute-predict.md` | 算力供需预测 `predictSupplyDemand`（PRD C-5） | ✅ 已落地（2026-08-28） |
+| `api/editor-runtime.md` | 大屏渲染运行时 `renderScreen` / `renderFromJSON`（PRD visual-editor §7） | ✅ 已落地（2026-08-28） |
+| `api/water-ops.md` | 水网运营扩展：水库卡片 / 站点实时指标（R-2、R-5）/ 多方案对比与甘特图（DO-4、DO-5） | ✅ 已落地（2026-08-28） |
+| `api/industry-extensions.md` | 跨包扩展：设备卡片外壳（cardFields）/ 故障根因诊断（NH-4）/ 算力任务分配（C-4）/ 绕行与影响范围渲染（IM-2~4） | ✅ 已落地（2026-08-28） |
 | `deployment/docker.md` | Docker 部署 | ✅ 已落地 |
 | `deployment/air-gap.md` | 离线/内网（空气隔离）部署 | ✅ 已落地 |
 | `demo/`（apps/demo） | D5 FeatureShowcase 串联闭环 | ✅ 已落地 |

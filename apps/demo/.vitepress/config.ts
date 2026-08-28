@@ -68,6 +68,8 @@ export default defineConfig({
           { text: 'G1 电网拓扑浏览器', link: '/grid/topology' },
           { text: 'G2 停电分析器', link: '/grid/outage' },
           { text: 'G3 负荷热力图', link: '/grid/load' },
+          { text: 'G4 三维变电站', link: '/grid/station3d' },
+          { text: 'G5 实时数据接入', link: '/grid/realtime' },
         ],
       },
       {
@@ -86,6 +88,7 @@ export default defineConfig({
           { text: 'T1 路网编辑器', link: '/transport/road' },
           { text: 'T2 交通流量可视化', link: '/transport/traffic' },
           { text: 'T3 事件响应图', link: '/transport/incident' },
+          { text: 'T4 公共交通客流 OD', link: '/transport/transit' },
         ],
       },
       {
@@ -104,6 +107,7 @@ export default defineConfig({
           { text: '通信网总览', link: '/telecom/' },
           { text: 'T1 基站覆盖地图', link: '/telecom/coverage' },
           { text: 'T2 网络健康度面板', link: '/telecom/health' },
+          { text: 'T3 容量热力图', link: '/telecom/capacity' },
         ],
       },
       {

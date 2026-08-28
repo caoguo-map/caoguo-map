@@ -38,6 +38,9 @@ const state = reactive({
   preview: false,
 });
 
+/** 场景切换历史栈（用于下钻后的「返回」导航）；栈顶为当前场景下钻来源 */
+const sceneHistory: string[] = [];
+
 // 初始化 activeSceneKey
 state.activeSceneKey = state.config.scenes[0]?.key ?? '';
 
@@ -142,10 +145,27 @@ function setConfig(config: DashboardConfig) {
   selectedId.value = null;
 }
 
-function switchScene(key: string) {
+function switchScene(key: string, record = true) {
+  if (key === state.activeSceneKey) return;
+  // 仅交互式下钻（record=true）才入栈；轮播/初始化/编辑切换不污染返回链
+  if (record && sceneHistory[sceneHistory.length - 1] !== state.activeSceneKey) {
+    sceneHistory.push(state.activeSceneKey);
+  }
   state.activeSceneKey = key;
   selectedId.value = null;
 }
+
+/** 从下钻目标返回上一级场景（栈顶）。无历史时回到首个场景。 */
+function goBackScene(): string | null {
+  if (sceneHistory.length === 0) return null;
+  const prev = sceneHistory.pop()!;
+  state.activeSceneKey = prev;
+  selectedId.value = null;
+  return prev;
+}
+
+/** 当前是否存在可返回的上级场景 */
+const canGoBack = () => sceneHistory.length > 0;
 
 function addScene(title = '新场景') {
   const scene: Scene = {
@@ -304,6 +324,9 @@ export function useEditor() {
     setSelectedDevice,
     setConfig,
     switchScene,
+    goBackScene,
+    canGoBack,
+    sceneHistory,
     addScene,
     addComponent,
     addLayer,

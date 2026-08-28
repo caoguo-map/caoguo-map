@@ -16,12 +16,14 @@ export function useDeviceData(layer: Ref<MapLayer | undefined>): {
   devices: Ref<DeviceItem[]>;
   loading: Ref<boolean>;
   error: Ref<string | null>;
+  lastUpdate: Ref<number | null>;
 } {
   const { resolveForNode } = useDataSources();
   const conn = useDataConnection();
   const devices = ref<DeviceItem[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const lastUpdate = ref<number | null>(null);
 
   let unsub: (() => void) | null = null;
   const layerId = layer.value?.id;
@@ -32,6 +34,7 @@ export function useDeviceData(layer: Ref<MapLayer | undefined>): {
       devices.value = [];
       loading.value = false;
       error.value = null;
+      lastUpdate.value = null;
       if (layerId) setDevices(layerId, []);
       return;
     }
@@ -39,6 +42,7 @@ export function useDeviceData(layer: Ref<MapLayer | undefined>): {
       devices.value = list;
       loading.value = meta.loading;
       error.value = meta.error;
+      lastUpdate.value = Date.now();
       if (layerId) setDevices(layerId, list);
     });
   }
@@ -58,5 +62,5 @@ export function useDeviceData(layer: Ref<MapLayer | undefined>): {
     if (unsub) unsub();
   });
 
-  return { devices, loading, error };
+  return { devices, loading, error, lastUpdate };
 }

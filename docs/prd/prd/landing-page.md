@@ -54,6 +54,30 @@ map.hb.cn/
 
 ---
 
+### 2.1 落地状态对照（2026-08-28 补充）
+
+> V2.0 PRD 有检查清单但**无状态标注**，无法判断各区块是否已落地。本节按 `apps/landing` 实现现状逐块标定。状态口径：**✅ 已落地**（组件/页面已存在，可访问）；**🟡 部分落地**；**❌ 未落地**（尚未实现）。
+
+| PRD 区块 | 实现载体 | 状态 |
+|----------|----------|------|
+| 3.1 导航栏 | `components/SiteNav.vue` | ✅ 已落地 |
+| 3.2 Hero 区 | `components/Hero.vue` | ✅ 已落地 |
+| 3.3 痛点区 | `components/PainPoints.vue` | ✅ 已落地 |
+| 3.4 解决方案区（六张网 Tab） | `components/NetworkTabs.vue` | ✅ 已落地 |
+| 3.5 核心能力区 | `components/CoreCapabilities.vue` | ✅ 已落地 |
+| 3.6 代码示例区 | `components/CodeExample.vue` | ✅ 已落地 |
+| 3.7 合作伙伴区 | `components/PartnerSection.vue` | ✅ 已落地 |
+| 3.8 数据指标区 | `components/Metrics.vue` | ✅ 已落地 |
+| 3.9 CTA 区 | `components/CtaSection.vue` | ✅ 已落地 |
+| 3.10 Footer | `components/SiteFooter.vue` | ✅ 已落地 |
+| 4.1 合作伙伴详情页 `/partner` | `partner/index.md` | ✅ 已落地 |
+| 4.2 场景故事区（4 个真实场景） | `components/PartnerStories.vue`（管网/电网/水网/交通 4 则） | ✅ 已落地 |
+| 4.3 利润测算工具 | `components/PartnerCalculator.vue` | ✅ 已落地 |
+| 4.4 合作模式详解（三种模式） | `partner/index.md` 内联区块 | ✅ 已落地 |
+| 4.5 技术支持体系 | `components/SupportSection.vue`（部署/文档/组件复用/响应/培训/升级 6 项） | ✅ 已落地 |
+
+---
+
 ## 三、页面结构（V2.0 完整版）
 
 ### 3.1 导航栏
