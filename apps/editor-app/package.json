@@ -1,0 +1,22 @@
+{
+  "name": "@caoguo/editor-app",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@caoguo/map-editor": "workspace:*",
+    "@caoguo/maplibre": "workspace:*",
+    "@caoguo/theme": "workspace:*",
+    "maplibre-gl": "^4.7.1",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.4",
+    "vite": "^5.4.21"
+  }
+}

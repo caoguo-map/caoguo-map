@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "theme": "dark",
+  "canvas": { "width": 1920, "height": 1080, "background": "#0a0e1a" },
+  "scenes": [
+    {
+      "key": "farm-overview",
+      "title": "🌾 农场全域总览",
+      "menu": { "icon": "🌾", "desc": "全部设备总览" },
+      "map": { "center": [114.30, 30.58], "zoom": 13, "tiles": "tianditu", "theme": "dark" },
+      "layers": [
+        {
+          "id": "device-layer-1",
+          "type": "device-layer",
+          "position": { "x": 0, "y": 0, "w": 1920, "h": 1080 },
+          "config": { "schemas": { "machine": { "label": "无人农机", "icon": "🚜" } }, "markerSize": 36, "pulseOnWarning": true },
+          "dataSource": { "type": "rest", "url": "/api/devices/farm", "interval": 5000, "mapping": { "id": "id", "name": "name", "type": "type", "status": "status", "lat": "lat", "lng": "lng" } }
+        }
+      ],
+      "components": [
+        { "id": "topbar-1", "type": "status-bar", "position": { "x": 0, "y": 0, "w": 1920, "h": 52 }, "config": { "title": "🌾 农场全域总览", "showClock": true, "showBackButton": true }, "style": { "background": "rgba(10,14,26,0.88)", "borderBottom": "1px solid rgba(255,255,255,0.06)" } },
+        { "id": "device-list-1", "type": "device-list", "position": { "x": 0, "y": 52, "w": 280, "h": 1028 }, "config": { "deviceLayerId": "device-layer-1", "showFilter": true, "showStatusDot": true }, "style": { "background": "rgba(10,14,26,0.88)", "borderRight": "1px solid rgba(255,255,255,0.06)" } },
+        { "id": "detail-panel-1", "type": "detail-panel", "position": { "x": 1540, "y": 52, "w": 380, "h": 1028 }, "config": { "deviceLayerId": "device-layer-1", "showTrendChart": true, "trendColor": "#4ade80" }, "visible": false, "trigger": "device-click" },
+        { "id": "gauge-1", "type": "gauge-chart", "position": { "x": 20, "y": 600, "w": 200, "h": 200 }, "config": { "label": "平均负载", "max": 100, "color": "#4ade80" }, "dataSource": { "type": "binding", "source": "device-layer-1", "aggregate": "avg", "field": "load" } },
+        { "id": "pie-1", "type": "pie-chart", "position": { "x": 20, "y": 820, "w": 200, "h": 200 }, "config": { "label": "设备状态" }, "dataSource": { "type": "binding", "source": "device-layer-1", "aggregate": "status-count" } },
+        { "id": "text-title-1", "type": "text", "position": { "x": 20, "y": 80, "w": 240, "h": 40 }, "config": { "text": "设备概览", "fontSize": 18, "fontWeight": "600", "color": "#e0e6f0" } }
+      ]
+    }
+  ]
+}

@@ -274,9 +274,16 @@ export class Map {
     if (this._map.getLayer(id)) this._map.removeLayer(id);
   }
 
-  on(event: string, layerId?: string, cb?: (e: unknown) => void): void {
-    if (cb && layerId) this._map.on(event as keyof MlMap['on'], layerId, cb as never);
-    else this._map.on(event as keyof MlMap['on'], cb as never);
+  on(event: string, cb: (e: unknown) => void): void;
+  on(event: string, layerId: string, cb: (e: unknown) => void): void;
+  on(event: string, layerId?: string | ((e: unknown) => void), cb?: (e: unknown) => void): void {
+    if (typeof layerId === 'function') {
+      this._map.on(event as keyof MlMap['on'], layerId as never);
+    } else if (cb && layerId) {
+      this._map.on(event as keyof MlMap['on'], layerId, cb as never);
+    } else if (cb) {
+      this._map.on(event as keyof MlMap['on'], cb as never);
+    }
   }
 
   addSource(id: string, source: object): void {
@@ -313,6 +320,11 @@ export class Map {
 
   remove(): void {
     this._map.remove();
+  }
+
+  /** 暴露底层 maplibre-gl Map 实例（用于 Marker 等原生能力，或精细控制） */
+  getMap(): MlMap {
+    return this._map;
   }
 
   /**

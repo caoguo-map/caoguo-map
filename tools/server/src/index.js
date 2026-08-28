@@ -4,7 +4,11 @@
  * 职责：
  *   1. /api/deepseek  —— 代理 DeepSeek Chat Completions（解决浏览器 CORS + 保护密钥）
  *   2. /api/nlpg      —— NLPG：自然语言 → (LLM/规则) SQL → 安全校验 → PostGIS 执行 → 结果
- *   3. /api/health    —— 健康检查
+ *   3. /api/db/query  —— 数据库代理（MySQL/OceanBase/PG/ClickHouse/InfluxDB/达梦）
+ *   4. /api/webhook/* —— Webhook 登记/接收/轮询
+ *   5. /api/devices   —— 设备 Mock 快照（REST 轮询）
+ *   6. WS /api/ws     —— 设备 Mock 实时推送（每 2s 一帧）
+ *   7. /api/health    —— 健康检查
  *
  * 配置：读取 docker/.env（DEEPSEEK_API_KEY / POSTGRES_* / PROXY_PORT）
  */
@@ -14,6 +18,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import pg from 'pg';
+import { snapshot as deviceSnapshot, handleUpgrade as handleWsUpgrade } from './mockDevices.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -245,6 +250,123 @@ async function handleNlpg(query) {
 }
 
 // ============================================================
+// 五·五、数据库代理（/api/db/query 后端分发）
+// ============================================================
+// 惰性加载驱动：未安装则给出明确错误，不阻断服务启动
+async function loadDriver(name) {
+  try {
+    return await import(name);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 按 type 路由到对应数据库执行查询，返回统一 { ok, rows, rowCount, message }。
+ * 支持：mysql / oceanbase（MySQL 协议）、postgres、clickhouse、influxdb、dameng。
+ */
+async function queryDatabase(type, cfg = {}) {
+  const { host, port, database, username, password, query } = cfg;
+  const connInfo = { host: host || '127.0.0.1', port, database, user: username, password };
+
+  try {
+    if (type === 'mysql' || type === 'oceanbase') {
+      const mysql = await loadDriver('mysql2/promise');
+      if (!mysql) return { ok: false, message: '未安装 mysql2 驱动（npm i mysql2）' };
+      const c = await mysql.createConnection({ ...connInfo, port: Number(port || (type === 'oceanbase' ? 2881 : 3306)) });
+      const [rows] = await c.query(query);
+      await c.end();
+      return { ok: true, rows: ensureArray(rows), rowCount: Array.isArray(rows) ? rows.length : undefined };
+    }
+
+    if (type === 'postgres') {
+      const pg = await loadDriver('pg');
+      if (!pg) return { ok: false, message: '未安装 pg 驱动' };
+      const client = new pg.Client({ ...connInfo, port: Number(port || 5432) });
+      await client.connect();
+      const r = await client.query(query);
+      await client.end();
+      return { ok: true, rows: r.rows, rowCount: r.rowCount };
+    }
+
+    if (type === 'clickhouse') {
+      const ch = await loadDriver('@clickhouse/client');
+      if (!ch) return { ok: false, message: '未安装 @clickhouse/client 驱动' };
+      const client = ch.createClient({
+        url: `http://${host || '127.0.0.1'}:${port || 8123}`,
+        username: username || 'default',
+        password: password || '',
+        database: database || 'default',
+      });
+      try {
+        const rs = await client.query({ query, format: 'JSONEachRow' });
+        const rows = await rs.json();
+        return { ok: true, rows: Array.isArray(rows) ? rows : (rows?.data ?? []), rowCount: Array.isArray(rows) ? rows.length : undefined };
+      } finally {
+        await client.close().catch(() => {});
+      }
+    }
+
+    if (type === 'influxdb') {
+      // InfluxDB v2：通过 HTTP /api/v2/query 执行 Flux（org 在 query 中 via |>
+      const url = `http://${host}:${port || 8086}/api/v2/query?org=${encodeURIComponent(cfg.org || 'caoguo')}`;
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/vnd.flux', Authorization: `Token ${cfg.token || password || ''}` },
+        body: query,
+      });
+      if (!r.ok) return { ok: false, message: 'InfluxDB HTTP ' + r.status + ': ' + (await r.text().catch(() => '')) };
+      const text = await r.text();
+      // 解析注释头 + CSV 体为对象数组（简化）
+      const rows = parseInfluxCsv(text);
+      return { ok: true, rows, rowCount: rows.length };
+    }
+
+    if (type === 'dameng') {
+      // 达梦需专用驱动 dmdb（私有包），未内置
+      const dm = await loadDriver('dmdb');
+      if (!dm) return { ok: false, message: '达梦需安装官方 dmdb 驱动并配置 DM_HOME' };
+      const c = await dm.connect(connInfo);
+      const rows = await c.query(query);
+      await c.close();
+      return { ok: true, rows: ensureArray(rows), rowCount: Array.isArray(rows) ? rows.length : undefined };
+    }
+
+    return { ok: false, message: '不支持的数据库类型：' + type };
+  } catch (e) {
+    return { ok: false, message: e.message };
+  }
+}
+
+function ensureArray(rows) {
+  // mysql2 小结果集返回数组；大结果集返回 ResultSetHeader，需处理
+  if (Array.isArray(rows)) return rows;
+  return [];
+}
+
+function parseInfluxCsv(text) {
+  const lines = text.split('\n').filter(Boolean);
+  if (lines.length < 2) return [];
+  // 跳过注释行（#）
+  const dataLines = lines.filter((l) => !l.startsWith('#'));
+  const header = dataLines[0].split(',');
+  return dataLines.slice(1).map((l) => {
+    const cells = l.split(',');
+    const o = {};
+    header.forEach((h, i) => (o[h.trim()] = cells[i]));
+    return o;
+  });
+}
+
+// ============================================================
+// 五·六、Webhook 接收（外部系统推送 → 代理暂存 → 前端轮询取回）
+// ============================================================
+const webhooks = new Map(); // id -> { createdAt, lastPayload }
+function genId(prefix = 'wh') {
+  return prefix + '_' + Math.random().toString(36).slice(2, 10);
+}
+
+// ============================================================
 // 六、路由
 // ============================================================
 async function handle(req, res) {
@@ -258,6 +380,11 @@ async function handle(req, res) {
       'Access-Control-Allow-Headers': 'Content-Type',
     });
     return res.end();
+  }
+
+  // 设备 Mock：REST 快照（编辑器设备图层轮询用；path 留空即可当数组解析）
+  if (path === '/api/devices' && req.method === 'GET') {
+    return json(res, 200, deviceSnapshot());
   }
 
   if (path === '/api/health' && req.method === 'GET') {
@@ -290,6 +417,46 @@ async function handle(req, res) {
     }
   }
 
+  // 数据库代理：统一入口，按 type 路由到对应库执行查询
+  if (path === '/api/db/query' && req.method === 'POST') {
+    try {
+      const body = await readBody(req);
+      if (!body.type) return json(res, 400, { ok: false, message: '缺少 type' });
+      if (!body.query && body.type !== 'rest') return json(res, 400, { ok: false, message: '缺少 query' });
+      const result = await queryDatabase(body.type, body);
+      return json(res, result.ok ? 200 : 502, result);
+    } catch (e) {
+      return json(res, 500, { ok: false, message: e.message });
+    }
+  }
+
+  // Webhook 登记：返回前端轮询用的接收端点
+  if (path === '/api/webhook/register' && req.method === 'POST') {
+    const body = await readBody(req).catch(() => ({}));
+    const id = genId();
+    webhooks.set(id, { createdAt: Date.now(), lastPayload: null, source: body.source });
+    const receiveUrl = `/api/webhook/${id}`;
+    return json(res, 200, { ok: true, id, receiveUrl, pollUrl: receiveUrl, message: '将 receiveUrl 配置为数据源的 Webhook 地址，外部系统 POST 设备数组到此端点' });
+  }
+
+  // Webhook 接收端点：外部 POST 推送（payload 为设备数组）；前端 GET 取最新
+  const whMatch = path.match(/^\/api\/webhook\/([\w-]+)$/);
+  if (whMatch) {
+    const id = whMatch[1];
+    if (!webhooks.has(id)) return json(res, 404, { ok: false, message: 'webhook 不存在' });
+    if (req.method === 'POST' || req.method === 'PUT') {
+      const body = await readBody(req).catch(() => ({}));
+      const arr = Array.isArray(body) ? body : (body.rows ?? body.data ?? null);
+      if (!arr) return json(res, 400, { ok: false, message: 'body 需为设备数组或 {rows}' });
+      webhooks.get(id).lastPayload = arr;
+      return json(res, 200, { ok: true, received: arr.length });
+    }
+    if (req.method === 'GET') {
+      const payload = webhooks.get(id).lastPayload;
+      return json(res, 200, { ok: true, rows: payload ?? [], hasData: !!payload });
+    }
+  }
+
   return json(res, 404, { ok: false, message: 'not found' });
 }
 
@@ -299,11 +466,26 @@ const server = http.createServer((req, res) => {
   });
 });
 
+// WebSocket：/api/ws 设备实时推送（与编辑器 websocket 数据源联动）
+server.on('upgrade', (req, socket) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  if (url.pathname === '/api/ws') {
+    handleWsUpgrade(req, socket);
+  } else {
+    socket.destroy();
+  }
+});
+
 server.listen(PORT, () => {
   console.log(`[caoguo-ai-server] listening on http://127.0.0.1:${PORT}`);
-  console.log(`  POST /api/deepseek  - DeepSeek 代理`);
-  console.log(`  POST /api/nlpg      - 自然语言 → SQL → PostGIS`);
-  console.log(`  GET  /api/health    - 健康检查`);
+  console.log(`  POST /api/deepseek       - DeepSeek 代理`);
+  console.log(`  POST /api/nlpg           - 自然语言 → SQL → PostGIS`);
+  console.log(`  POST /api/db/query       - 数据库代理（MySQL/OceanBase/PG/ClickHouse/InfluxDB/达梦）`);
+  console.log(`  POST /api/webhook/register - 登记 Webhook 接收端点`);
+  console.log(`  *    /api/webhook/:id     - 外部推送 / 前端轮询取数`);
+  console.log(`  GET  /api/devices        - 设备 Mock 快照（REST 轮询）`);
+  console.log(`  WS   /api/ws             - 设备 Mock 实时推送（每 2s）`);
+  console.log(`  GET  /api/health         - 健康检查`);
   console.log(`  DeepSeek key: ${DEEPSEEK_API_KEY ? '已配置' : '未配置'}`);
   console.log(`  PostGIS: ${pgConfig.host}:${pgConfig.port}/${pgConfig.database}`);
 });

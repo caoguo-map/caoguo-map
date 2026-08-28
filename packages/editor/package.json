@@ -1,0 +1,70 @@
+{
+  "name": "@caoguo/map-editor",
+  "version": "0.0.1",
+  "description": "草果地图大屏可视化编辑器 —— 拖拽式大屏搭建工具，零代码创建游戏式地图大屏",
+  "license": "Apache-2.0",
+  "author": "caoguo <caoguo@hb.cn>",
+  "homepage": "https://github.com/caoguo-map/maplibre-editor/blob/main/packages/editor/README.md",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caoguo-map/maplibre-editor.git",
+    "directory": "packages/editor"
+  },
+  "bugs": {
+    "url": "https://github.com/caoguo-map/maplibre-editor/issues"
+  },
+  "keywords": [
+    "map",
+    "dashboard",
+    "visual-editor",
+    "caoguo",
+    "big-screen",
+    "gis"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vue-tsc -p tsconfig.json --declaration --emitDeclarationOnly --outDir dist && vite build",
+    "build:js": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@caoguo/maplibre": "workspace:*",
+    "@caoguo/theme": "workspace:*",
+    "xlsx": "^0.18.5"
+  },
+  "peerDependencies": {
+    "maplibre-gl": "^4.7.1",
+    "vue": "^3.4.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.4",
+    "postcss": "^8.5.26",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "unplugin-vue": "^7.2.0",
+    "maplibre-gl": "^4.7.1",
+    "vite": "^5.4.21",
+    "vitest": "^2.1.8",
+    "vue": "^3.5.0",
+    "vue-tsc": "^2.2.0"
+  }
+}

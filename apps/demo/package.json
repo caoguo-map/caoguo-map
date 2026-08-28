@@ -9,6 +9,7 @@
     "preview": "vitepress preview"
   },
   "dependencies": {
+    "@caoguo/map-editor": "workspace:*",
     "@caoguo/maplibre": "workspace:*",
     "@caoguo/maplibre-ai": "workspace:*",
     "@caoguo/maplibre-compute": "workspace:*",
