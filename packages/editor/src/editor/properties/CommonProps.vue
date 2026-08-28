@@ -2,9 +2,11 @@
 import { computed } from 'vue';
 import type { EditorNode } from '../../types';
 import { useHistory } from '../../store/useHistory';
+import { useEditor } from '../../store/useEditor';
 
 const props = defineProps<{ node: EditorNode }>();
 const { commit } = useHistory();
+const { activeScene } = useEditor();
 
 const pos = computed(() => props.node.position);
 
@@ -18,6 +20,29 @@ function patchStyle(key: string, val: string) {
   commit();
   if (!props.node.style) props.node.style = {};
   props.node.style[key] = val;
+}
+
+// 父容器：嵌套在 tab-container 里的子组件显示「归属 Tab」选择
+const parentTabs = computed<{ label: string }[] | null>(() => {
+  if (!activeScene.value) return null;
+  const walk = (nodes: EditorNode[]): { label: string }[] | null => {
+    for (const n of nodes) {
+      if ((n.children ?? []).some((c) => c.id === props.node.id)) {
+        if (n.type !== 'tab-container') return null;
+        const tabs = (n.config?.tabs as { label: string }[] | undefined) ?? [];
+        return Array.isArray(tabs) ? tabs : [];
+      }
+      const hit = walk(n.children ?? []);
+      if (hit) return hit;
+    }
+    return null;
+  };
+  return walk(activeScene.value.components);
+});
+
+function patchTab(index: number) {
+  commit();
+  props.node.tab = index;
 }
 </script>
 
@@ -39,8 +64,18 @@ function patchStyle(key: string, val: string) {
     <label class="cg-field"><span>背景色</span><input :value="style.background ?? ''" placeholder="rgba(10,14,26,0.88)" @change="patchStyle('background', ($event.target as HTMLInputElement).value)" /></label>
     <label class="cg-field"><span>圆角 (px)</span><input type="number" :value="style.borderRadius ?? ''" placeholder="10" @change="patchStyle('borderRadius', ($event.target as HTMLInputElement).value + 'px')" /></label>
     <label class="cg-field"><span>边框</span><input :value="style.border ?? ''" placeholder="1px solid #333" @change="patchStyle('border', ($event.target as HTMLInputElement).value)" /></label>
-    <label class="cg-field"><span>内边距 (px)</span><input :value="style.padding ?? ''" placeholder="12" @change="patchStyle('padding', ($event.target as HTMLInputElement).value + 'px')" /></label>
+    <label class="cg-field"><span>内边距 (px)</span><input type="number" :value="style.padding ?? ''" placeholder="12" @change="patchStyle('padding', ($event.target as HTMLInputElement).value + 'px')" /></label>
     <label class="cg-field"><span>文字色</span><input :value="style.color ?? ''" placeholder="#e0e6f0" @change="patchStyle('color', ($event.target as HTMLInputElement).value)" /></label>
+  </div>
+
+  <div v-if="parentTabs" class="cg-field-group">
+    <div class="cg-group-title">标签页归属</div>
+    <label class="cg-field">
+      <span>归属 Tab</span>
+      <select :value="props.node.tab ?? 0" @change="patchTab(Number(($event.target as HTMLSelectElement).value))">
+        <option v-for="(t, i) in parentTabs" :key="i" :value="i">{{ t.label || 'Tab ' + (i + 1) }}</option>
+      </select>
+    </label>
   </div>
 </template>
 

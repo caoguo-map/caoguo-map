@@ -1,4 +1,4 @@
-import { reactive, computed, ref } from 'vue';
+import { reactive, computed, ref, watch } from 'vue';
 import type { DashboardConfig, Scene, ComponentNode, MapLayer, EditorNode } from '../types';
 import { createComponent, createLayer, genId } from '../components';
 import { useDeviceStore } from './useDeviceStore';
@@ -52,8 +52,33 @@ const nodes = computed<EditorNode[]>(() => {
   return [...scene.layers, ...scene.components];
 });
 
-/** 当前选中节点 id */
-const selectedId = ref<string | null>(null);
+/** 选中集合（多选，PRD 3.2 Ctrl+点击/框选）；selectedId 为主选中（最后加入者），保持单选语义兼容 */
+const selectedIds = ref<Set<string>>(new Set());
+const selectedId = computed<string | null>({
+  get: () => {
+    let last: string | null = null;
+    selectedIds.value.forEach((id) => (last = id));
+    return last;
+  },
+  set: (v) => {
+    selectedIds.value = v ? new Set([v]) : new Set();
+  },
+});
+function selectOnly(id: string) {
+  selectedIds.value = new Set([id]);
+}
+function selectToggle(id: string) {
+  const next = new Set(selectedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedIds.value = next;
+}
+function setSelection(ids: Iterable<string>) {
+  selectedIds.value = new Set(ids);
+}
+function clearSelection() {
+  selectedIds.value = new Set();
+}
 const selectedNode = computed<EditorNode | undefined>(() => findNode(selectedId.value ?? '')?.node);
 
 /** 递归遍历场景全部节点（含容器 children），回调收到节点与其所在数组 */
@@ -90,6 +115,26 @@ const allNodes = computed<EditorNode[]>(() => {
 // 选中设备（点击地图 marker / 列表项设置，详情面板联动）
 const { store: deviceStore, setSelectedDevice } = useDeviceStore();
 const selectedDeviceId = computed(() => deviceStore.selectedDeviceId);
+
+// 设备选中联动（PRD trigger='device-click'）：选中设备 → 显示详情面板；取消选中 → 隐藏
+// flush:'sync' 保证选中后立即生效（无渲染帧延迟）
+watch(
+  selectedDeviceId,
+  (id) => {
+    const scene = activeScene.value;
+    if (!scene) return;
+    for (const c of scene.components) {
+      if (c.trigger === 'device-click') c.visible = id != null;
+    }
+  },
+  { flush: 'sync' },
+);
+
+/** 非持久化 UI 状态：标签页容器当前激活页（key=节点 id） */
+const uiTabs = reactive<Record<string, number>>({});
+function setTab(nodeId: string, index: number) {
+  uiTabs[nodeId] = index;
+}
 
 function setConfig(config: DashboardConfig) {
   state.config = config;
@@ -154,7 +199,11 @@ function removeNode(id: string) {
   walkScene((node, arr) => {
     if (node.children) node.children = node.children.filter((c) => c.id !== id);
   });
-  if (selectedId.value === id) selectedId.value = null;
+  if (selectedIds.value.has(id)) {
+    const next = new Set(selectedIds.value);
+    next.delete(id);
+    selectedIds.value = next;
+  }
 }
 
 /** 更新节点位置（递归查找，兼容嵌套子组件） */
@@ -244,7 +293,12 @@ export function useEditor() {
     nodes,
     allNodes,
     selectedId,
+    selectedIds,
     selectedNode,
+    selectOnly,
+    selectToggle,
+    setSelection,
+    clearSelection,
     selectedDeviceId,
     findNode,
     setSelectedDevice,
@@ -263,6 +317,8 @@ export function useEditor() {
     setAllLocked,
     exportJSON,
     setZoom,
+    uiTabs,
+    setTab,
     createEmptyConfig,
   };
 }

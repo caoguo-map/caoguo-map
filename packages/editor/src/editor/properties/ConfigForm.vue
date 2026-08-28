@@ -27,8 +27,22 @@ function set(key: string, val: unknown) {
 }
 
 function num(key: string): number { return Number(get(key) ?? 0); }
-function str(key: string): string { return String(get(key) ?? ''); }
+function str(key: string): string {
+  const v = get(key);
+  if (v == null) return '';
+  // 对象/数组反序列化为 JSON 文本（textarea 编辑用）
+  return typeof v === 'string' ? v : JSON.stringify(v);
+}
 function bool(key: string): boolean { return Boolean(get(key)); }
+
+/** textarea 内容尝试 JSON 解析：合法 JSON 存结构化值，否则存原始字符串 */
+function tryParse(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
 
 // 已有设备图层（供 deviceLayerId 等下拉选择，避免手填不友好）
 const deviceLayerOptions = computed(() =>
@@ -178,6 +192,7 @@ function onInput(field: Field, ev: Event) {
   let val: unknown;
   if (field.type === 'checkbox') val = (t as HTMLInputElement).checked;
   else if (field.type === 'number') val = Number(t.value);
+  else if (field.type === 'textarea') val = tryParse(t.value);
   else val = t.value;
   set(field.key, val);
 }

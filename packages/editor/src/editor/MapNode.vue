@@ -22,6 +22,8 @@ const { setSelectedDevice, store: deviceStore } = useDeviceStore();
 const deviceLayer = computed<MapLayer | undefined>(() =>
   activeScene.value?.layers.find((l) => l.type === 'device-layer'),
 );
+// 设备图层配置（markerSize / pulseOnWarning / schemas 类型定制）
+const layerCfg = computed(() => (deviceLayer.value?.config ?? {}) as Record<string, any>);
 const { devices, error: dataError } = useDeviceData(deviceLayer);
 
 const containerRef = ref<HTMLDivElement | null>(null);
@@ -40,7 +42,8 @@ function svgMarkup(iconName: string, color: string, size: number): string {
 }
 
 function buildMarkerElement(dev: { type: string; status: string; name?: string }): HTMLDivElement {
-  const size = 36;
+  // 消费设备图层配置：markerSize（此前硬编码 36）/ pulseOnWarning / schemas 类型定制图标与标签
+  const size = Number(layerCfg.value.markerSize) || 36;
   const color = deviceColor(dev.status);
   const el = document.createElement('div');
   el.className = 'cg-dev-marker';
@@ -54,11 +57,21 @@ function buildMarkerElement(dev: { type: string; status: string; name?: string }
   el.style.justifyContent = 'center';
   el.style.boxShadow = `0 0 10px ${color}66`;
   el.style.cursor = 'pointer';
-  el.innerHTML = svgMarkup(deviceIcon(dev.type), color, size - 12);
-  if (dev.status === 'warning' || dev.status === 'fault') {
+  const schema = (layerCfg.value.schemas ?? {})[dev.type] as { label?: string; icon?: string } | undefined;
+  if (schema?.icon) {
+    // Schema 自定义图标（emoji 直接以文本渲染）
+    const span = document.createElement('span');
+    span.textContent = schema.icon;
+    span.style.fontSize = Math.max(12, size - 14) + 'px';
+    span.style.lineHeight = '1';
+    el.appendChild(span);
+  } else {
+    el.innerHTML = svgMarkup(deviceIcon(dev.type), color, size - 12);
+  }
+  if (layerCfg.value.pulseOnWarning !== false && (dev.status === 'warning' || dev.status === 'fault')) {
     el.style.animation = 'cg-marker-pulse 1.4s infinite';
   }
-  el.title = dev.name ?? '';
+  el.title = schema?.label ?? dev.name ?? '';
   return el;
 }
 
@@ -119,6 +132,12 @@ function mountMap() {
     tianditu: opts.tianditu,
   });
   wrapperRef.value = map;
+
+  // 控件（消费 showNavigation / showScale 配置，此前未实现）
+  const mapCfg = props.node.config as Record<string, any>;
+  const ml = map.getMap();
+  if (mapCfg.showNavigation) ml.addControl(new maplibregl.NavigationControl(), 'top-right');
+  if (mapCfg.showScale) ml.addControl(new maplibregl.ScaleControl(), 'bottom-left');
 
   map.on('load', () => {
     applyInteractionMode();

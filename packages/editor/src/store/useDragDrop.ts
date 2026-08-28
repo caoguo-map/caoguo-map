@@ -17,6 +17,8 @@ export interface DragState {
   origY: number;
   origW: number;
   origH: number;
+  /** 多选平移：本次拖动涉及的全部节点起始位置（key=节点 id） */
+  origins: Map<string, { x: number; y: number }>;
 }
 
 const drag = ref<DragState>({
@@ -28,7 +30,13 @@ const drag = ref<DragState>({
   origY: 0,
   origW: 0,
   origH: 0,
+  origins: new Map(),
 });
+
+/** 对齐参考线（拖动时显示，画布坐标）：x=竖线列表，y=横线列表 */
+const guides = ref<{ x: number[]; y: number[] }>({ x: [], y: [] });
+/** 参考线吸附阈值（画布 px） */
+const SNAP_THRESHOLD = 5;
 
 let editor: ReturnType<typeof useEditor> | null = null;
 let history: ReturnType<typeof useHistory> | null = null;
@@ -97,12 +105,20 @@ export function onCanvasDrop(ev: DragEvent, canvasEl: HTMLElement) {
   else e.addComponent(type, x, y);
 }
 
-/** 画布内按下：开始移动节点 */
+/** 画布内按下：开始移动节点（多选集合一起平移） */
 export function startMove(ev: MouseEvent, id: string) {
   const { e } = ensure();
   const node = e.findNode(id)?.node;
   if (!node || node.locked) return;
-  e.selectedId.value = id;
+  if (!(ev.ctrlKey || ev.metaKey)) e.selectOnly(id);
+  // 收集拖动集合：当前选中 + 被按下节点（去锁）
+  const ids = new Set<string>(e.selectedIds.value);
+  ids.add(id);
+  const origins = new Map<string, { x: number; y: number }>();
+  for (const nid of ids) {
+    const n = e.findNode(nid)?.node;
+    if (n && !n.locked) origins.set(nid, { x: n.position.x, y: n.position.y });
+  }
   drag.value = {
     mode: 'move',
     id,
@@ -112,6 +128,7 @@ export function startMove(ev: MouseEvent, id: string) {
     origY: node.position.y,
     origW: node.position.w,
     origH: node.position.h,
+    origins,
   };
   window.addEventListener('mousemove', onMove);
   window.addEventListener('mouseup', stop);
@@ -132,9 +149,43 @@ export function startResize(ev: MouseEvent, id: string) {
     origY: node.position.y,
     origW: node.position.w,
     origH: node.position.h,
+    origins: new Map(),
   };
   window.addEventListener('mousemove', onMove);
   window.addEventListener('mouseup', stop);
+}
+
+/** 收集候选对齐线（其他顶层节点的左/中/右、上/中/下） */
+function collectCandidates(exclude: Set<string>): { vx: number[]; hy: number[] } {
+  const { e } = ensure();
+  const vx: number[] = [];
+  const hy: number[] = [];
+  const scene = e.activeScene.value;
+  if (!scene) return { vx, hy };
+  const add = (n: any) => {
+    vx.push(n.position.x, n.position.x + n.position.w / 2, n.position.x + n.position.w);
+    hy.push(n.position.y, n.position.y + n.position.h / 2, n.position.y + n.position.h);
+  };
+  for (const l of scene.layers) if (!exclude.has(l.id)) add(l);
+  for (const c of scene.components) if (!exclude.has(c.id)) add(c);
+  return { vx, hy };
+}
+
+/** 对齐吸附：返回吸附后的坐标与命中的参考线 */
+function snapAxis(
+  values: { v: number }[],
+  candidates: number[],
+): { v: number; line: number | null } {
+  let best: { v: number; line: number | null; diff: number } | null = null;
+  for (const { v } of values) {
+    for (const c of candidates) {
+      const diff = Math.abs(v - c);
+      if (diff <= SNAP_THRESHOLD && (!best || diff < best.diff)) {
+        best = { v: c, line: c, diff };
+      }
+    }
+  }
+  return best ? { v: best.v, line: best.line } : { v: values[0].v, line: null };
 }
 
 function onMove(ev: MouseEvent) {
@@ -147,10 +198,34 @@ function onMove(ev: MouseEvent) {
   if (d.mode === 'move') {
     let nx = d.origX + dx;
     let ny = d.origY + dy;
-    if (e.state.snapToGrid) {
-      const g = e.state.gridSize;
-      nx = Math.round(nx / g) * g;
-      ny = Math.round(ny / g) * g;
+    const g = { x: [] as number[], y: [] as number[] };
+    if (d.origins.size > 0) {
+      // 对齐参考线吸附（对齐优先于网格吸附；仅单选拖动时启用，多选保持整体平移手感）
+      if (d.origins.size === 1) {
+        const w = d.origW;
+        const h = d.origH;
+        const { vx, hy } = collectCandidates(new Set(d.origins.keys()));
+        const sx = snapAxis([{ v: nx }, { v: nx + w / 2 }, { v: nx + w }], vx);
+        const sy = snapAxis([{ v: ny }, { v: ny + h / 2 }, { v: ny + h }], hy);
+        if (sx.line != null) { nx = sx.v; g.x.push(sx.line); }
+        if (sy.line != null) { ny = sy.v; g.y.push(sy.line); }
+      }
+      if (!g.x.length && e.state.snapToGrid) {
+        const gs = e.state.gridSize;
+        nx = Math.round(nx / gs) * gs;
+      }
+      if (!g.y.length && e.state.snapToGrid) {
+        const gs = e.state.gridSize;
+        ny = Math.round(ny / gs) * gs;
+      }
+      // 整体平移：主节点吸附后的偏移应用到全部选中节点
+      const ddx = nx - d.origX;
+      const ddy = ny - d.origY;
+      for (const [nid, o] of d.origins) {
+        e.updatePosition(nid, { x: o.x + ddx, y: o.y + ddy });
+      }
+      guides.value = g;
+      return;
     }
     e.updatePosition(d.id, { x: nx, y: ny });
   } else if (d.mode === 'resize') {
@@ -170,9 +245,10 @@ function stop() {
     h.commit();
   }
   committed = false;
-  drag.value = { mode: null, id: null, startX: 0, startY: 0, origX: 0, origY: 0, origW: 0, origH: 0 };
+  guides.value = { x: [], y: [] };
+  drag.value = { mode: null, id: null, startX: 0, startY: 0, origX: 0, origY: 0, origW: 0, origH: 0, origins: new Map() };
 }
 
 export function useDragDrop() {
-  return { drag, onPanelDragStart, onCanvasDrop, startMove, startResize };
+  return { drag, guides, onPanelDragStart, onCanvasDrop, startMove, startResize };
 }

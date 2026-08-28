@@ -49,12 +49,18 @@ export function parseScreenJSON(json: string): { config: DashboardConfig | null;
 }
 
 /**
- * 渲染大屏到指定容器（全屏播放器，等比自适应 + 场景轮播）。
+ * 渲染大屏到指定容器。
+ * - 默认全屏播放器（position:fixed）
+ * - `options.embedded: true` 嵌入模式：随父容器尺寸自适应（父容器需给定宽高）
  * 注意：需自行引入样式 `import '@caoguo/map-editor/style.css'`。
  */
-export function renderScreen(container: HTMLElement | string, config: DashboardConfig): ScreenHandle {
+export function renderScreen(
+  container: HTMLElement | string,
+  config: DashboardConfig,
+  options: { embedded?: boolean } = {},
+): ScreenHandle {
   const el = resolveContainer(container);
-  const app = createApp(ScreenViewer, { config });
+  const app = createApp(ScreenViewer, { config, embedded: options.embedded ?? false });
   app.mount(el);
   return { app, unmount: () => app.unmount() };
 }

@@ -115,6 +115,8 @@ export interface MapLayer {
   locked?: boolean;
   /** 嵌套子节点（图层一般不使用，保留以统一 EditorNode 访问） */
   children?: EditorNode[];
+  /** 归属标签页索引（与 ComponentNode.tab 对齐，统一 EditorNode 访问） */
+  tab?: number;
 }
 
 /** UI 组件（叠加在地图上的面板/卡片/图表等） */
@@ -133,6 +135,8 @@ export interface ComponentNode {
   children?: EditorNode[];
   /** 显示触发条件，如 device-click 时显示详情面板 */
   trigger?: string;
+  /** 归属标签页索引（tab-container 子组件用，缺省归第 0 页） */
+  tab?: number;
 }
 
 /** 场景（一个大屏页面） */

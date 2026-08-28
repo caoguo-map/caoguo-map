@@ -4,20 +4,27 @@ import Canvas from './Canvas.vue';
 import { useEditor } from '../store/useEditor';
 import type { DashboardConfig } from '../types';
 
-const props = defineProps<{ config?: DashboardConfig }>();
+const props = defineProps<{ config?: DashboardConfig; embedded?: boolean }>();
 const { state, setConfig, switchScene } = useEditor();
 const err = ref<string | null>(null);
 
 // 大屏等比自适应（响应式画布）：按视口与画布尺寸取最小缩放比，居中铺满
+// 嵌入模式：按父容器尺寸计算并监听容器变化（ResizeObserver），非全屏 fixed
+const rootRef = ref<HTMLElement | null>(null);
 const scale = ref(1);
 function applyFit() {
   const c = state.config.canvas;
   if (!c) return;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  let vw = window.innerWidth;
+  let vh = window.innerHeight;
+  if (props.embedded && rootRef.value) {
+    vw = rootRef.value.clientWidth || vw;
+    vh = rootRef.value.clientHeight || vh;
+  }
   scale.value = Math.min(vw / c.width, vh / c.height, 1) || 1;
 }
 window.addEventListener('resize', applyFit);
+let ro: ResizeObserver | null = null;
 
 
 const params = new URLSearchParams(window.location.search);
@@ -111,19 +118,25 @@ onMounted(() => {
   switchScene(cfg.scenes[0]?.key ?? '');
   state.preview = true;
   applyFit();
+  if (props.embedded && rootRef.value && typeof ResizeObserver !== 'undefined') {
+    ro = new ResizeObserver(() => applyFit());
+    ro.observe(rootRef.value);
+  }
   window.addEventListener('keydown', onKey);
   startLoop();
 });
 
 onBeforeUnmount(() => {
   stopLoop();
+  ro?.disconnect();
+  ro = null;
   window.removeEventListener('keydown', onKey);
   window.removeEventListener('resize', applyFit);
 });
 </script>
 
 <template>
-  <div class="cg-screen">
+  <div ref="rootRef" class="cg-screen" :class="{ embedded: props.embedded }">
     <div v-if="err" class="cg-screen-err">{{ err }}</div>
     <template v-else>
       <div class="cg-screen-fit-wrap">
@@ -163,6 +176,10 @@ onBeforeUnmount(() => {
 <style scoped>
 .cg-screen {
   position: fixed; inset: 0; background: #04070f; overflow: hidden;
+}
+/* 嵌入模式：随父容器尺寸渲染（父容器需给定宽高） */
+.cg-screen.embedded {
+  position: relative; inset: auto; width: 100%; height: 100%;
 }
 .cg-screen-fit-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 .cg-screen-fit { transform-origin: center center; }

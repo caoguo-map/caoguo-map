@@ -91,6 +91,51 @@ describe('useEditor', () => {
     const parsed = JSON.parse(e.exportJSON({ includeSecrets: true }));
     expect(parsed.dataSources[0].password).toBe('secret');
   });
+
+  it('多选模型：selectToggle/selectOnly/setSelection 与 selectedId 主选中兼容', () => {
+    const a = e.addComponent('text', 0, 0)!;
+    const b = e.addComponent('clock', 0, 0)!;
+    const c = e.addComponent('image', 0, 0)!;
+
+    e.selectOnly(a.id);
+    expect(e.selectedId.value).toBe(a.id);
+    expect(e.selectedIds.value.size).toBe(1);
+
+    e.selectToggle(b.id);
+    expect(e.selectedIds.value.has(a.id)).toBe(true);
+    expect(e.selectedIds.value.has(b.id)).toBe(true);
+    expect(e.selectedId.value).toBe(b.id); // 主选中 = 最后加入
+
+    e.selectToggle(b.id);
+    expect(e.selectedIds.value).toEqual(new Set([a.id]));
+
+    e.setSelection([a.id, c.id]);
+    expect(e.selectedIds.value.size).toBe(2);
+
+    // removeNode 同步从选择集合移除
+    e.removeNode(a.id);
+    expect(e.selectedIds.value).toEqual(new Set([c.id]));
+
+    e.clearSelection();
+    expect(e.selectedId.value).toBeNull();
+  });
+
+  it('设备选中联动：trigger=device-click 的面板随选中显隐', () => {
+    const panel = e.addComponent('detail-panel', 0, 0)!;
+    panel.trigger = 'device-click';
+    panel.visible = false;
+
+    e.setSelectedDevice('d1');
+    expect(panel.visible).toBe(true);
+    e.setSelectedDevice(null);
+    expect(panel.visible).toBe(false);
+
+    // 无 trigger 的节点不受设备选中影响
+    const plain = e.addComponent('text', 0, 0)!;
+    plain.visible = false;
+    e.setSelectedDevice('d2');
+    expect(plain.visible).toBe(false);
+  });
 });
 
 function useDataSourcesHelper() {
