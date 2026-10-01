@@ -245,7 +245,7 @@ docs/
 | `api/event.md` | `Map.on`（已实现） | ✅ 已落地 |
 | `examples/*.md` | — | ✅ 已落地（6 篇） |
 | `faq/*.md` | — | ✅ 已落地（5 篇） |
-| `ai/nlpg.md` `ai/copilot.md` | D3 NLPG / D4 Copilot | 🟡 待引擎能力开发后写实 |
+| `ai/nlpg.md` `ai/copilot.md` | D3 NLPG / D4 Copilot | ✅ 已落地（2026-10-02 写实：按 `@caoguo/maplibre-ai` 真实 API 编写，含规则引擎/安全校验/LLM 增强与 5 类意图） |
 
 ### 6.3 P2 — Phase 2-3（🟡 行业与规模化）
 

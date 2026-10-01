@@ -81,6 +81,14 @@ export default defineConfig({
         ],
       },
       {
+        text: 'AI 能力',
+        collapsed: false,
+        items: [
+          { text: 'NLPG 自然语言查询', link: '/ai/nlpg' },
+          { text: 'MapCopilot 代码生成', link: '/ai/copilot' },
+        ],
+      },
+      {
         text: '主题与编辑器',
         collapsed: false,
         items: [

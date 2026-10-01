@@ -19,7 +19,6 @@
 | water | F-4 淹没叠加分析 | 🟡 | 数据层 `overlayFlood()` 已落地；**人口/建筑数据由调用方注入** |
 | water | F-5 多情景对比 | 🟡 | 数据层 `compareFloodScenarios()` 已落地；**情景范围叠加渲染交集成方** |
 | compute | C-4 资源调度面板 | 🟡 | 分配数据层 + 结果面板已落地；**计费/配额/租户等真实业务规则由上层业务系统实现** |
-| docs | `ai/nlpg.md`、`ai/copilot.md` | 🟡 | **待引擎能力开发后写实** |
 | docs | M1 / M2 / M3 | 🟡 | 规划中 |
 | demo | 大屏编辑器与运行时 | 🟡 | 编辑器入口已迁移至独立应用 `apps/editor-app`，demo 站不再内嵌 |
 
@@ -169,7 +168,7 @@ PRD：`phase-3` §5.1.2 / §5.2.1 / §5.4.1；`phase-2-telecom.md`（容量专�
 | 应用 | 覆盖 | 状态 |
 |------|------|------|
 | `apps/landing` | 落地页 15 个区块（3.1–3.10 + 4.1–4.5）全部落地 | ✅ |
-| `apps/docs` | 文档站 24 篇已交付（guide/api/deployment/demo）；`ai/nlpg`、`ai/copilot` 🟡 待写实 | ✅（含 🟡 2 项） |
+| `apps/docs` | 文档站 26 篇已交付（guide/api/ai/deployment/demo/examples/faq）；`ai/nlpg`、`ai/copilot` 已按真实 API 写实 | ✅ |
 | `apps/demo` | Demo D1–D16 按 Phase 分组全部落地；另补 D17–D26（已核实页面存在并补状态）与 4 个补齐页面（station3d / realtime / capacity / transit-OD） | ✅ |
 | `apps/editor-app` | 编辑器独立应用（端口 5190），alias 直连源码热更新 | ✅ |
 

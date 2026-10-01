@@ -1,6 +1,6 @@
 # LLM Provider（多 provider 扩展）
 
-> 隶属 `@caoguo/ai` 包。来源：`packages/ai/src/llm/`
+> 隶属 `@caoguo/maplibre-ai`（`packages/ai`）。来源：`packages/ai/src/llm/`
 
 `DeepSeekClient` 仍是默认实现。`OpenAICompatibleClient` 用于对接任意遵循 OpenAI Chat Completions 协议的服务（OpenAI 官方、Azure OpenAI、SiliconFlow、Together、Groq、OpenRouter 等）。
 
@@ -20,7 +20,7 @@ interface LlmClient {
 ## `OpenAICompatibleClient`
 
 ```ts
-import { OpenAICompatibleClient } from '@caoguo/ai';
+import { OpenAICompatibleClient } from '@caoguo/maplibre-ai';
 
 const client = new OpenAICompatibleClient({
   apiKey: 'sk-...',
@@ -51,8 +51,8 @@ const json = await client.chatJson<{ sql: string }>([
 两者接口完全一致，可直接互换使用：
 
 ```ts
-import { DeepSeekClient } from '@caoguo/ai';
-import { LlmNlpg, LlmMapCopilot } from '@caoguo/ai';
+import { DeepSeekClient } from '@caoguo/maplibre-ai';
+import { LlmNlpg, LlmMapCopilot } from '@caoguo/maplibre-ai';
 
 const deepseek = new DeepSeekClient({ apiKey: 'sk-...' });
 const openai = new OpenAICompatibleClient({

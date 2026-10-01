@@ -90,9 +90,9 @@
 | D2 | 草果地图暗色/亮色主题样式 | JSON 文件 | 符合 MapLibre Style Spec，视觉效果达商业地图 80% | ✅ 已落地（caoguo-dark/light） |
 | D3 | 落地页 `map.hb.cn` | Web 站点 | 响应式设计，30 秒内传达产品价值 | ✅ 已落地（V2.0 含合作伙伴区） |
 | D4 | 技术文档站 `map.hb.cn/docs` | Web 站点 | 快速开始 + API 参考 + 部署指南 | ✅ 已落地（29 页） |
-| D5 | MapCopilot v1 | 功能模块 | 支持 5 类核心交互的代码生成 | ✅ 已落地（packages/ai copilot 模块：intentRouter 5 类意图、codegen）／接口联调待 swagger |
+| D5 | MapCopilot v1 | 功能模块 | 支持 5 类核心交互的代码生成 | ✅ 已落地（`@caoguo/maplibre-ai` copilot 模块：`classifyIntent` 5 类意图 + `generateCode`）／接口联调待 swagger。**命名偏差**：PRD 早期文稿的「intentRouter」实为 `classifyIntent` |
 | D6 | GeoAI 数据入图管线 | 功能模块 | 支持 CSV/Excel 地址自动空间化 | ✅ 已落地（packages/ai geoai 模块：ingestDataset 空间化）／联调待 swagger |
-| D7 | NLPG v1 查询接口 | API 服务 | 自然语言 → PostGIS SQL → GeoJSON | ✅ 已落地（packages/ai nlpg 模块：generateSQL）／联调待 swagger |
+| D7 | NLPG v1 查询接口 | API 服务 | 自然语言 → PostGIS SQL → GeoJSON | ✅ 已落地（`@caoguo/maplibre-ai` nlpg 模块：`generatePostGISQuery` + `validateSql` 校验层）／联调待 swagger。**命名偏差**：PRD 早期文稿的「generateSQL」实为 `generatePostGISQuery` |
 | D8 | 演示 Demo #1（基础地图） | Web 应用 | 可交互的地图渲染演示 | ✅ 已落地（FeatureShowcase 串联闭环） |
 
 ---
@@ -397,7 +397,7 @@ GeoJSON 输出 → 地图渲染
 |---|------|------|------|
 | N-1 | 文本→SQL | 自然语言转 PostGIS SQL | ✅ 已落地（`ai/nlpg` 的 `generatePostGISQuery` + `LlmNlpg`，含 pipeline 场景意图） |
 | N-2 | 空间关系 | ST_Intersects / ST_Contains / ST_Buffer / ST_DWithin | ✅ 已落地（`sqlGenerator` 真实语义：ST_Within/ST_Contains/ST_Intersects/ST_DWithin + 参考几何） |
-| N-3 | 属性过滤 | 支持 AND/OR 条件组合 | ✅ 已落地（`buildWhere` 支持多条件 AND/OR 组合） |
+| N-3 | 属性过滤 | 支持 AND/OR 条件组合 | ✅ 已落地（`sqlGenerator` 内部 `buildWhere` 支持多条件 AND/OR 组合；**该函数未导出**，对外经 `generatePostGISQuery` 生效） |
 | N-4 | 结果可视化 | SQL 执行结果自动渲染到地图 | ✅ demo 有关键词解析驱动地图 + `nlpgQuery` 返回 GeoJSON 就绪结构 |
 | N-5 | SQL 校验 | 所有生成的 SQL 必须通过安全校验层 | ✅ 已落地（`sqlValidator` 的 `validateSql`：只读/白名单表/注入与危险关键字拦截） |
 
