@@ -143,3 +143,42 @@ export function compareFloodScenarios(
     ranking,
   };
 }
+
+/** 情景配色板（按顺序循环取用，保证多情景叠加时颜色可区分） */
+export const SCENARIO_COLORS = ['#38bdf8', '#f59e0b', '#f472b6', '#a78bfa', '#4ade80', '#fb7185'];
+
+/** 第 i 个情景的配色（超出色板长度则循环） */
+export function scenarioColor(index: number): string {
+  return SCENARIO_COLORS[((index % SCENARIO_COLORS.length) + SCENARIO_COLORS.length) % SCENARIO_COLORS.length];
+}
+
+/**
+ * 多情景叠加 GeoJSON（F-5 渲染数据层，纯函数）
+ *
+ * 每个情景输出一个多边形，`properties.color` 已带配色，
+ * 渲染层可直接用 `['get', 'color']` 做 data-driven 着色。
+ * 点数不足 3 的退化情景会被跳过。
+ */
+export function buildScenarioComparisonGeoJSON(
+  comparison: FloodScenarioComparison,
+): GeoJSON.FeatureCollection<GeoJSON.Polygon> {
+  const features: GeoJSON.Feature<GeoJSON.Polygon>[] = [];
+  comparison.plans.forEach((plan, i) => {
+    const src = plan.result?.inundationPolygon ?? [];
+    if (src.length < 3) return;
+    const ring = src.map(([x, y]) => [x, y] as [number, number]);
+    ring.push(ring[0]); // 闭合
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Polygon', coordinates: [ring] },
+      properties: {
+        scenarioIndex: i,
+        name: plan.name,
+        color: scenarioColor(i),
+        inundatedArea: plan.result.inundatedArea,
+        maxDepth: plan.result.maxDepth,
+      },
+    });
+  });
+  return { type: 'FeatureCollection', features };
+}

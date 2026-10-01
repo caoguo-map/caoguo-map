@@ -22,6 +22,8 @@ import {
 import { FloodRender } from './FloodRender';
 import type { EvacuationGraph, EvacuationPlan, EvacuationPlanOptions } from './evacuation';
 import { planEvacuation } from './evacuation';
+import type { FloodScenario, FloodScenarioComparison } from './scenarioCompare';
+import { compareFloodScenarios } from './scenarioCompare';
 
 export interface FloodInundationOptions {
   map: CaoguoMap;
@@ -99,6 +101,25 @@ export class FloodInundation {
   /** 撤退路径渲染（F-6 渲染薄壳） */
   renderEvacuation(plan: EvacuationPlan): void {
     this.render_.renderEvacuation(plan);
+  }
+
+  /** 多情景对比叠加渲染（F-5 渲染薄壳） */
+  renderScenarioComparison(
+    comparison: FloodScenarioComparison,
+    options: { fillOpacity?: number } = {},
+  ): void {
+    this.render_.renderScenarioComparison(comparison, options);
+  }
+
+  /**
+   * 多情景对比（F-5 数据层委托）：调用方跑完各情景 `simulate` 后传入，
+   * 返回面积/水深/洪峰矩阵与排序口径（**不擅自宣布最优**，由调用方选择）。
+   */
+  compareScenarios(
+    scenarios: FloodScenario[],
+    orderBy: 'smallest' | 'largest' = 'smallest',
+  ): FloodScenarioComparison {
+    return compareFloodScenarios(scenarios, orderBy);
   }
 
   clear(): void {

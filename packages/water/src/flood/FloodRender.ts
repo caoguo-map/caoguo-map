@@ -11,6 +11,8 @@ import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { upsertSource } from '@caoguo/maplibre';
 import type { FloodResult } from '../types';
 import type { EvacuationPlan } from './evacuation';
+import type { FloodScenarioComparison } from './scenarioCompare';
+import { buildScenarioComparisonGeoJSON } from './scenarioCompare';
 import { depthColor } from './floodCore';
 
 export interface FloodRenderOptions {
@@ -149,6 +151,36 @@ export class FloodRender {
       paint: { 'line-color': '#22d3ee', 'line-width': 3, 'line-opacity': 0.9 },
     });
     this.layerIds.push(`${prefix}-evac-line`);
+  }
+
+  /**
+   * 多情景对比叠加渲染（F-5 渲染薄壳）。
+   * 各情景淹没范围半透明填充 + 同色描边，配色由数据层 `properties.color` 提供
+   * （data-driven `['get','color']`），情景数量不影响图层数量（恒为 2 层）。
+   */
+  renderScenarioComparison(
+    comparison: FloodScenarioComparison,
+    options: { fillOpacity?: number } = {},
+  ): void {
+    const fc = buildScenarioComparisonGeoJSON(comparison);
+    if (!fc.features.length) return;
+    const mlMap = this.getMlMap();
+    const prefix = this.layerPrefix;
+
+    upsertSource(mlMap, `${prefix}-cmp-src`, fc);
+    mlMap.addLayer({
+      id: `${prefix}-cmp-fill`,
+      type: 'fill',
+      source: `${prefix}-cmp-src`,
+      paint: { 'fill-color': ['get', 'color'], 'fill-opacity': options.fillOpacity ?? 0.25 },
+    });
+    mlMap.addLayer({
+      id: `${prefix}-cmp-line`,
+      type: 'line',
+      source: `${prefix}-cmp-src`,
+      paint: { 'line-color': ['get', 'color'], 'line-width': 1.5 },
+    });
+    this.layerIds.push(`${prefix}-cmp-fill`, `${prefix}-cmp-line`);
   }
 
   clear(): void {
