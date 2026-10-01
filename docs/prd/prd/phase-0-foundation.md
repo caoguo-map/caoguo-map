@@ -27,7 +27,7 @@
 
 | 维度 | Phase-0 现状 | 缺口 |
 |------|-------------|------|
-| 引擎 | `@caoguo/maplibre` 已实现 11 大模块（CRS/天地图/离线瓦片/SW 缓存/控件/辉光/LOD/主题/3D 地形/数据源工具/全局配置），已发布 npm `@caoguo/maplibre@0.0.8` | 通用 Shader 框架待扩展（当前仅「管线辉光」一个垂直场景，见 F-1.3） |
+| 引擎 | `@caoguo/maplibre` 已实现 11 大模块（CRS/天地图/离线瓦片/SW 缓存/控件/辉光/LOD/主题/3D 地形/数据源工具/全局配置），已发布 npm `@caoguo/maplibre@0.0.8` | 无（通用 Shader 框架已落地：`ShaderLayer` + `LINE_*`/`FLOW_LINE_*` 预设，见 F-1.3） |
 | 展示 | 落地页（V2.0）、文档站（29 页）、演示中心（D5 串联闭环）均已落地 | 无 |
 | AI 能力 | demo 有 Copilot UI；`packages/ai` 已实现 MapCopilot / NLPG / GeoAI 三模块代码 | 接口联调待 swagger 就绪（D5/D6/D7 代码层已落地，见下方状态） |
 | 组件包 | `@caoguo/theme`（主题）、`@caoguo/maplibre-pipeline`（管网：爆管/泄漏/健康/拓扑/NLPG 全模块）已就位并发布 npm | 各业务包的 UI 面板类功能点普遍为「数据层已就绪、UI 由集成方实现」（详见 phase-1/2/3 状态标注） |
@@ -69,7 +69,7 @@
 |--------|------|
 | 自研渲染内核（fork maplibre-gl 并重写 WebGL） | 做薄封装 + 插件（addProtocol / CustomLayer / transformRequest），maplibre-gl 设为 peerDependency，降低维护成本 |
 | 3D 地形渲染（F-1.5） | P2 优先级，Phase 0 不做 |
-| 通用 Shader DSL / 编辑器 | 仅交付「管线辉光」CustomLayer 一个垂直 Shader 场景（F-1.3 部分落地） |
+| 通用 Shader DSL / 编辑器 | **DSL / 可视化编辑器不做**；通用 Shader **框架**已落地（`ShaderLayer` + 预设，见 F-1.3），原「管线辉光」仅为其中一个垂直场景 |
 | 六张网行业专题图层 | 属 Phase 1-3（管网 Phase 1，电/水 Phase 2，交通/算力/通信 Phase 3） |
 | MapCopilot / GeoAI / NLPG 的实现 | 需求已定义，实现顺延 Phase 1 |
 | 多语言 i18n | 首期仅中文 |
@@ -113,7 +113,7 @@
 |---|------|------|--------|------|
 | F-1.1 | 国内投影支持 | CGCS2000、GCJ-02、WGS84 三种坐标系动态转换 | P0 | ✅ 已落地（`src/crs`） |
 | F-1.2 | 天地图底图接入 | 预置天地图 WMTS 瓦片服务配置，开箱即用 | P0 | ✅ 已落地（`src/sources/tianditu`） |
-| F-1.3 | 自定义 Shader | 自定义 WebGL Shader 用于管线/路网/水系线条渲染 | P1 | 🟡 部分（辉光 CustomLayer 已落地，通用 Shader 框架待扩展） |
+| F-1.3 | 自定义 Shader | 自定义 WebGL Shader 用于管线/路网/水系线条渲染 | P1 | ✅ 已落地（`ShaderLayer` 通用框架：GLSL/属性布局/uniform 全部声明式传入，框架负责编译链接、属性绑定、uniform 按类型分派、自动注入 `uMatrix`/`uResolution`、资源回收；`Map.addShaderLayer()` 挂载；配套 `LINE_*` 普通线与 `FLOW_LINE_*` 流动线预设 + 纯函数几何 `buildLineGeometry()`/`buildFlowLineGeometry()`。原「管线辉光」为其垂直场景之一） |
 | F-1.4 | 离线瓦片支持 | 加载本地 MVT 瓦片、GeoJSON、矢量切片 | P0 | ✅ 已落地（`src/offline` IndexedDB + 协议层） |
 | F-1.5 | 3D 地形渲染 | DEM 数据叠加，实现地形起伏 | P2 | ✅ 已落地（terrain.ts：applyTerrain/removeTerrain + Map.enableTerrain/disableTerrain，默认 Terrarium 公共 DEM 源） |
 | F-1.6 | 瓦片缓存策略 | Service Worker 缓存已加载瓦片 | P1 | ✅ 已落地（`src/offline/serviceWorker` + 空气隔离） |

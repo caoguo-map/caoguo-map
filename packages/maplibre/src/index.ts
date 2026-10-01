@@ -25,8 +25,8 @@ import {
   type TileFormat,
 } from './offline';
 import { ScaleControl, ThemeSwitcher, LegendControl, ExportControl } from './controls';
-import { CustomLineLayer } from './shaders';
-import type { GlowLine } from './shaders';
+import { CustomLineLayer, ShaderLayer } from './shaders';
+import type { GlowLine, ShaderLayerOptions, ShaderUniformValue } from './shaders';
 import { LodController } from './lod';
 import type { LodLevel, LodChangeEvent } from './lod';
 import { applyTerrain, removeTerrain } from './terrain';
@@ -124,6 +124,18 @@ export interface GlowLayerHandle {
   id: string;
   /** 动态替换线集合（高亮选中 / 切换数据，无需重建图层） */
   setLines: (lines: GlowLine[]) => void;
+}
+
+/** `addShaderLayer` 返回的句柄：图层 id + 动态更新顶点/uniform */
+export interface ShaderLayerHandle {
+  /** 图层 id，可用于 map.removeLayer(id) */
+  id: string;
+  /** 动态替换顶点数据（无需重建图层） */
+  setVertices: (vertices: Float32Array) => void;
+  /** 设置单个 uniform（如驱动流动动画的 uTime） */
+  setUniform: (name: string, value: ShaderUniformValue) => void;
+  /** 批量设置 uniform */
+  setUniforms: (patch: Record<string, ShaderUniformValue>) => void;
 }
 
 export interface MapOptions {
@@ -390,6 +402,25 @@ export class Map {
     return {
       id: layer.id,
       setLines: (lines: GlowLine[]) => layer.setLines(lines),
+    };
+  }
+
+  /**
+   * 挂载**通用**自定义着色器图层（F-1.3 通用 Shader 框架）。
+   *
+   * 与 `addGlowLayer`（固定的管线辉光垂直实现）不同：顶点/片元着色器、属性布局、
+   * uniform 全部由调用方声明；框架负责编译链接、属性绑定、uniform 分派与资源回收，
+   * 并自动注入 `uMatrix`（mat4）与 `uResolution`（vec2）。
+   * 可配合 `LINE_*` / `FLOW_LINE_*` 预设直接渲染普通线或流动线。
+   */
+  addShaderLayer(options: ShaderLayerOptions): ShaderLayerHandle {
+    const layer = new ShaderLayer(options);
+    this._map.addLayer(layer as never);
+    return {
+      id: layer.id,
+      setVertices: (vertices: Float32Array) => layer.setVertices(vertices),
+      setUniform: (name: string, value: ShaderUniformValue) => layer.setUniform(name, value),
+      setUniforms: (patch: Record<string, ShaderUniformValue>) => layer.setUniforms(patch),
     };
   }
 
