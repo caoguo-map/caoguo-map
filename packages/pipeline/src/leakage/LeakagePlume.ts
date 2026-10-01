@@ -10,7 +10,8 @@ import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { upsertSource } from '@caoguo/maplibre';
 import type { GasLeakParams, GasLeakResult } from './gaussianPlume';
 import { gaussianPlume, plumeAtTime } from './gaussianPlume';
-import { overlayUsers } from './overlay';
+import { overlayUsers, buildLeakOverlayGeoJSON } from './overlay';
+import type { OverlayResult } from './overlay';
 import type { FloodParams, FloodResult } from './floodFill';
 import { simulateFlood } from './floodFill';
 import type { DemGrid } from './floodFill';
@@ -166,6 +167,58 @@ export class LeakagePlume {
     this.renderFlood(result);
     for (const l of this.listeners) l(result);
     return result;
+  }
+
+  /**
+   * 叠加渲染（L-4 渲染薄壳）：危险区域线框 + 受影响用户点（按类型着色、按规模定半径）。
+   * 配色/半径取自 feature 属性，data-driven 着色使**图层数恒为 2**，与要素数量无关。
+   *
+   * @param overlay `overlayUsers()` 的统计结果
+   * @param polygon 危险区域多边形（缺省则不绘制线框）
+   */
+  renderOverlay(overlay: OverlayResult, polygon: [number, number][] = [], options: { outlineColor?: string } = {}): void {
+    const fc = buildLeakOverlayGeoJSON(overlay, polygon);
+    if (!fc.features.length) return;
+    const mlMap = (this.map as unknown as {
+      instance: {
+        addSource: (id: string, source: unknown) => void;
+        addLayer: (layer: unknown) => void;
+        getSource: (id: string) => unknown;
+      };
+    }).instance;
+
+    const srcId = `${this.layerPrefix}-ovl-src`;
+    upsertSource(mlMap, srcId, fc);
+    try {
+      mlMap.addLayer({
+        id: `${this.layerPrefix}-ovl-point`,
+        type: 'circle',
+        source: srcId,
+        filter: ['==', ['geometry-type'], 'Point'],
+        paint: {
+          'circle-color': ['get', 'color'],
+          'circle-radius': ['get', 'radius'],
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#0b1220',
+        },
+      });
+      this.layerIds.push(`${this.layerPrefix}-ovl-point`);
+    } catch {
+      // ignore
+    }
+    try {
+      mlMap.addLayer({
+        id: `${this.layerPrefix}-ovl-outline`,
+        type: 'line',
+        source: srcId,
+        filter: ['==', ['geometry-type'], 'Polygon'],
+        paint: { 'line-color': options.outlineColor ?? this.fillColor, 'line-width': 1.5 },
+      });
+      this.layerIds.push(`${this.layerPrefix}-ovl-outline`);
+    } catch {
+      // ignore
+    }
   }
 
   /** 清空图层 */

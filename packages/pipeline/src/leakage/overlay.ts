@@ -81,3 +81,64 @@ export function overlayUsers(
     affected,
   };
 }
+
+// ============================================================
+// L-4 叠加渲染数据层（把统计结果转成可直接渲染的 GeoJSON）
+// ============================================================
+
+/** 用户类型配色（与严重度同序：重要用户最醒目） */
+const USER_KIND_COLORS: Record<UserKind, string> = {
+  important: '#f87171',
+  industrial: '#fbbf24',
+  commercial: '#60a5fa',
+  residential: '#4ade80',
+};
+
+/** 用户类型 → 配色 */
+export function userKindColor(kind: UserKind): string {
+  return USER_KIND_COLORS[kind] ?? '#94a3b8';
+}
+
+/**
+ * 叠加渲染 GeoJSON（L-4 渲染数据层，纯函数）
+ *
+ * 输出：危险区域线框（可选）+ 受影响用户点（按类型着色、按规模定半径）。
+ * 配色/半径写入 `properties`，渲染层用 data-driven `['get','color']`，
+ * 使**图层数恒为 2**，与受影响要素数量无关。
+ */
+export function buildLeakOverlayGeoJSON(
+  overlay: OverlayResult,
+  polygon: [number, number][] = [],
+): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = [];
+
+  if (polygon.length >= 3) {
+    const ring = polygon.map(([x, y]) => [x, y] as [number, number]);
+    ring.push(ring[0]);
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Polygon', coordinates: [ring] },
+      properties: { overlayRole: 'danger-outline' },
+    });
+  }
+
+  const scales = (overlay.affected ?? []).map((u) => u.scale ?? 0);
+  const maxScale = scales.length ? Math.max(...scales) : 0;
+  for (const u of overlay.affected ?? []) {
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [u.lng, u.lat] },
+      properties: {
+        overlayRole: 'user',
+        id: u.id,
+        kind: u.kind,
+        name: u.name ?? '',
+        scale: u.scale ?? 0,
+        radius: maxScale > 0 ? 4 + 8 * ((u.scale ?? 0) / maxScale) : 6,
+        color: userKindColor(u.kind),
+      },
+    });
+  }
+
+  return { type: 'FeatureCollection', features };
+}
