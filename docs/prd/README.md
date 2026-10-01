@@ -1,6 +1,6 @@
 # PRD 索引
 
-> 最后更新：2026-08-28。本日完成**全量 PRD 完善度审计**（`prd-coverage-audit.md`）并按审计结论修复，各 PRD 的功能点表已补齐落地状态标注与验收标准。
+> 最后更新：2026-10-02。历史：2026-08-28 完成**全量 PRD 完善度审计**（`prd-coverage-audit.md`）并按审计结论修复，各 PRD 的功能点表已补齐落地状态标注与验收标准；2026-10-02 新增编辑器派生功能清单 `editor-feature-inventory.md`。
 
 ## 一、状态口径
 
@@ -27,6 +27,7 @@
 | `prd/demo-center.md` | `apps/demo` | V1.1 | ✅ 已标注 | D1～D16 状态已标；新增 D17～D26 补充 Demo 与 4 个补齐页面（station3d / realtime / capacity / transit-OD） |
 | `prd/documentation.md` | `apps/docs` | V1.1 | ✅ 已标注 | 文档站，42 处状态标记 |
 | `prd/landing-page.md` | `apps/landing` | V2.1 | ✅ 已标注（§2.1） | 3.1～4.5 共 15 个区块全部 ✅（§4.2 场景故事、§4.5 技术支持体系已补齐） |
+| `editor-feature-inventory.md` | **派生清单**：`@caoguo/map-editor` 功能清单 | — | ✅ 按模块重组 | 由 `visual-editor.md` §13 派生，条目均回源码核对；与 §13 冲突时以源码为准并同步修正 §13 |
 | `maplibre-6networks-plan.md` | 顶层规划（六张网） | — | 🟡 部分 | 商业方案视角，非功能点级 PRD |
 | `prd-coverage-audit.md` | 审计报告（本文档的产出依据） | — | — | 含共性问题与整改优先级 |
 
