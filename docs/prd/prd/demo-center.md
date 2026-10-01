@@ -58,18 +58,22 @@
 
 ### 补充 Demo（PRD 未列，实际已实现）
 
-| # | Demo | 场景 | 页面 |
-|---|------|------|------|
-| D17 | 水系拓扑浏览 | 水网 | `demo/water/river.md` |
-| D18 | 路网与路况渲染 | 交通 | `demo/transport/road.md` |
-| D19 | 网络健康度 | 通信 | `demo/telecom/health.md` |
-| D20 | 延迟热力图 | 算力 | `demo/compute/latency.md` |
-| D21 | 算力供需预测 | 算力 | `demo/compute/predict.md` |
-| D22 | 算力 NLPG 查询 | 算力 | `demo/compute/nlp.md` |
-| D23 | 管网 NLPG 查询 | 管网 | `demo/pipeline/nlpg.md` |
-| D24 | AI 能力集合 | 通用 | `demo/ai/index.md` |
-| D25 | 引擎特性集合（控件/辉光/LOD/离线） | 通用 | `demo/features/index.md` |
-| D26 | 主题切换 | 通用 | `demo/themes/index.md` |
+| # | Demo | 场景 | 页面 | 状态 |
+|---|------|------|------|------|
+| D17 | 水系拓扑浏览 | 水网 | `demo/water/river.md` | ✅ 已落地 |
+| D18 | 路网与路况渲染 | 交通 | `demo/transport/road.md` | ✅ 已落地 |
+| D19 | 网络健康度 | 通信 | `demo/telecom/health.md` | ✅ 已落地 |
+| D20 | 延迟热力图 | 算力 | `demo/compute/latency.md` | ✅ 已落地 |
+| D21 | 算力供需预测 | 算力 | `demo/compute/predict.md` | ✅ 已落地 |
+| D22 | 算力 NLPG 查询 | 算力 | `demo/compute/nlp.md` | ✅ 已落地 |
+| D23 | 管网 NLPG 查询 | 管网 | `demo/pipeline/nlpg.md` | ✅ 已落地 |
+| D24 | AI 能力集合 | 通用 | `demo/ai/index.md` | ✅ 已落地 |
+| D25 | 引擎特性集合（控件/辉光/LOD/离线） | 通用 | `demo/features/index.md` | ✅ 已落地 |
+| D26 | 主题切换 | 通用 | `demo/themes/index.md` | ✅ 已落地 |
+
+> 路径口径：表中 `demo/...` 是站内路由，实际文件为 `apps/demo/<去掉 demo/ 前缀>`
+> （如 `demo/water/river.md` → `apps/demo/water/river.md`）。
+> 状态为 2026-10-02 逐个核实文件存在后标注（补齐原表缺失的状态列，符合维护约定第 1 条）。
 
 ### 已补齐的 Demo（2026-08-28 新增，原 PRD 未列）
 

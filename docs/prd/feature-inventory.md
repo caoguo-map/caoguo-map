@@ -23,7 +23,7 @@
 | docs | M1 / M2 / M3 | 🟡 | 规划中 |
 | demo | 大屏编辑器与运行时 | 🟡 | 编辑器入口已迁移至独立应用 `apps/editor-app`，demo 站不再内嵌 |
 
-> 文档维护待办：`demo-center.md` 的「补充 Demo（D17–D26）」表**无状态列**，不符合维护约定第 1 条，建议补标。
+
 
 ## 一、`@caoguo/maplibre`（地图引擎）
 
@@ -170,7 +170,7 @@ PRD：`phase-3` §5.1.2 / §5.2.1 / §5.4.1；`phase-2-telecom.md`（容量专�
 |------|------|------|
 | `apps/landing` | 落地页 15 个区块（3.1–3.10 + 4.1–4.5）全部落地 | ✅ |
 | `apps/docs` | 文档站 24 篇已交付（guide/api/deployment/demo）；`ai/nlpg`、`ai/copilot` 🟡 待写实 | ✅（含 🟡 2 项） |
-| `apps/demo` | Demo D1–D16 按 Phase 分组全部落地；另补 D17–D26（**缺状态列**）与 4 个补齐页面（station3d / realtime / capacity / transit-OD） | ✅ |
+| `apps/demo` | Demo D1–D16 按 Phase 分组全部落地；另补 D17–D26（已核实页面存在并补状态）与 4 个补齐页面（station3d / realtime / capacity / transit-OD） | ✅ |
 | `apps/editor-app` | 编辑器独立应用（端口 5190），alias 直连源码热更新 | ✅ |
 
 ## 十二、与 PRD 对照
