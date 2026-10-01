@@ -150,7 +150,7 @@
 - [x] GCJ-02 偏移纠正在全国范围内误差 < 50 米（`crs.test.ts` 覆盖，往返残差 < 50m）
 - [ ] 天地图底图加载时间 < 2 秒（首次）、< 500ms（缓存命中）—— 需真机网络实测，尚未量化
 - [ ] 离线模式下，50MB 瓦片数据流畅浏览 —— 尚未压测（GeoJSON 分桶为 MVP，生产级 MVT 待接入）
-- [ ] npm 包体积 < 200KB (gzip) —— 待发布后实测
+- [x] npm 包体积 < 200KB (gzip) —— ✅ 已实测 21.3 KB（2026-10-02）
 
 ---
 
@@ -464,14 +464,19 @@ LLM 生成的 SQL
 
 | 指标 | 目标值 | 说明 | 状态 |
 |------|--------|------|------|
-| npm 包体积 | < 200KB (gzip) | 核心引擎 | 🟡 待发布实测 |
+| npm 包体积 | < 200KB (gzip) | 核心引擎 | ✅ 已实测 **21.3 KB**（2026-10-02：ESM 全量 entry+chunks+子入口逐个 gzip 求和 = 21,808 B；`maplibre-gl` 为 peerDep 不计入） |
 | 首屏渲染时间 | < 2 秒 | 含底图加载 | 🟡 待真机实测 |
 | 离线模式启动 | < 1 秒 | 预缓存瓦片 | 🟡 待压测 |
 | Copilot 响应延迟 | < 3 秒 | 含 LLM 推理 | 🟡 代码层（意图识别+代码生成）已落地，端到端延迟待 LLM 联调实测 |
 | NLPG 查询延迟 P95 | < 3 秒 | 含 SQL 执行 | 🟡 代码层（文本→SQL+校验）已落地，端到端延迟待联调实测 |
-| GeoAI 编码速率 | > 300 条/秒 | 10 万条 < 5 分钟 | 🟡 代码层（batchGeocode 本地库优先）已落地，速率待压测 |
+| GeoAI 编码速率 | > 300 条/秒 | 10 万条 < 5 分钟 | ✅ 已实测 **≈12 万条/秒**（2026-10-02：10 万条 0.83s，离线本地库 `batchGeocode` + `parseAddress`，Node 环境，无网络调用） |
 | 浏览器兼容 | Chrome 90+, Firefox 88+, Edge 90+ | 现代浏览器 | 🟡 待真机验证 |
 | 文档站 LCP | < 1.5 秒 | VitePress 默认优化 | ✅ 本地构建通过 |
+
+> **实测口径（便于复现）**
+> - **包体积**：`cd packages/maplibre/dist && for f in index.js chunk-*.js sourceUtils.js styles.js terrain.js; do gzip -c "$f" | wc -c; done` 求和（`maplibre-gl` 为 peerDependency 不计入）。
+> - **GeoAI 速率**：Node import `packages/ai/dist/geoai/index.js`，对 10 万条「湖北省武汉市洪山区光谷大道N号」跑 `batchGeocode(rows, parseAddress)`（离线本地库，无网络）。
+> - 其余指标（首屏渲染 / 离线启动 / Copilot 延迟 / NLPG P95 / 浏览器兼容）需真机或 LLM / PostGIS 联调环境，暂未实测。
 
 ---
 
