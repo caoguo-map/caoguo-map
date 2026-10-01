@@ -14,3 +14,5 @@ export { LeakagePlume } from './LeakagePlume';
 export * from './overlay';
 // 气象数据接入（PRD L-5）
 export * from './weather';
+// 泄漏参数面板与取值（PRD L-1）
+export * from './panels';
