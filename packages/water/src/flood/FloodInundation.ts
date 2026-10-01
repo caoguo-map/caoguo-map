@@ -20,6 +20,8 @@ import {
   maxDepth,
 } from './floodCore';
 import { FloodRender } from './FloodRender';
+import type { EvacuationGraph, EvacuationPlan, EvacuationPlanOptions } from './evacuation';
+import { planEvacuation } from './evacuation';
 
 export interface FloodInundationOptions {
   map: CaoguoMap;
@@ -80,6 +82,23 @@ export class FloodInundation {
     const flooded = inundateCells(this.dem, waterLevel, seedCell);
     const graded = gradedFloodFeatureCollection(this.dem, flooded, waterLevel, this.demBounds);
     this.render_.renderGraded(graded);
+  }
+
+  /**
+   * 撤退路径推荐（PRD F-6）：纯函数委托，不触碰地图。
+   * 路网由调用方注入；淹没范围取指定 FloodResult 的 inundationPolygon。
+   */
+  planEvacuation(
+    graph: EvacuationGraph,
+    result: FloodResult,
+    options: Omit<EvacuationPlanOptions, 'floodPolygons'> = {},
+  ): EvacuationPlan {
+    return planEvacuation(graph, { ...options, floodPolygons: [result.inundationPolygon] });
+  }
+
+  /** 撤退路径渲染（F-6 渲染薄壳） */
+  renderEvacuation(plan: EvacuationPlan): void {
+    this.render_.renderEvacuation(plan);
   }
 
   clear(): void {

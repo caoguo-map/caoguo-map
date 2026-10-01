@@ -5,3 +5,5 @@ export * from './FloodInundation';
 export * from './scenarioCompare';
 // 淹没参数面板（PRD F-1）
 export * from './panels';
+// 撤退路径推荐（PRD F-6）
+export * from './evacuation';

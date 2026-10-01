@@ -10,6 +10,7 @@
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { upsertSource } from '@caoguo/maplibre';
 import type { FloodResult } from '../types';
+import type { EvacuationPlan } from './evacuation';
 import { depthColor } from './floodCore';
 
 export interface FloodRenderOptions {
@@ -118,6 +119,36 @@ export class FloodRender {
       },
     });
     this.layerIds.push(`${prefix}-graded`);
+  }
+
+  /**
+   * 撤退路径渲染（F-6 渲染薄壳）：把可达路线画为折线层。
+   * 不可达起点不绘制（其路线无通路，画出来无意义）。
+   */
+  renderEvacuation(plan: EvacuationPlan): void {
+    const mlMap = this.getMlMap();
+    const prefix = this.layerPrefix;
+    const features: GeoJSON.Feature<GeoJSON.LineString>[] = plan.routes
+      .filter((r) => r.reachable && r.pathCoords.length > 1)
+      .map((r) => ({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: r.pathCoords },
+        properties: {
+          originId: r.originId,
+          shelterId: r.shelterId,
+          distanceM: r.distanceM,
+        },
+      }));
+    if (!features.length) return;
+
+    upsertSource(mlMap, `${prefix}-evac-src`, { type: 'FeatureCollection', features });
+    mlMap.addLayer({
+      id: `${prefix}-evac-line`,
+      type: 'line',
+      source: `${prefix}-evac-src`,
+      paint: { 'line-color': '#22d3ee', 'line-width': 3, 'line-opacity': 0.9 },
+    });
+    this.layerIds.push(`${prefix}-evac-line`);
   }
 
   clear(): void {

@@ -300,7 +300,7 @@ const colorByDikeStatus = [
 | F-3 | 水深色谱（浅蓝→深蓝→深红）（✅ 渲染已落地：FloodRender 按 maxDepth 用 depthColor 分级着色） | P0 | ✅ 已落地 |
 | F-4 | 叠加分析：淹没范围 × 人口/建筑/耕地 | P1 | 🟡 部分落地（数据层 `overlayFlood()` 已落地：淹没多边形 × 注入点要素叠加 + 分类/规模统计，`featuresToOverlayTargets()` 可从数据集构造；**人口/建筑数据由调用方注入**，展示交集成方） |
 | F-5 | 多情景对比：不同降雨量下的淹没范围叠加 | P1 | 🟡 部分落地（数据层 `compareFloodScenarios()` 已落地：面积/水深/洪峰矩阵 + 双口径排序（最安全/最极端）；调用方跑 `simulateFlood` 后传入，**情景范围叠加渲染交集成方**） |
-| F-6 | 撤退路径推荐：基于路网 + 淹没范围计算安全撤离路线 | P2 | ❌ 未落地 |
+| F-6 | 撤退路径推荐：基于路网 + 淹没范围计算安全撤离路线 | P2 | ✅ 已落地（纯函数 `planEvacuation()`：路网由调用方注入，沿边**内部**采样判定淹没禁行（不含两端，否则起点被自身出入口封死），多源 Dijkstra 求最近安全点 + `pathCoords` 直出；类方法 `FloodInundation.planEvacuation()` / 渲染薄壳 `renderEvacuation()`） |
 
 #### 4.2.3 验收标准
 
