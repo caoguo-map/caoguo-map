@@ -28,6 +28,7 @@
 | `prd/documentation.md` | `apps/docs` | V1.1 | ✅ 已标注 | 文档站，42 处状态标记 |
 | `prd/landing-page.md` | `apps/landing` | V2.1 | ✅ 已标注（§2.1） | 3.1～4.5 共 15 个区块全部 ✅（§4.2 场景故事、§4.5 技术支持体系已补齐） |
 | `editor-feature-inventory.md` | **派生清单**：`@caoguo/map-editor` 功能清单 | — | ✅ 按模块重组 | 由 `visual-editor.md` §13 派生，条目均回源码核对；与 §13 冲突时以源码为准并同步修正 §13 |
+| `feature-inventory.md` | **派生清单**：全仓功能清单（按交付包重组） | — | ✅ 按包重组 | 由各 PRD 落地状态表派生（源于 2026-08-28 全量审计）；文首单列 🟡/❌ 待办缺口；**未逐条回源码复核**，冲突以源码为准 |
 | `maplibre-6networks-plan.md` | 顶层规划（六张网） | — | 🟡 部分 | 商业方案视角，非功能点级 PRD |
 | `prd-coverage-audit.md` | 审计报告（本文档的产出依据） | — | — | 含共性问题与整改优先级 |
 
