@@ -14,6 +14,13 @@ import { overlayUsers } from './overlay';
 import type { FloodParams, FloodResult } from './floodFill';
 import { simulateFlood } from './floodFill';
 import type { DemGrid } from './floodFill';
+import type {
+  WeatherLocation,
+  WeatherObservation,
+  WeatherProvider,
+  WeatherRaw,
+} from './weather';
+import { normalizeWeather, toWindParams } from './weather';
 
 export type { GasLeakParams, GasLeakResult, FloodParams, FloodResult, DemGrid };
 
@@ -46,6 +53,9 @@ export class LeakagePlume {
   private listeners = new Set<Listener>();
   private lastResult: GasLeakResult | FloodResult | null = null;
   private gasRafId: number | null = null;
+  /** 气象取数实现（PRD L-5）：由调用方注入，本包不内置 fetch */
+  private weatherProvider?: WeatherProvider;
+  private lastWeather?: WeatherObservation;
 
   constructor(options: LeakagePlumeOptions) {
     this.map = options.map;
@@ -183,6 +193,47 @@ export class LeakagePlume {
   /** 取最后一次结果 */
   getLastResult(): GasLeakResult | FloodResult | null {
     return this.lastResult;
+  }
+
+  // --------------------------------------------------
+  // 气象数据接入（PRD L-5）
+  // 传输层由调用方注入，本包保持离线友好、不内置 fetch
+  // --------------------------------------------------
+
+  /** 注入气象取数实现（REST / WebSocket / 本地缓存 / 测试桩均可） */
+  setWeatherProvider(provider: WeatherProvider | undefined): void {
+    this.weatherProvider = provider;
+  }
+
+  /** 取最近一次成功接入的气象观测 */
+  getLastWeather(): WeatherObservation | undefined {
+    return this.lastWeather;
+  }
+
+  /**
+   * 拉取实时气象并归一化（风向→来向度数、风速→m/s）。
+   * 未注入 provider 时抛错，避免静默用 0 值算出错方向。
+   */
+  async refreshWeather(
+    location: WeatherLocation,
+    signal?: AbortSignal,
+  ): Promise<WeatherObservation> {
+    if (!this.weatherProvider) {
+      throw new Error('未配置 WeatherProvider：请先 setWeatherProvider 注入取数实现');
+    }
+    const raw: WeatherRaw | WeatherObservation = await this.weatherProvider(location, signal);
+    const obs = normalizeWeather(raw);
+    this.lastWeather = obs;
+    return obs;
+  }
+
+  /** 气象观测 → 可直接并入 GasLeakParams 的风场字段 */
+  windParamsFrom(obs: WeatherObservation | undefined = this.lastWeather): {
+    windDirection: number;
+    windSpeed: number;
+  } {
+    if (!obs) throw new Error('暂无气象观测：请先 refreshWeather() 或传入 obs');
+    return toWindParams(obs);
   }
 
   // --------------------------------------------------

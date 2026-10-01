@@ -287,7 +287,7 @@ def simulate_burst(pipe_id,管网拓扑):
 | L-2 | 动态扩散动画：危险区域随时间扩大 | P0 | ✅ 已落地（纯函数 `plumeAtTime(t)` 时间切片 + `LeakagePlume.playGasAnimation()`，rAF 推进烟羽前缘；**无 rAF 环境自动退化为静态快照**） |
 | L-3 | 等浓度线：展示不同浓度等级的危险区域 | P1 | ✅ 已落地（`renderContours` 按阈值 step 分级着色 + `fill-outline-color` 描边；此前误标） |
 | L-4 | 叠加分析：危险区域与建筑/人口数据叠加 | P1 | 🟡 部分落地（数据层 `overlayUsers()` 已落地：point-in-polygon 叠加 + 分类统计 + 影响人口合计，`LeakagePlume.overlayUsers()` 取最大等值线叠加；**建筑/人口数据由调用方注入**，渲染/展示交集成方） |
-| L-5 | 气象数据接入：自动获取实时风向/风速 | P2 | ❌ 未落地 |
+| L-5 | 气象数据接入：自动获取实时风向/风速 | P2 | ✅ 已落地（纯函数 `weather.ts`：单位/坐标系统一——对外「来向度 + m/s」，对内转换高斯烟羽所需弧度；支持 km/h 与蒲福风级折算、中英文方位解析；`WeatherProvider` 由调用方注入（REST/WebSocket/缓存/桩），**本包保持离线友好不内置 fetch**；类方法 `LeakagePlume.setWeatherProvider()` / `refreshWeather()` / `windParamsFrom()`） |
 
 #### 4.3.4 验收标准
 

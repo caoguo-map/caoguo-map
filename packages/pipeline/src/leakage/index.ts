@@ -12,3 +12,5 @@ export type {
 export { LeakagePlume } from './LeakagePlume';
 // 叠加分析（PRD L-4）
 export * from './overlay';
+// 气象数据接入（PRD L-5）
+export * from './weather';
