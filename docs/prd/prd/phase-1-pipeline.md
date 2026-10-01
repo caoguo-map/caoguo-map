@@ -100,7 +100,7 @@
 | # | 功能 | 描述 | 优先级 | 状态 |
 |---|------|------|--------|------|
 | P-1 | 拓扑渲染 | 管段按类型着色（燃气=黄色/供水=蓝色/供热=红色），节点按设备类型显示图标 | P0 | ✅ 已落地（管段着色 + 节点按类型着色 `NODE_KIND_COLORS` + emoji 图标层 `NODE_KIND_ICONS`） |
-| P-2 | 层级钻取 | 区域→街道→小区→楼栋，逐级钻取管网 | P0 | 🟡 部分落地 |
+| P-2 | 层级钻取 | 区域→街道→小区→楼栋，逐级钻取管网 | P0 | ✅ 已落地（此前只有单层 `region` 等值过滤、`drillUp()` 一次性回顶。现补层级模型：纯函数 `hierarchy.ts` 支持 `region` 层级路径（`江岸区/一元街道/滨江小区`，`/` 分隔，单段值向后兼容）、`isUnder` 前缀归属、**逐级** `parentPath` 回溯、`aggregateStats` 层级聚合、`listChildren`/`buildHierarchy` 子级清单与层级树；类方法 `drillTo`/`drillUp`（逐级）/`getBreadcrumb`/`getLevelStats`/`listChildren`/`getHierarchy`；`DrillDownEvent` 增加可选 `level`/`path`） |
 | P-3 | 设备卡片 | 点击节点/管段弹出信息卡片（属性+图片+维护记录） | P0 | ✅ 已落地（数据层 `getNodeDetail()` / `getPipeDetail()` + 零依赖卡片外壳 `renderNodeCardHtml()` / `renderPipeCardHtml()`；富交互面板可自建） |
 | P-4 | 连通性高亮 | 选中某段管线，高亮显示上下游连通路径 | P1 | ✅ 已落地 |
 | P-5 | 拓扑编辑 | 拖拽添加管段/节点，自动维护连通性 | P2 | 🟡 部分落地（**数据层已落地**：`addNode()` / `addPipe()`（端点校验保证连通性、id 自动生成、重复抛错）/ `removePipe()` / `removeNode()`（级联删管段），写入后自动重渲染；**拖拽交互由集成方实现**——任何交互形态产出 node/pipe 对象后调本组 API 即可） |

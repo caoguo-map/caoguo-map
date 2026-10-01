@@ -268,8 +268,12 @@ export interface PipeSelectEvent {
 export interface DrillDownEvent {
   /** 上一级区域 */
   from: string | null;
-  /** 目标区域 */
+  /** 目标区域（层级路径，`/` 分隔）；回到顶层时为空串 */
   to: string;
+  /** 目标层级序号（0=区域，1=街道…）；回到顶层时为 null */
+  level?: number | null;
+  /** 目标层级路径分段 */
+  path?: string[];
 }
 
 // ============================================================

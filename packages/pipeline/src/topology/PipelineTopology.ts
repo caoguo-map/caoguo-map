@@ -31,6 +31,21 @@ import { renderCardHtml } from '@caoguo/maplibre';
 import type { RenderCardOptions } from '@caoguo/maplibre';
 import type { ImportantUserMarker } from '../burst/importantUsers';
 import { buildImportantUserMarkers, importantUserColor } from '../burst/importantUsers';
+import type {
+  BreadcrumbItem,
+  HierarchyEntry,
+  HierarchyNode,
+  HierarchyStats,
+} from './hierarchy';
+import {
+  aggregateStats,
+  breadcrumb,
+  buildHierarchy,
+  isUnder,
+  parentPath,
+  splitPath,
+  listChildren as listChildEntries,
+} from './hierarchy';
 
 /** 节点类型 → emoji 图标（P-1 节点图标；junction 无专用图标，仅按色区分） */
 export const NODE_KIND_ICONS: Record<string, string> = {
@@ -326,7 +341,7 @@ export class PipelineTopology {
     if (this.pipelineTypes?.length && !this.pipelineTypes.includes(p.pipelineType as PipelineType)) {
       return false;
     }
-    if (this.currentRegion && p.region !== this.currentRegion) return false;
+    if (!isUnder(this.currentRegion, p.region)) return false;
     const f = this.layerFilter;
     if (f) {
       const props = p.properties ?? {};
@@ -346,8 +361,7 @@ export class PipelineTopology {
     if (this.pipelineTypes?.length && !this.pipelineTypes.includes(n.pipelineType as PipelineType)) {
       return false;
     }
-    if (this.currentRegion && n.region !== this.currentRegion) return false;
-    return true;
+    return isUnder(this.currentRegion, n.region);
   }
 
   /** 计算管段使用年限（年） */
@@ -399,19 +413,65 @@ export class PipelineTopology {
     return r;
   }
 
+  /**
+   * 层级钻取（P-2）：下钻到指定区域。
+   * 单段值（'江岸区'）等价于此前的区域过滤，**向后兼容**；
+   * 多段值（'江岸区/一元街道/滨江小区'）按前缀匹配逐级下钻。
+   */
   drillDown(region: string): void {
-    const from = this.currentRegion;
-    this.currentRegion = region;
-    this.render();
-    for (const l of this.drillListeners) l({ from, to: region });
+    this.drillTo(region);
   }
 
-  /** 层级钻取：返回上一级（清空区域过滤） */
+  /** 下钻到指定层级路径 */
+  drillTo(path: string): void {
+    const from = this.currentRegion;
+    this.currentRegion = path || null;
+    this.render();
+    this.emitDrill(from, this.currentRegion ?? '');
+  }
+
+  /** 逐级返回上一级；已在顶层则回到全量（事件 to 为空串） */
   drillUp(): void {
     const from = this.currentRegion;
-    this.currentRegion = null;
+    const parent = parentPath(this.currentRegion);
+    this.currentRegion = parent;
     this.render();
-    for (const l of this.drillListeners) l({ from, to: '' });
+    this.emitDrill(from, parent ?? '');
+  }
+
+  private emitDrill(from: string | null, to: string): void {
+    const parts = splitPath(to);
+    for (const l of this.drillListeners) {
+      l({ from, to, level: parts.length ? parts.length - 1 : null, path: parts });
+    }
+  }
+
+  /** 当前层级路径（null = 全量） */
+  getCurrentPath(): string | null {
+    return this.currentRegion;
+  }
+
+  /** 当前层级的面包屑（区域 → 街道 → 小区 → 楼栋） */
+  getBreadcrumb(): BreadcrumbItem[] {
+    return breadcrumb(this.currentRegion);
+  }
+
+  /** 某路径下（含全部子级）的聚合统计 */
+  getLevelStats(path: string | null = this.currentRegion): HierarchyStats {
+    return aggregateStats(this.dataset, path);
+  }
+
+  /** 某路径下的直接子级清单（含各自统计，供逐级下钻 UI 使用） */
+  listChildren(path: string | null = this.currentRegion): HierarchyEntry[] {
+    return listChildEntries(this.dataset, path);
+  }
+
+  /** 构建层级树（默认到楼栋 4 级） */
+  getHierarchy(
+    path: string | null = this.currentRegion,
+    maxDepth?: number,
+  ): HierarchyNode[] {
+    return buildHierarchy(this.dataset, path, maxDepth);
   }
 
   /** 分层控制：按管径/材质/状态/年代过滤 */
