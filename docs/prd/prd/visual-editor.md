@@ -879,7 +879,7 @@ export function renderFromJSON(json: DashboardConfig, container: string | HTMLEl
 | 3.4 图层列表 | 图层树、显隐与顺序管理 | ✅ 已落地 |
 | 3.5 场景管理 | 多场景创建/切换/轮播 | ✅ 已落地 |
 | 3.6 系统自检 | 静态体检 + 数据源连通性检查 | ✅ 已落地 |
-| 4.1 数据源 | 14 种类型（含 6 种数据库） + 后端代理取数 | ✅ 已落地 |
+| 4.1 数据源 | 13 种类型（3 静态 + 4 接口 + 5 数据库 + `binding`；数据库为 mysql/达梦/influxdb/oceanbase/clickhouse 共 5 种） + 后端代理取数 | ✅ 已落地 |
 | 4.2 数据联动 | 设备点击→详情面板、筛选标签→图层/图表、告警列表→定位 | ✅ 已落地 |
 | 4.2.1 实时刷新反馈 | 轮询刷新触发标记脉冲 / 卡片描边 / 数据点闪动（节流去抖） | ✅ 已落地 |
 | 4.2.2 阈值本地着色 | 正常/警告/严重三档规则着色与脉冲，随节点 JSON 导出 | ✅ 已落地 |
@@ -888,7 +888,7 @@ export function renderFromJSON(json: DashboardConfig, container: string | HTMLEl
 | 4.2 下钻 | 地图标记点击→跳转子场景（`drillDownSceneKey`）+ 状态栏返回上级场景（`sceneHistory` 栈） | ✅ 已落地 |
 | 5 JSON 配置格式 | `parseScreenJSON` / `renderScreen` / `renderFromJSON` 全链路 | ✅ 已落地 |
 | 6.1 编辑器内预览 | 预览模式（隐藏编辑器 UI） | ✅ 已落地 |
-| 6.2 模板系统 | 8 套行业模板（管网/电网/水网/交通/农业/通信/算力/空白） | ✅ 已落地 |
+| 6.2 模板系统 | 8 套行业模板（管网/电网/水网/交通/农业/通信/算力/空白），各含行业 schemas、专属 REST 端点与差异化组件（指标仪表/状态饼图/告警列表/土壤剖面/进度卡/数据网格） | ✅ 已落地 |
 | 7.1/7.2 运行 | 全屏播放 `renderFromJSON` + 容器嵌入 `renderScreen` | ✅ 已落地 |
 | 7.3 导出脱敏 | 导出剔除 `proxyBase` 与密码，本地草稿保留（见 §7.3） | ✅ 已落地 |
 | — 编辑体验 | 撤销重做、Ctrl+C/V/Z/S、Delete、Ctrl+点击多选 | ✅ 已落地 |
@@ -930,7 +930,7 @@ export function renderFromJSON(json: DashboardConfig, container: string | HTMLEl
 | `DataCard` / `DataGrid` / `ProgressCard` / `SoilProfile` / `AlertList` / `StatRow` | `ComponentView.vue` | 🟡 已实现，**无独立组件** |
 | `TrendChart` / `BarChart` / `GaugeChart` / `PieChart` / `WindRose` | `ComponentView.vue` | 🟡 已实现，**无独立组件** |
 | 主题 `dark.css` / `light.css` | `@caoguo/theme` → `styles/tokens.css` | ✅ 已落地（CSS 变量，随 `data-theme` 切换） |
-| 主题 `agriculture.css` | — | ❌ 未落地（农业场景改用模板 `templates/agriculture.json` + 行业主题色板） |
+| 主题 `agriculture.css` | — | ❌ 未落地（农业场景改用 `templates.ts` 的 agriculture 构建器，含行业 schemas 与土壤剖面/指标组件 + 行业主题色板） |
 
 状态口径：**✅ 已落地** / **🟡 已实现但不可独立复用** / **🔵 规划中（未实现）** / **❌ 已放弃或不适用**。
 

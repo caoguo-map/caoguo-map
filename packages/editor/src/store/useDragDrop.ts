@@ -188,10 +188,17 @@ function snapAxis(
   return best ? { v: best.v, line: best.line } : { v: values[0].v, line: null };
 }
 
+let moved = false;
 function onMove(ev: MouseEvent) {
-  const { e } = ensure();
+  const { e, h } = ensure();
   const d = drag.value;
   if (!d.mode || !d.id) return;
+  // commit 语义是「可变操作前」记录快照：必须在首次真实位移前提交。
+  // 此前放在 stop() 里事后提交，会把「移动后」的状态压入 past，导致撤销拖拽是空操作。
+  if (!moved) {
+    h.commit();
+    moved = true;
+  }
   const zoom = e.state.zoom;
   const dx = (ev.clientX - d.startX) / zoom;
   const dy = (ev.clientY - d.startY) / zoom;
@@ -236,15 +243,11 @@ function onMove(ev: MouseEvent) {
   }
 }
 
-let committed = false;
 function stop() {
-  const { h } = ensure();
   window.removeEventListener('mousemove', onMove);
   window.removeEventListener('mouseup', stop);
-  if (drag.value.mode && !committed) {
-    h.commit();
-  }
-  committed = false;
+  // 历史已在首次位移时提交（见 onMove），此处只清理拖拽态与参考线
+  moved = false;
   guides.value = { x: [], y: [] };
   drag.value = { mode: null, id: null, startX: 0, startY: 0, origX: 0, origY: 0, origW: 0, origH: 0, origins: new Map() };
 }

@@ -10,7 +10,7 @@ import { useHistory } from '../store/useHistory';
 import { genId } from '../components';
 import type { ComponentNode } from '../types';
 
-const { state, selectedIds, removeNode, activeScene, findNode, setSelection } = useEditor();
+const { state, selectedIds, removeNode, activeScene, findNode, setSelection, exportJSON } = useEditor();
 const { undo, redo, commit } = useHistory();
 
 // ── 复制 / 粘贴（Ctrl+C / Ctrl+V）：深拷贝节点并重新生成 id（含嵌套 children），支持多选 ──
@@ -65,7 +65,9 @@ function onKey(ev: KeyboardEvent) {
   } else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'y') {
     ev.preventDefault(); redo();
   } else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 's') {
-    ev.preventDefault(); // 保存由 Toolbar 处理
+    ev.preventDefault();
+    // 与自动保存一致：写入本地草稿（保留密钥），避免点击「保存」按钮以外无法持久化
+    localStorage.setItem('caoguo-dashboard-draft', exportJSON({ includeSecrets: true }));
   }
 }
 
