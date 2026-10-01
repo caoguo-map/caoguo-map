@@ -22,8 +22,13 @@ import {
 import { FloodRender } from './FloodRender';
 import type { EvacuationGraph, EvacuationPlan, EvacuationPlanOptions } from './evacuation';
 import { planEvacuation } from './evacuation';
-import type { FloodScenario, FloodScenarioComparison } from './scenarioCompare';
-import { compareFloodScenarios } from './scenarioCompare';
+import type {
+  FloodScenario,
+  FloodScenarioComparison,
+  FloodOverlayResult,
+  FloodOverlayTarget,
+} from './scenarioCompare';
+import { compareFloodScenarios, overlayFlood } from './scenarioCompare';
 
 export interface FloodInundationOptions {
   map: CaoguoMap;
@@ -101,6 +106,20 @@ export class FloodInundation {
   /** 撤退路径渲染（F-6 渲染薄壳） */
   renderEvacuation(plan: EvacuationPlan): void {
     this.render_.renderEvacuation(plan);
+  }
+
+  /** 淹没叠加分析（F-4 数据层委托）：淹没范围 × 注入的点要素 → 影响统计 */
+  overlayFlood(polygon: [number, number][], targets: FloodOverlayTarget[] | undefined): FloodOverlayResult {
+    return overlayFlood(polygon, targets);
+  }
+
+  /** 淹没叠加渲染（F-4 渲染薄壳） */
+  renderOverlay(
+    overlay: FloodOverlayResult,
+    polygon: [number, number][] = [],
+    options: { outlineColor?: string } = {},
+  ): void {
+    this.render_.renderOverlay(overlay, polygon, options);
   }
 
   /** 多情景对比叠加渲染（F-5 渲染薄壳） */

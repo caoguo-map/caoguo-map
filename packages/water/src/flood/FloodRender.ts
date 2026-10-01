@@ -11,8 +11,8 @@ import type { Map as CaoguoMap } from '@caoguo/maplibre';
 import { upsertSource } from '@caoguo/maplibre';
 import type { FloodResult } from '../types';
 import type { EvacuationPlan } from './evacuation';
-import type { FloodScenarioComparison } from './scenarioCompare';
-import { buildScenarioComparisonGeoJSON } from './scenarioCompare';
+import type { FloodScenarioComparison, FloodOverlayResult } from './scenarioCompare';
+import { buildScenarioComparisonGeoJSON, buildFloodOverlayGeoJSON } from './scenarioCompare';
 import { depthColor } from './floodCore';
 
 export interface FloodRenderOptions {
@@ -181,6 +181,48 @@ export class FloodRender {
       paint: { 'line-color': ['get', 'color'], 'line-width': 1.5 },
     });
     this.layerIds.push(`${prefix}-cmp-fill`, `${prefix}-cmp-line`);
+  }
+
+  /**
+   * 淹没叠加渲染（F-4 渲染薄壳）：
+   * 淹没范围线框 + 受影响点要素（按类型着色、按规模定半径）。
+   * 配色/半径取自 feature 属性，data-driven 着色使**图层数恒为 2**，与要素数量无关。
+   */
+  renderOverlay(
+    overlay: FloodOverlayResult,
+    polygon: [number, number][] = [],
+    options: { outlineColor?: string } = {},
+  ): void {
+    const fc = buildFloodOverlayGeoJSON(overlay, polygon);
+    if (!fc.features.length) return;
+    const mlMap = this.getMlMap();
+    const prefix = this.layerPrefix;
+
+    upsertSource(mlMap, `${prefix}-ovl-src`, fc);
+    mlMap.addLayer({
+      id: `${prefix}-ovl-point`,
+      type: 'circle',
+      source: `${prefix}-ovl-src`,
+      filter: ['==', ['geometry-type'], 'Point'],
+      paint: {
+        'circle-color': ['get', 'color'],
+        'circle-radius': ['get', 'radius'],
+        'circle-opacity': 0.9,
+        'circle-stroke-width': 1,
+        'circle-stroke-color': '#0b1220',
+      },
+    });
+    mlMap.addLayer({
+      id: `${prefix}-ovl-outline`,
+      type: 'line',
+      source: `${prefix}-ovl-src`,
+      filter: ['==', ['geometry-type'], 'Polygon'],
+      paint: {
+        'line-color': options.outlineColor ?? '#38bdf8',
+        'line-width': 1.5,
+      },
+    });
+    this.layerIds.push(`${prefix}-ovl-point`, `${prefix}-ovl-outline`);
   }
 
   clear(): void {

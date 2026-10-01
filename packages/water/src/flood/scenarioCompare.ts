@@ -144,6 +144,78 @@ export function compareFloodScenarios(
   };
 }
 
+// ============================================================
+// F-4 叠加渲染数据层（把统计结果转成可直接渲染的 GeoJSON）
+// ============================================================
+
+/** 常见叠加类型的配色；未列出的类型按名称稳定散列到色板，保证同类型同色 */
+const OVERLAY_KIND_COLORS: Record<string, string> = {
+  population: '#f87171',
+  building: '#fbbf24',
+  farmland: '#4ade80',
+  school: '#60a5fa',
+  hospital: '#f472b6',
+};
+
+/** 稳定字符串散列（同 kind 恒定同色，不引入随机） */
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+/** 叠加类型 → 配色 */
+export function overlayKindColor(kind: string): string {
+  const known = OVERLAY_KIND_COLORS[kind];
+  if (known) return known;
+  return SCENARIO_COLORS[hashString(kind) % SCENARIO_COLORS.length];
+}
+
+/**
+ * 淹没叠加渲染 GeoJSON（F-4 渲染数据层，纯函数）
+ *
+ * 输出：淹没范围多边形（线框，作底图参照）+ 受影响的点要素（按类型着色、按规模定半径）。
+ * 配色写进 `properties.color`，渲染层用 data-driven `['get','color']`，
+ * 使**图层数恒定**（1 个圆点层 + 1 个线层），与要素数量无关。
+ */
+export function buildFloodOverlayGeoJSON(
+  overlay: FloodOverlayResult,
+  polygon: [number, number][] = [],
+): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = [];
+
+  if (polygon.length >= 3) {
+    const ring = polygon.map(([x, y]) => [x, y] as [number, number]);
+    ring.push(ring[0]);
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Polygon', coordinates: [ring] },
+      properties: { overlayRole: 'flood-outline' },
+    });
+  }
+
+  const scales = (overlay.affected ?? []).map((t) => t.scale ?? 0);
+  const maxScale = scales.length ? Math.max(...scales) : 0;
+  for (const t of overlay.affected ?? []) {
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [t.lng, t.lat] },
+      properties: {
+        overlayRole: 'target',
+        id: t.id,
+        kind: t.kind,
+        name: t.name ?? '',
+        scale: t.scale ?? 0,
+        // 半径按规模归一化到 4~12 px，无规模数据时取中值
+        radius: maxScale > 0 ? 4 + 8 * ((t.scale ?? 0) / maxScale) : 6,
+        color: overlayKindColor(t.kind),
+      },
+    });
+  }
+
+  return { type: 'FeatureCollection', features };
+}
+
 /** 情景配色板（按顺序循环取用，保证多情景叠加时颜色可区分） */
 export const SCENARIO_COLORS = ['#38bdf8', '#f59e0b', '#f472b6', '#a78bfa', '#4ade80', '#fb7185'];
 

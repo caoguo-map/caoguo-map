@@ -298,7 +298,7 @@ const colorByDikeStatus = [
 | F-1 | 参数面板：降雨量/来水量/河段选择 | P0 | ✅ 已落地（零依赖面板 `renderFloodParamsHtml({rainfall,inflow,reaches})`：`data-field` 事件委托，回调更新 `FloodInput` 重跑 `simulateFlood()`） |
 | F-2 | 淹没范围动态渲染（渐进式动画）（✅ 渲染已落地：FloodRender 接收 FloodResult 画淹没面，水位上涨可重复调用更新） | P0 | ✅ 已落地 |
 | F-3 | 水深色谱（浅蓝→深蓝→深红）（✅ 渲染已落地：FloodRender 按 maxDepth 用 depthColor 分级着色） | P0 | ✅ 已落地 |
-| F-4 | 叠加分析：淹没范围 × 人口/建筑/耕地 | P1 | 🟡 部分落地（数据层 `overlayFlood()` 已落地：淹没多边形 × 注入点要素叠加 + 分类/规模统计，`featuresToOverlayTargets()` 可从数据集构造；**人口/建筑数据由调用方注入**，展示交集成方） |
+| F-4 | 叠加分析：淹没范围 × 人口/建筑/耕地 | P1 | ✅ 已落地（数据层 `overlayFlood()`（多边形 × 注入点要素 + 分类/规模统计）+ 渲染数据层 `buildFloodOverlayGeoJSON()`（受影响点按类型着色、按规模定半径 + 淹没线框）+ `overlayKindColor()`（未知类型按名称稳定散列，同类型恒定同色）+ 渲染薄壳 `FloodRender.renderOverlay()`（data-driven `['get','color']`，图层数恒为 2）+ 类委托 `FloodInundation.overlayFlood()` / `renderOverlay()`。**人口/建筑数据仍由调用方注入**——本包负责叠加计算与可视化，不内置底数数据） |
 | F-5 | 多情景对比：不同降雨量下的淹没范围叠加 | P1 | ✅ 已落地（数据层 `compareFloodScenarios()`（面积/水深/洪峰矩阵 + 双口径排序）+ 渲染数据层 `buildScenarioComparisonGeoJSON()`（每情景闭合多边形 + `properties.color` 配色）+ 渲染薄壳 `FloodRender.renderScenarioComparison()`（半透明填充 + 同色描边，data-driven `['get','color']`，图层数恒为 2 与情景数无关）+ 类委托 `FloodInundation.compareScenarios()` / `renderScenarioComparison()`） |
 | F-6 | 撤退路径推荐：基于路网 + 淹没范围计算安全撤离路线 | P2 | ✅ 已落地（纯函数 `planEvacuation()`：路网由调用方注入，沿边**内部**采样判定淹没禁行（不含两端，否则起点被自身出入口封死），多源 Dijkstra 求最近安全点 + `pathCoords` 直出；类方法 `FloodInundation.planEvacuation()` / 渲染薄壳 `renderEvacuation()`） |
 
