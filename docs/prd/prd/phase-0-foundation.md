@@ -467,8 +467,8 @@ LLM 生成的 SQL
 | npm 包体积 | < 200KB (gzip) | 核心引擎 | ✅ 已实测 **21.3 KB**（2026-10-02：ESM 全量 entry+chunks+子入口逐个 gzip 求和 = 21,808 B；`maplibre-gl` 为 peerDep 不计入） |
 | 首屏渲染时间 | < 2 秒 | 含底图加载 | 🟡 待真机实测 |
 | 离线模式启动 | < 1 秒 | 预缓存瓦片 | 🟡 待压测 |
-| Copilot 响应延迟 | < 3 秒 | 含 LLM 推理 | 🟡 代码层（意图识别+代码生成）已落地，端到端延迟待 LLM 联调实测 |
-| NLPG 查询延迟 P95 | < 3 秒 | 含 SQL 执行 | 🟡 代码层（文本→SQL+校验）已落地，端到端延迟待联调实测 |
+| Copilot 响应延迟 | < 3 秒 | 含 LLM 推理 | 🟡 部分实测：**代码层（意图识别+代码生成）已实测 P95 0.027 ms**（2026-10-02，Node，2000 次采样）；端到端（含 LLM 推理与网络）待联调实测 |
+| NLPG 查询延迟 P95 | < 3 秒 | 含 SQL 执行 | 🟡 部分实测：**代码层（文本→SQL+安全校验）已实测 P95 0.059 ms**（2026-10-02，Node，2000 次采样，**不含 SQL 执行与网络**）；端到端待 PostGIS 联调实测 |
 | GeoAI 编码速率 | > 300 条/秒 | 10 万条 < 5 分钟 | ✅ 已实测 **≈12 万条/秒**（2026-10-02：10 万条 0.83s，离线本地库 `batchGeocode` + `parseAddress`，Node 环境，无网络调用） |
 | 浏览器兼容 | Chrome 90+, Firefox 88+, Edge 90+ | 现代浏览器 | 🟡 待真机验证 |
 | 文档站 LCP | < 1.5 秒 | VitePress 默认优化 | ✅ 本地构建通过 |
@@ -476,7 +476,11 @@ LLM 生成的 SQL
 > **实测口径（便于复现）**
 > - **包体积**：`cd packages/maplibre/dist && for f in index.js chunk-*.js sourceUtils.js styles.js terrain.js; do gzip -c "$f" | wc -c; done` 求和（`maplibre-gl` 为 peerDependency 不计入）。
 > - **GeoAI 速率**：Node import `packages/ai/dist/geoai/index.js`，对 10 万条「湖北省武汉市洪山区光谷大道N号」跑 `batchGeocode(rows, parseAddress)`（离线本地库，无网络）。
-> - 其余指标（首屏渲染 / 离线启动 / Copilot 延迟 / NLPG P95 / 浏览器兼容）需真机或 LLM / PostGIS 联调环境，暂未实测。
+> - **NLPG / Copilot 延迟**：Node import `packages/ai/dist/{nlpg,copilot}/index.js`，循环 2000 次分别跑
+>   `nlpgQuery(text)` 与 `generateFromQuery(text)`，取 `performance.now()` 差值排序求 P95。**仅代码层**，
+>   不含 LLM 推理、SQL 执行与网络。
+> - 完全未实测 3 项：首屏渲染 / 离线启动 / 浏览器兼容 —— 均需真机浏览器环境；
+>   Copilot 与 NLPG 的**端到端**（含 LLM 推理 / PostGIS 执行）需联调环境。
 
 ---
 
