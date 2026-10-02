@@ -7,7 +7,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
-import { upsertSource } from '@caoguo/maplibre';
+import { upsertSource, addOverlayLayers } from '@caoguo/maplibre';
 import type { GasLeakParams, GasLeakResult } from './gaussianPlume';
 import { gaussianPlume, plumeAtTime } from './gaussianPlume';
 import { overlayUsers, buildLeakOverlayGeoJSON } from './overlay';
@@ -187,35 +187,14 @@ export class LeakagePlume {
       };
     }).instance;
 
-    const srcId = `${this.layerPrefix}-ovl-src`;
-    upsertSource(mlMap, srcId, fc);
     try {
-      mlMap.addLayer({
-        id: `${this.layerPrefix}-ovl-point`,
-        type: 'circle',
-        source: srcId,
-        filter: ['==', ['geometry-type'], 'Point'],
-        paint: {
-          'circle-color': ['get', 'color'],
-          'circle-radius': ['get', 'radius'],
-          'circle-opacity': 0.9,
-          'circle-stroke-width': 1,
-          'circle-stroke-color': '#0b1220',
-        },
+      const ids = addOverlayLayers(mlMap, {
+        sourceId: `${this.layerPrefix}-ovl-src`,
+        layerPrefix: `${this.layerPrefix}-ovl`,
+        data: fc,
+        outlineColor: options.outlineColor ?? this.fillColor,
       });
-      this.layerIds.push(`${this.layerPrefix}-ovl-point`);
-    } catch {
-      // ignore
-    }
-    try {
-      mlMap.addLayer({
-        id: `${this.layerPrefix}-ovl-outline`,
-        type: 'line',
-        source: srcId,
-        filter: ['==', ['geometry-type'], 'Polygon'],
-        paint: { 'line-color': options.outlineColor ?? this.fillColor, 'line-width': 1.5 },
-      });
-      this.layerIds.push(`${this.layerPrefix}-ovl-outline`);
+      this.layerIds.push(...ids);
     } catch {
       // ignore
     }

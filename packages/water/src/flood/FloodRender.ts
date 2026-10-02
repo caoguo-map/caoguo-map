@@ -8,7 +8,7 @@
  */
 
 import type { Map as CaoguoMap } from '@caoguo/maplibre';
-import { upsertSource } from '@caoguo/maplibre';
+import { upsertSource, addOverlayLayers } from '@caoguo/maplibre';
 import type { FloodResult } from '../types';
 import type { EvacuationPlan } from './evacuation';
 import type { FloodScenarioComparison, FloodOverlayResult } from './scenarioCompare';
@@ -196,33 +196,13 @@ export class FloodRender {
     const fc = buildFloodOverlayGeoJSON(overlay, polygon);
     if (!fc.features.length) return;
     const mlMap = this.getMlMap();
-    const prefix = this.layerPrefix;
-
-    upsertSource(mlMap, `${prefix}-ovl-src`, fc);
-    mlMap.addLayer({
-      id: `${prefix}-ovl-point`,
-      type: 'circle',
-      source: `${prefix}-ovl-src`,
-      filter: ['==', ['geometry-type'], 'Point'],
-      paint: {
-        'circle-color': ['get', 'color'],
-        'circle-radius': ['get', 'radius'],
-        'circle-opacity': 0.9,
-        'circle-stroke-width': 1,
-        'circle-stroke-color': '#0b1220',
-      },
+    const ids = addOverlayLayers(mlMap, {
+      sourceId: `${this.layerPrefix}-ovl-src`,
+      layerPrefix: `${this.layerPrefix}-ovl`,
+      data: fc,
+      outlineColor: options.outlineColor,
     });
-    mlMap.addLayer({
-      id: `${prefix}-ovl-outline`,
-      type: 'line',
-      source: `${prefix}-ovl-src`,
-      filter: ['==', ['geometry-type'], 'Polygon'],
-      paint: {
-        'line-color': options.outlineColor ?? '#38bdf8',
-        'line-width': 1.5,
-      },
-    });
-    this.layerIds.push(`${prefix}-ovl-point`, `${prefix}-ovl-outline`);
+    this.layerIds.push(...ids);
   }
 
   clear(): void {

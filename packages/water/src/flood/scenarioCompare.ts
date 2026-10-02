@@ -10,6 +10,7 @@
  * 纯函数，不依赖地图实例，可在 Node 单测。
  */
 
+import { assignKindColor, buildOverlayGeoJSON } from '@caoguo/maplibre';
 import type { FloodResult, WaterFeature } from '../types';
 
 // ============================================================
@@ -157,18 +158,9 @@ const OVERLAY_KIND_COLORS: Record<string, string> = {
   hospital: '#f472b6',
 };
 
-/** 稳定字符串散列（同 kind 恒定同色，不引入随机） */
-function hashString(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return h;
-}
-
-/** 叠加类型 → 配色 */
+/** 叠加类型 → 配色（未知类型按名称稳定散列取色板，委托 `@caoguo/maplibre` 通用实现） */
 export function overlayKindColor(kind: string): string {
-  const known = OVERLAY_KIND_COLORS[kind];
-  if (known) return known;
-  return SCENARIO_COLORS[hashString(kind) % SCENARIO_COLORS.length];
+  return assignKindColor(kind, OVERLAY_KIND_COLORS);
 }
 
 /**
@@ -182,38 +174,20 @@ export function buildFloodOverlayGeoJSON(
   overlay: FloodOverlayResult,
   polygon: [number, number][] = [],
 ): GeoJSON.FeatureCollection {
-  const features: GeoJSON.Feature[] = [];
-
-  if (polygon.length >= 3) {
-    const ring = polygon.map(([x, y]) => [x, y] as [number, number]);
-    ring.push(ring[0]);
-    features.push({
-      type: 'Feature',
-      geometry: { type: 'Polygon', coordinates: [ring] },
-      properties: { overlayRole: 'flood-outline' },
-    });
-  }
-
-  const scales = (overlay.affected ?? []).map((t) => t.scale ?? 0);
-  const maxScale = scales.length ? Math.max(...scales) : 0;
-  for (const t of overlay.affected ?? []) {
-    features.push({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [t.lng, t.lat] },
-      properties: {
-        overlayRole: 'target',
-        id: t.id,
-        kind: t.kind,
-        name: t.name ?? '',
-        scale: t.scale ?? 0,
-        // 半径按规模归一化到 4~12 px，无规模数据时取中值
-        radius: maxScale > 0 ? 4 + 8 * ((t.scale ?? 0) / maxScale) : 6,
-        color: overlayKindColor(t.kind),
-      },
-    });
-  }
-
-  return { type: 'FeatureCollection', features };
+  return buildOverlayGeoJSON({
+    points: (overlay.affected ?? []).map((t) => ({
+      id: t.id,
+      kind: t.kind,
+      lng: t.lng,
+      lat: t.lat,
+      scale: t.scale,
+      name: t.name,
+    })),
+    polygon,
+    colorOf: overlayKindColor,
+    polygonRole: 'flood-outline',
+    pointRole: 'target',
+  });
 }
 
 /** 情景配色板（按顺序循环取用，保证多情景叠加时颜色可区分） */

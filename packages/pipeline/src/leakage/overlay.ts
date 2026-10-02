@@ -8,6 +8,7 @@
  * 纯函数，不依赖地图实例，可在 Node 单测。
  */
 
+import { assignKindColor, buildOverlayGeoJSON } from '@caoguo/maplibre';
 import type { PipelineUser, UserKind } from '../types';
 
 /** 叠加分析结果 */
@@ -94,9 +95,9 @@ const USER_KIND_COLORS: Record<UserKind, string> = {
   residential: '#4ade80',
 };
 
-/** 用户类型 → 配色 */
+/** 用户类型 → 配色（已知类型取预设色，未知类型兜底灰；委托 `@caoguo/maplibre` 通用实现） */
 export function userKindColor(kind: UserKind): string {
-  return USER_KIND_COLORS[kind] ?? '#94a3b8';
+  return assignKindColor(kind, USER_KIND_COLORS, '#94a3b8');
 }
 
 /**
@@ -110,35 +111,18 @@ export function buildLeakOverlayGeoJSON(
   overlay: OverlayResult,
   polygon: [number, number][] = [],
 ): GeoJSON.FeatureCollection {
-  const features: GeoJSON.Feature[] = [];
-
-  if (polygon.length >= 3) {
-    const ring = polygon.map(([x, y]) => [x, y] as [number, number]);
-    ring.push(ring[0]);
-    features.push({
-      type: 'Feature',
-      geometry: { type: 'Polygon', coordinates: [ring] },
-      properties: { overlayRole: 'danger-outline' },
-    });
-  }
-
-  const scales = (overlay.affected ?? []).map((u) => u.scale ?? 0);
-  const maxScale = scales.length ? Math.max(...scales) : 0;
-  for (const u of overlay.affected ?? []) {
-    features.push({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [u.lng, u.lat] },
-      properties: {
-        overlayRole: 'user',
-        id: u.id,
-        kind: u.kind,
-        name: u.name ?? '',
-        scale: u.scale ?? 0,
-        radius: maxScale > 0 ? 4 + 8 * ((u.scale ?? 0) / maxScale) : 6,
-        color: userKindColor(u.kind),
-      },
-    });
-  }
-
-  return { type: 'FeatureCollection', features };
+  return buildOverlayGeoJSON({
+    points: (overlay.affected ?? []).map((u) => ({
+      id: u.id,
+      kind: u.kind,
+      lng: u.lng,
+      lat: u.lat,
+      scale: u.scale,
+      name: u.name,
+    })),
+    polygon,
+    colorOf: (kind) => userKindColor(kind as UserKind),
+    polygonRole: 'danger-outline',
+    pointRole: 'user',
+  });
 }
