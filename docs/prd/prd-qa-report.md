@@ -104,7 +104,11 @@
 
 ## 四、建议的后续优先级
 
-1. **P0（安全/入口类）**：ai `validateSql` 7 类危险输入；editor `renderFromJSON` 错误路径；ai `batchGeocode` 的 (0,0) 语义。
-2. **P1（核心算法零守护）**：grid O-2/O-4；compute C-1 着色层 + `checkAlerts`；pipeline H-5 权重；transport TF-4；telecom NH-3。
-3. **P2（渲染薄壳对齐最佳实践）**：把 B-2/B-5/H-2/F-2/F-6 渲染层测试补到 F-4/F-5/L-4 的「四连断言」标准。
-4. **文档一致性**：water DO-4/DO-5 验收清单自相矛盾；transport 测试标题编号错位；compute C-4 状态标注；editor 清单的用例数过期。
+1. ~~**P0（安全/入口类）**~~ → **✅ 已修复（2026-10-03，+33 用例，全仓 943 全绿）**：
+   - ai `validateSql` 7 类危险输入：11 例（空串短路、大小写混淆、词边界保护、多语句/块注释/UNION、引号括号配对、非白名单空间函数、**ST_SetSRID 豁免与裸 SET 拦截并存**、空白名单、parameterize）
+   - ai `batchGeocode`：7 例（空 rows、缺 lat、NaN、**(0,0) 判 provided**、failed 契约固化、parse 抛错传播）
+   - editor 渲染运行时：7 例（parseScreenJSON 六类错误路径 + renderFromJSON 抛错先于 DOM）。**附带重构**：parseScreenJSON 拆至无 Vue 依赖的 `runtime/parseScreen.ts`（原文件静态 import `.vue` 导致 node 测试环境无法加载，vi.mock 拦截组件后验证抛错路径）
+   - grid O-2/O-4：9 例（convexHull 退化/内部点/纯函数性、centroid 空集、severity 递减与排序居首）
+2. **P1（核心算法零守护，待补）**：compute C-1 着色层 + `checkAlerts`；pipeline H-5 权重；transport TF-4；telecom NH-3。
+3. **P2（渲染薄壳对齐最佳实践，待补）**：把 B-2/B-5/H-2/F-2/F-6 渲染层测试补到 F-4/F-5/L-4 的「四连断言」标准。
+4. **文档一致性（待改）**：water DO-4/DO-5 验收清单自相矛盾；transport 测试标题编号错位；compute C-4 状态标注；editor 清单的用例数过期。

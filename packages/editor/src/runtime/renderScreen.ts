@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import type { App } from 'vue';
 import ScreenViewer from '../editor/ScreenViewer.vue';
+import { parseScreenJSON } from './parseScreen';
 import type { DashboardConfig } from '../types';
 
 /**
@@ -30,23 +31,9 @@ function resolveContainer(container: HTMLElement | string): HTMLElement {
 }
 
 /**
- * 校验并解析大屏 JSON。
- * 返回解析结果；config 为 null 时 reason 说明原因。
+ * 校验并解析大屏 JSON（纯函数实现已拆至 `parseScreen.ts`，此处保持导出兼容）。
  */
-export function parseScreenJSON(json: string): { config: DashboardConfig | null; reason?: string } {
-  let raw: unknown;
-  try {
-    raw = JSON.parse(json);
-  } catch (e) {
-    return { config: null, reason: 'JSON 语法错误：' + (e as Error).message };
-  }
-  const cfg = raw as DashboardConfig;
-  if (!cfg || typeof cfg !== 'object') return { config: null, reason: '配置不是对象' };
-  if (!Array.isArray(cfg.scenes)) return { config: null, reason: '缺少 scenes 数组' };
-  if (cfg.scenes.length === 0) return { config: null, reason: 'scenes 为空（至少需一个场景）' };
-  if (!cfg.canvas || typeof cfg.canvas.width !== 'number') return { config: null, reason: '缺少 canvas.width' };
-  return { config: cfg };
-}
+export { parseScreenJSON };
 
 /**
  * 渲染大屏到指定容器。
