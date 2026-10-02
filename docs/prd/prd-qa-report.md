@@ -115,5 +115,12 @@
    - transport：TF-4 `renderOdMatrix` 5 例（图层产物/零流量插值锚点从 0 起/未知节点跳过/自定义前缀）。**发现并锁定契约差异**：本实现对空/全无效输入仍 upsert 空 source（等效清空上一帧），与 water/pipeline 的「空输入早退」不同——非 bug，测试即文档
    - telecom：NH-3 `faultTrend` 5 例（day=UTC 日期、month=UTC 年月、**week=epoch 周序号而非自然周**、升序、空输入）
    - 测试假设纠偏：`paintNodeBy` 合法 mode 并非 'gpu'；`paintLinkByType` 属性名是 `type` 非 `linkType`——按实现修正断言
-3. **P2（渲染薄壳对齐最佳实践，待补）**：把 B-2/B-5/H-2/F-2/F-6 渲染层测试补到 F-4/F-5/L-4 的「四连断言」标准。
+3. ~~**P2（渲染薄壳对齐最佳实践）**~~ → **✅ 已修复（2026-10-03，+15 用例，全仓 990 全绿）**。勘察实情比审计更弱：B-5/H-2/F-6 渲染**零覆盖**（不止「不抛错层级」），B-2 仅被历史测试顺带执行（零图层断言）。已逐项补齐到四连标准的适用子集：
+   - **B-2 影响范围**（`burst/render.test.ts`，3 例）：hull-fill/pipes-line/nodes-pt 三层产物、paint 常量固化（半透明红 #ef4444 / fill-opacity 0.15）、幂等重渲染图层数恒定 + clear 清空。该实现无 data-driven/无 filter，故固化 ①②常量④
+   - **B-5 重要用户**（`topology/importantUsersRender.test.ts`，3 例，原零覆盖）：单 circle 层、**data-driven** severity 半径 interpolate（1→5…100→9）+ 颜色 case 四档、要素属性与返回 markers 一致、幂等 + 空输入仍 upsert
+   - **H-2 风险热力图**（`health/healthRender.test.ts`，4 例，原零覆盖）：heatmap 层、**data-driven** heatmap-weight 按 healthScore 反向映射（0→1 / 50→0.5 / 100→0，越差越热）+ heatmap-density 渐变、重复 evaluate 图层数恒定、空管网仍 upsert
+   - **F-2 淹没渲染**（FloodRender.test.ts 扩至 6 例）：**水位上涨重复调用**（QA 点名的缺口）图层数恒定且 fill-color 随新 maxDepth 更新、renderGraded 的 data-driven depth interpolate 锚点 0.5–4m、空淹没范围仍 upsert（契约锁定）
+   - **F-6 撤退路径渲染**（+2 例，原零覆盖）：全员不可达**空输入早退不加层**（五个薄壳中唯一）；混合可达只画可达路线、青色 line 层常量固化
+   - **③ geometry filter 说明**：这 5 处实现均为单几何类型 source，本就无需 filter，不属缺陷；四连对其余三条全部落地
+   - **空输入契约差异全景已显式锁定**：F-6 早退不加层 ↔ B-2/B-5/H-2/F-2/TF-4 空 source 仍 upsert，两种风格并存、各有测试背书
 4. **文档一致性（待改）**：water DO-4/DO-5 验收清单自相矛盾；transport 测试标题编号错位；compute C-4 状态标注；editor 清单的用例数过期。
