@@ -91,7 +91,7 @@
 | D3 | 落地页 `map.hb.cn` | Web 站点 | 响应式设计，30 秒内传达产品价值 | ✅ 已落地（V2.0 含合作伙伴区） |
 | D4 | 技术文档站 `map.hb.cn/docs` | Web 站点 | 快速开始 + API 参考 + 部署指南 | ✅ 已落地（29 页） |
 | D5 | MapCopilot v1 | 功能模块 | 支持 5 类核心交互的代码生成 | ✅ 已落地（`@caoguo/maplibre-ai` copilot 模块：`classifyIntent` 5 类意图 + `generateCode`）／接口联调待 swagger。**命名偏差**：PRD 早期文稿的「intentRouter」实为 `classifyIntent` |
-| D6 | GeoAI 数据入图管线 | 功能模块 | 支持 CSV/Excel 地址自动空间化 | ✅ 已落地（packages/ai geoai 模块：ingestDataset 空间化）／联调待 swagger |
+| D6 | GeoAI 数据入图管线 | 功能模块 | 支持 CSV/Excel 地址自动空间化 | ✅ 已落地（`@caoguo/maplibre-ai` geoai 模块：`importToGeoJSON` 完成表格式数据 → GeoJSON 空间化，全链路 `detectHeaders` / `parseAddress` / `detectCRS` / `batchGeocode` 均已导出）／联调待 swagger。**命名偏差（2026-10-02 核对）**：PRD 早期写的 `ingestDataset` 在源码中**不存在**，实际主入口为 `importToGeoJSON` |
 | D7 | NLPG v1 查询接口 | API 服务 | 自然语言 → PostGIS SQL → GeoJSON | ✅ 已落地（`@caoguo/maplibre-ai` nlpg 模块：`generatePostGISQuery` + `validateSql` 校验层）／联调待 swagger。**命名偏差**：PRD 早期文稿的「generateSQL」实为 `generatePostGISQuery` |
 | D8 | 演示 Demo #1（基础地图） | Web 应用 | 可交互的地图渲染演示 | ✅ 已落地（FeatureShowcase 串联闭环） |
 

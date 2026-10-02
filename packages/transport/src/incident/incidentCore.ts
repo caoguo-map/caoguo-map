@@ -47,7 +47,7 @@ export interface IncidentTimelineStep {
 }
 
 /** 严重程度 → 影响半径（米） */
-const SEVERITY_RADIUS: Record<IncidentSeverity, number> = {
+export const SEVERITY_RADIUS: Record<IncidentSeverity, number> = {
   low: 500,
   medium: 1000,
   high: 2000,

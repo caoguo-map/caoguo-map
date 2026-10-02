@@ -285,7 +285,7 @@ def simulate_burst(pipe_id,管网拓扑):
 |---|------|--------|------|
 | L-1 | 参数面板：风向/风速/泄漏量可调节 | P0 | ✅ 已落地（零依赖面板 `renderLeakParamsHtml()`：风向/风速/泄漏量/释放高度/稳定度，`data-field` 事件委托；`leakParamsFromForm()` 把面板的「来向度数」统一转成烟羽弧度，并做空值兜底） |
 | L-2 | 动态扩散动画：危险区域随时间扩大 | P0 | ✅ 已落地（纯函数 `plumeAtTime(t)` 时间切片 + `LeakagePlume.playGasAnimation()`，rAF 推进烟羽前缘；**无 rAF 环境自动退化为静态快照**） |
-| L-3 | 等浓度线：展示不同浓度等级的危险区域 | P1 | ✅ 已落地（`renderContours` 按阈值 step 分级着色 + `fill-outline-color` 描边；此前误标） |
+| L-3 | 等浓度线：展示不同浓度等级的危险区域 | P1 | ✅ 已落地（内部私有方法 `renderContours` 按阈值 step 分级着色 + `fill-outline-color` 描边；**该方法未导出**，对外经 `simulateGas()` / `renderGraded()` 生效；此前误标） |
 | L-4 | 叠加分析：危险区域与建筑/人口数据叠加 | P1 | ✅ 已落地（数据层 `overlayUsers()`（point-in-polygon 叠加 + 分类统计 + 影响人口合计 + `importantCount`）+ 渲染数据层 `buildLeakOverlayGeoJSON()`（受影响用户点按类型着色、按规模定半径 + 危险区线框）+ `userKindColor()`（配色与严重度同序）+ 渲染薄壳 `LeakagePlume.renderOverlay()`（data-driven `['get','color']`，图层数恒为 2，与要素数无关）+ 类入口 `LeakagePlume.overlayUsers()` 取最大等值线叠加。**建筑/人口数据仍由调用方注入**——本包只做叠加计算与可视化） |
 | L-5 | 气象数据接入：自动获取实时风向/风速 | P2 | ✅ 已落地（纯函数 `weather.ts`：单位/坐标系统一——对外「来向度 + m/s」，对内转换高斯烟羽所需弧度；支持 km/h 与蒲福风级折算、中英文方位解析；`WeatherProvider` 由调用方注入（REST/WebSocket/缓存/桩），**本包保持离线友好不内置 fetch**；类方法 `LeakagePlume.setWeatherProvider()` / `refreshWeather()` / `windParamsFrom()`） |
 

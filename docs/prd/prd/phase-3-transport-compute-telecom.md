@@ -146,7 +146,7 @@ def predict_congestion(road_id, minutes_ahead):
 #### 3.3.2 验收标准
 
 - [x] 事件影响范围按 severity 分级（500/1000/2000/5000m）计算 —— `incidentCore.ts` `SEVERITY_RADIUS` + `analyzeIncident()`
-- [x] 绕行方案避开事件路段 —— `dijkstraAvoid()` 已实现单测覆盖
+- [x] 绕行方案避开事件路段 —— 包内函数 `dijkstraAvoid()` 已实现并有单测覆盖（**未导出**，对外经 `IncidentMap.renderDetour()` 生效）
 - [ ] 附近资源（摄像头/救援站/医院）在地图上渲染图层 —— 数据层 `findNearbyResources()` 已就绪，**渲染层待补**
 - [ ] 绕行路径线在地图上绘制 —— 算法已就绪，**渲染层待补**
 - [ ] 3 公里内资源查询响应 < 200ms —— 待压测
@@ -214,7 +214,8 @@ const stationRadius = ['interpolate', ['linear'], ['get', 'throughput'], 0, 4, m
 - [x] 路况预测（T-5）—— `predictCongestion({ minutesAhead })`，默认 30 分钟，含趋势项与置信度
 - [ ] 历史趋势曲线渲染（TF-3）—— 数据层 `edgeTrend()` 已就绪，**图表层未接**
 
-> 图算法额外能力（PRD 未单列功能点）：`dijkstra` / `aStar` 最短路、`nodesWithinRadius` 缓冲查询、`nearestNeighborVrp` 简版 VRP 均已实现，但**未接入 `RoadNetwork` 组件**（无 `planRoute` 方法、无缓冲高亮渲染），属「算法已就绪、组件层未接」状态。
+> 图算法额外能力（PRD 未单列功能点）：`dijkstra` / `aStar` 最短路、`nodesWithinRadius` 缓冲查询、`nearestNeighborVrp` 简版 VRP 均已实现并导出。
+> **2026-10-02 核对修正**：`RoadNetwork.planRoute()` 与 `planRouteAStar()` **已实现且有单测覆盖**（此前本注误写为「无 `planRoute` 方法」）；仍缺的是**缓冲高亮渲染**（`nodesWithinRadius` 未接入渲染层），属「算法已就绪、渲染未接」。
 
 ---
 
