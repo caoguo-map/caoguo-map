@@ -88,4 +88,36 @@ describe('F-6 撤退路径推荐 evacuate', () => {
     expect(plan.originIds).toEqual([]);
     expect(plan.routes).toEqual([]);
   });
+
+  it('空图（无节点无边）不抛错且无路线', () => {
+    const plan = planEvacuation({ nodes: [], edges: [] }, { floodPolygons: [flood] });
+    expect(plan.originIds).toEqual([]);
+    expect(plan.shelterIds).toEqual([]);
+    expect(plan.blockedEdges).toEqual([]);
+    expect(plan.routes).toEqual([]);
+  });
+
+  it('无淹没范围时全员安全 → 无撤离路线（语义明确）', () => {
+    // 不传 floodPolygons：没有任何节点落在淹没区，故无需撤离
+    const plan = planEvacuation(graph);
+    expect(plan.originIds).toEqual([]);
+    expect(plan.shelterIds.sort()).toEqual(['a', 'b', 'c']);
+    expect(plan.routes).toEqual([]);
+  });
+
+  it('内部采样点数为 0 时降级为 1（不除零、仍能判定）', () => {
+    // samplesPerEdge: 0 → Math.max(1, 0) → 1，即只取中点。
+    // 宽淹没区（lng ≤ 114.3035）下 a-b 中点 114.302 落在区内，仅取中点也应判出淹没边
+    const wide: [number, number][] = [
+      [114.299, 30.499],
+      [114.3035, 30.499],
+      [114.3035, 30.501],
+      [114.299, 30.501],
+    ];
+    const plan = planEvacuation(graph, { floodPolygons: [wide], samplesPerEdge: 0 });
+    expect(plan.blockedEdges).toEqual(['a|b']);
+    // 窄淹没区下中点 114.302 在区外 → 不禁行（与默认 3 点采样行为一致）
+    const narrow = planEvacuation(graph, { floodPolygons: [flood], samplesPerEdge: 0 });
+    expect(narrow.blockedEdges).toEqual([]);
+  });
 });

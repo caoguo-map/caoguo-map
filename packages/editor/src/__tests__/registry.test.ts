@@ -88,4 +88,31 @@ describe('TEMPLATES', () => {
     expect(getTemplate(TEMPLATES[0].key)?.key).toBe(TEMPLATES[0].key);
     expect(getTemplate('not-exist')).toBeUndefined();
   });
+
+  it('模板共 8 套，key 齐全且唯一（PRD §6.2）', () => {
+    expect(TEMPLATES).toHaveLength(8);
+    expect(TEMPLATES.map((t) => t.key).sort()).toEqual(
+      ['agriculture', 'blank', 'compute', 'grid', 'pipeline', 'telecom', 'transport', 'water'].sort(),
+    );
+    expect(new Set(TEMPLATES.map((t) => t.key)).size).toBe(8);
+  });
+
+  it('每套行业模板含行业 schemas 与专属 REST 端点（PRD §6.2 差异化）', () => {
+    for (const t of TEMPLATES) {
+      const cfg = t.build();
+      if (t.key === 'blank') {
+        // 空白模板允许无图层
+        expect(cfg.scenes[0].layers).toHaveLength(0);
+        continue;
+      }
+      const layer = cfg.scenes[0].layers[0];
+      expect(layer?.type).toBe('device-layer');
+      // 行业 schemas（非空）
+      const schemas = (layer?.config as { schemas?: Record<string, unknown> } | undefined)?.schemas ?? {};
+      expect(Object.keys(schemas).length).toBeGreaterThan(0);
+      // 专属 REST 端点（形如 /api/devices/<行业>）
+      expect(layer?.dataSource?.type).toBe('rest');
+      expect(layer?.dataSource?.url).toMatch(/^\/api\/devices\/\w+/);
+    }
+  });
 });

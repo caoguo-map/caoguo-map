@@ -34,6 +34,27 @@ describe('telecom/coverage', () => {
     expect(pointInPolygon(3, 3, poly)).toBe(false);
   });
 
+  it('pointInPolygon 边界与退化输入（收敛到 @caoguo/maplibre 后的守护）', () => {
+    // 凹多边形：点在外接矩形内但在缺口处
+    const lShape: [number, number][] = [
+      [0, 0],
+      [2, 0],
+      [2, 1],
+      [1, 1],
+      [1, 2],
+      [0, 2],
+    ];
+    expect(pointInPolygon(1.5, 1.5, lShape)).toBe(false);
+    expect(pointInPolygon(0.5, 0.5, lShape)).toBe(true);
+    // 退化多边形（少于 3 点）一律 false
+    expect(pointInPolygon(1, 1, [])).toBe(false);
+    expect(pointInPolygon(1, 1, [[0, 0]])).toBe(false);
+    expect(pointInPolygon(1, 1, [[0, 0], [2, 2]])).toBe(false);
+    // 无需预先闭合
+    const open: [number, number][] = [[0, 0], [2, 0], [2, 2], [0, 2]];
+    expect(pointInPolygon(1, 1, open)).toBe(true);
+  });
+
   it('detectCoverageGaps 识别盲区', () => {
     const topo = makeTopology();
     const samples = [

@@ -214,4 +214,30 @@ describe('系统自检·静态体检 systemCheck', () => {
     });
     expect(list.some((i) => i.level === 'warn' && i.title.includes('阈值规则不完整'))).toBe(true);
   });
+
+  it('场景缺少 key → error（补此前遗漏的检查）', () => {
+    const list = runStaticCheck({
+      config: cfgWith([{ key: '', title: '无key场景', layers: [], components: [] }]),
+      managedSources: managed,
+    });
+    expect(list.some((i) => i.level === 'error' && i.title === '场景缺少 key')).toBe(true);
+  });
+
+  it('内联数据源无可取数内容 → warn（补此前遗漏的 hasFetchable 分支）', () => {
+    const list = runStaticCheck({
+      config: cfgWith([
+        {
+          key: 's1',
+          title: 'S',
+          layers: [],
+          components: [
+            // 有 dataSource 但既无 url/query/staticData，也不是 postmessage/websocket
+            { id: 'c1', type: 'text', position: { x: 0, y: 0, w: 100, h: 40 }, dataSource: { type: 'rest' } },
+          ],
+        },
+      ]),
+      managedSources: managed,
+    });
+    expect(list.some((i) => i.level === 'warn' && i.title.includes('数据源未配置'))).toBe(true);
+  });
 });

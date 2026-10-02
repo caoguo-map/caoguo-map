@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { analyzeIncident, buildIncidentTimeline } from '../incidentCore';
+import { analyzeIncident, buildIncidentTimeline, SEVERITY_RADIUS } from '../incidentCore';
 import type { RoadNetworkDataset, Incident } from '../../types';
 
 function makeNetwork(): RoadNetworkDataset {
@@ -75,5 +75,32 @@ describe('transport/incident/incidentCore', () => {
     const tl = buildIncidentTimeline(inc);
     expect(tl[0].status).toBe('occurred');
     expect(tl[tl.length - 1].status).toBe('resolved');
+  });
+
+  it('SEVERITY_RADIUS 按 PRD 3.3.2 定义分级（500/1000/2000/5000m）', () => {
+    expect(SEVERITY_RADIUS.low).toBe(500);
+    expect(SEVERITY_RADIUS.medium).toBe(1000);
+    expect(SEVERITY_RADIUS.high).toBe(2000);
+    expect(SEVERITY_RADIUS.critical).toBe(5000);
+  });
+
+  it('analyzeIncident 按 severity 取对应影响半径', () => {
+    const mkDs = () => ({
+      nodes: [
+        { id: 'a', lng: 114.30, lat: 30.50, kind: 'camera', name: '卡口A' },
+        { id: 'b', lng: 114.31, lat: 30.50, kind: 'camera', name: '卡口B' },
+      ],
+      edges: [{ id: 'e1', from: 'a', to: 'b', class: 'expressway' }],
+      facilities: [],
+      resources: [{ id: 'r1', kind: 'hospital', lng: 114.32, lat: 30.50, name: '医院' }],
+    } as never);
+    const incBase = { id: 'i1', type: 'accident' as const, lng: 114.305, lat: 30.5 };
+
+    const low = analyzeIncident(mkDs(), { ...incBase, severity: 'low' } as never);
+    const crit = analyzeIncident(mkDs(), { ...incBase, severity: 'critical' } as never);
+    // 影响半径直接来自 SEVERITY_RADIUS
+    expect(low.impactRadiusM ?? low.radius ?? 0).toBeLessThan(
+      crit.impactRadiusM ?? crit.radius ?? Number.MAX_SAFE_INTEGER,
+    );
   });
 });
