@@ -128,3 +128,21 @@
    - transport `roadNetworkRoute.test.ts`：「路径规划（T-4）」「缓冲查询（T-5）」标题错位（PRD 中 T-4=时间轴回放、T-5=路况预测）→ 去掉错误编号；同文件 PRD :212「设施标注渲染未实现」与状态表 T-3 ✅ 矛盾 → 改为已实现
    - compute C-4：`phase-3` 状态表 🟡 → ✅（与 prd-completion-check 补记口径对齐：数据层三策略 + 面板 + 12 条测试均落地，业务规则归上层是边界声明非欠账）；同文件验收清单 :316 过期描述同步；`feature-inventory.md` 两处 C-4 🟡 → ✅
    - `editor-feature-inventory.md`：用例数 49/8 → **70/10**
+
+---
+
+## 五、终局总结（2026-10-03）
+
+本报告全部行动项（P0 / P1 / P2 / 文档一致性）已闭环。
+
+| 阶段 | 内容 | 提交 |
+|---|---|---|
+| 审计 | 10 包 894 用例全量 QA，发现 P0×2（algorithmic）+ P1×4（零守护）+ P2×5（渲染薄壳）+ 文档×4 | — |
+| P0 | polygonSelfIntersections 交集去重、congestionPredict 不回写数据集（3 例回归） | `1605fe6` |
+| P1 | compute C-1 着色层+checkAlerts、pipeline H-5 权重、transport TF-4、telecom NH-3（+32 例） | `b6dc5db` |
+| P2 | B-2/B-5/H-2/F-2/F-6 渲染薄壳对齐四连断言（+15 例，其中 3 处原为零覆盖） | `b2af81a` |
+| 文档 | DO-4/DO-5 矛盾、transport 编号错位、C-4 状态同步、editor 用例数（7 处编辑） | `689b628` |
+
+**成果**：全仓 10 包 **894 → 990 用例全绿**（+96，含此前数轮的 F-1 面板、F-6 边界、NH-3/pointInPolygon 边界等），每个功能点具备「纯函数单测 + 渲染薄壳图层级断言」双层防护；QA 期间顺带修正 1 处 PRD 数据源口径、锁定 2 组实现契约（空输入早退 vs 空 source upsert、epoch 周序号）。
+
+**不属本报告范畴的遗留**（真实 🟡，见 `feature-inventory.md` 速览）：P-5 拖拽交互、W8/W12 端到端 LLM 联调、3 项非功能指标真机实测、docs M1–M3——均为边界声明或需外部环境，非代码欠账。
