@@ -209,7 +209,7 @@ const stationRadius = ['interpolate', ['linear'], ['get', 'throughput'], 0, 4, m
 
 - [x] 路网按道路等级/实时速度着色（`paintRoadByClass` / `paintRoadBySpeed`）
 - [x] 拥堵预测支持 `minutesAhead` 参数（默认 30 分钟，含线性回归趋势项）
-- [ ] 设施标注渲染（T-3）—— 数据模型已定义（`toll` / `rest_area` / `parking` 等节点类型），**渲染层未实现**
+- [x] 设施标注渲染（T-3）—— 已实现（`FACILITY_COLORS`/`FACILITY_LABELS` 分类型着色，含渲染测试；与 §状态表 T-3 ✅ 一致）
 - [x] 路况时间轴回放（T-4）—— `renderSpeedTimeline()` + `speedSnapshotAt()`
 - [x] 路况预测（T-5）—— `predictCongestion({ minutesAhead })`，默认 30 分钟，含趋势项与置信度
 - [ ] 历史趋势曲线渲染（TF-3）—— 数据层 `edgeTrend()` 已就绪，**图表层未接**
@@ -261,7 +261,7 @@ const stationRadius = ['interpolate', ['linear'], ['get', 'throughput'], 0, 4, m
 | C-1 | 节点分布地图：按类型（数据中心/边缘/区域云）显示 | P0 | ✅ 已落地 |
 | C-2 | 节点详情面板：算力/存储/利用率/GPU 状态 | P0 | ✅ 已落地（数据层 `getNodeDetail()` + 零依赖卡片外壳 `renderNodeDetailHtml()`——compute 本就依赖 `@caoguo/maplibre`，复用 `renderCardHtml`；富交互面板可自建） |
 | C-3 | 光缆路由可视化：节点间连线，按带宽/利用率着色 | P0 | ✅ 已落地 |
-| C-4 | 资源调度面板：按区域/类型筛选 → 分配任务 | P1 | 🟡 部分落地（分配数据层 `assignment.ts` + 零依赖结果面板 `renderAssignmentPanelHtml(results)`（失败行标红显因）已落地；计费/配额/租户等真实业务规则应由上层业务系统实现，交互经事件委托接 `assignTasks()` 闭环） |
+| C-4 | 资源调度面板：按区域/类型筛选 → 分配任务 | P1 | ✅ 已落地（分配数据层 `assignment.ts` 三策略 + 零依赖结果面板 `renderAssignmentPanelHtml(results)` + 12 条测试；计费/配额/租户等真实业务规则应由上层业务系统实现——边界声明，与补记口径一致） |
 | C-5 | 供需预测：预测未来 7 天各区域算力需求 | P2 | ✅ 已落地 |
 
 #### 4.1.3 着色规则
@@ -313,7 +313,7 @@ const widthByBandwidth = [
   > 命名偏差：PRD 早期草稿写作 `findOptimalEdge`，实现与文档统一为 `recommendBestNode`。
 - [x] 延迟告警支持阈值参数（默认 50ms），超 2 倍判 critical —— `checkAlerts()`
 - [ ] 延迟趋势输出 24h 逐点序列（LM-3）—— 当前 `trend()` 仅返回 count/min/max/avg 统计摘要，**曲线序列与渲染待补**
-- [ ] 资源调度「分配」能力（C-4）—— 当前仅有 `filter({region, type})` 筛选，**分配/调度逻辑待补**
+- [x] 资源调度「分配」能力（C-4）—— 已实现（`assignment.ts`：`assignTask`/`assignTasks` 三策略 balanced/nearest/capacity + 结构化失败原因，12 条测试；计费/配额/租户等真实业务规则由上层业务系统实现）
 - [ ] 1 万节点 + 5 万链路规模渲染流畅 —— 待压测（见 §9 非功能性需求）
 
 ---

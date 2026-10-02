@@ -35,7 +35,7 @@ const dataset: RoadNetworkDataset = {
   ],
 };
 
-describe('RoadNetwork 路径规划（T-4）', () => {
+describe('RoadNetwork 路径规划（无 PRD 编号，基础寻路）', () => {
   it('planRoute 返回 Dijkstra 结果（节点序列 + 距离）', () => {
     const road = new RoadNetwork({ map: createMockMap(), dataset });
     const r = road.planRoute('a', 'c');
@@ -76,7 +76,7 @@ describe('RoadNetwork 路径规划（T-4）', () => {
   });
 });
 
-describe('RoadNetwork 缓冲查询（T-5）', () => {
+describe('RoadNetwork 缓冲查询（无 PRD 编号，基础查询）', () => {
   it('queryBuffer 按距离升序返回命中节点', () => {
     const road = new RoadNetwork({ map: createMockMap(), dataset });
     const hits = road.queryBuffer(114.3, 30.5, 3000);

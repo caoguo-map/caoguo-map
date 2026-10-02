@@ -11,7 +11,7 @@
 | 包名 | `@caoguo/map-editor` |
 | 源码 | `packages/editor/src/index.ts`（导出 `Editor` 主组件、`useEditor`/`useHistory`/`useDragDrop`、组件注册表、`TEMPLATES`、JSON Schema 类型） |
 | 构建 | `vue-tsc`（dts）+ vite 库模式（含 `.vue`，**不能用 tsup**） |
-| 测试 | vitest **49 passed** / 8 文件 |
+| 测试 | vitest **70 passed** / 10 文件 |
 | 里程碑 | W1–W6 **全部完成** |
 | 配套应用 | `apps/editor-app`（`pnpm dev:editor`，端口 5190，alias 直连源码热更新） |
 
