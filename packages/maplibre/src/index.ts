@@ -98,6 +98,8 @@ export * from './sourceUtils';
 export * from './cardFields';
 // 叠加渲染通用工具（water F-4 / pipeline L-4 共用）
 export * from './overlay';
+// 通用几何工具（点在多边形内等，water / pipeline / telecom 共用）
+export * from './geometry';
 
 /**
  * 全局配置（由应用入口注入一次，所有 Map 实例共享）。

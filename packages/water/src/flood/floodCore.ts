@@ -11,6 +11,7 @@
  * 3. 淹没范围提取（DEM 栅格 + 计算水位 → flood fill → 淹没多边形）
  */
 
+import { pointInPolygonXY } from '@caoguo/maplibre';
 import type { FloodInput, FloodResult, WaterDataset, WaterFeature } from '../types';
 
 /** SCS-CN 径流量计算（PRD §4.2.1） */
@@ -217,17 +218,9 @@ function featureInFlood(
 }
 
 /** 射线法判定点是否在多边形内（polygon 为 [x,y][]） */
+/** 点是否在多边形内：委托 `@caoguo/maplibre` 通用几何实现（数组点重载） */
 function pointInPolygon(p: [number, number], polygon: [number, number][]): boolean {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
-    const intersect =
-      yi > p[1] !== yj > p[1] &&
-      p[0] < ((xj - xi) * (p[1] - yi)) / (yj - yi) + xi;
-    if (intersect) inside = !inside;
-  }
-  return inside;
+  return pointInPolygonXY(p, polygon);
 }
 
 /** 凸包（Andrew's monotone chain） */

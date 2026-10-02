@@ -10,7 +10,7 @@
  * 纯函数，不依赖地图实例，可在 Node 单测。
  */
 
-import { assignKindColor, buildOverlayGeoJSON } from '@caoguo/maplibre';
+import { assignKindColor, buildOverlayGeoJSON, pointInPolygon } from '@caoguo/maplibre';
 import type { FloodResult, WaterFeature } from '../types';
 
 // ============================================================
@@ -37,19 +37,12 @@ export interface FloodOverlayResult {
   affected: FloodOverlayTarget[];
 }
 
-/** 射线法：点是否在多边形内 */
-export function pointInPolygon(lng: number, lat: number, polygon: [number, number][]): boolean {
-  if (polygon.length < 3) return false;
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
-    const intersects =
-      yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
-    if (intersects) inside = !inside;
-  }
-  return inside;
-}
+/**
+ * 射线法：点是否在多边形内。
+ * 委托 `@caoguo/maplibre` 的通用几何实现（原先各包各写一遍，避免算法漂移）。
+ * 保留本包导出以保证对外 API 不变。
+ */
+export { pointInPolygon } from '@caoguo/maplibre';
 
 /**
  * 淹没范围 × 点要素叠加（F-4 数据层）

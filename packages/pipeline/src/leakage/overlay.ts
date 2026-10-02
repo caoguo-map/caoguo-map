@@ -8,7 +8,7 @@
  * 纯函数，不依赖地图实例，可在 Node 单测。
  */
 
-import { assignKindColor, buildOverlayGeoJSON } from '@caoguo/maplibre';
+import { assignKindColor, buildOverlayGeoJSON, pointInPolygon } from '@caoguo/maplibre';
 import type { PipelineUser, UserKind } from '../types';
 
 /** 叠加分析结果 */
@@ -25,19 +25,13 @@ export interface OverlayResult {
   affected: PipelineUser[];
 }
 
-/** 射线法：点是否在多边形内（含边界，多边形首尾无需闭合） */
-export function pointInPolygon(lng: number, lat: number, polygon: [number, number][]): boolean {
-  if (polygon.length < 3) return false;
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
-    const intersects =
-      yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
-    if (intersects) inside = !inside;
-  }
-  return inside;
-}
+/**
+ * 射线法：点是否在多边形内（含边界，多边形首尾无需闭合）。
+ * 委托 `@caoguo/maplibre` 的通用几何实现。
+ * 注意：必须先 `import` 再 `export` —— 纯 `export ... from` 不会把它引入本模块作用域，
+ * 而本文件的 `overlayUsers()` 需要调用它。
+ */
+export { pointInPolygon };
 
 /** UserKind 严重度权重（与 burstCore.userSeverity 同口径，避免跨模块循环依赖） */
 const KIND_WEIGHT: Record<UserKind, number> = {

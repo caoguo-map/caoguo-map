@@ -16,6 +16,7 @@ import type {
   SignalSample,
   SignalLevel,
 } from '../types';
+import { pointInPolygon } from '@caoguo/maplibre';
 import { classifyRsrp } from '../style/telecomTheme';
 
 /** 覆盖盲区 */
@@ -55,24 +56,14 @@ export function haversine(lng1: number, lat1: number, lng2: number, lat2: number
 /**
  * 判断点是否在多边形内（射线法）
  */
-export function pointInPolygon(
-  lng: number,
-  lat: number,
-  polygon: [number, number][]
-): boolean {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i][0];
-    const yi = polygon[i][1];
-    const xj = polygon[j][0];
-    const yj = polygon[j][1];
-    const intersect =
-      yi > lat !== yj > lat &&
-      lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
+/**
+ * 射线法：点是否在多边形内。
+ * 委托 `@caoguo/maplibre` 的通用几何实现（**该实现补了 `polygon.length < 3` 守卫**，
+ * 原先本包缺少此守卫，2 点「多边形」可能误判为 true —— 属严格改进）。
+ * 注意：必须先 `import` 再 `export` —— 纯 `export ... from` 不会把它引入本模块作用域，
+ * 而本文件内部需要调用它。
+ */
+export { pointInPolygon };
 
 /**
  * CC-4 覆盖盲区识别：找出给定采样点中无覆盖或弱覆盖的区域
