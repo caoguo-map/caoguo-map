@@ -109,6 +109,11 @@
    - ai `batchGeocode`：7 例（空 rows、缺 lat、NaN、**(0,0) 判 provided**、failed 契约固化、parse 抛错传播）
    - editor 渲染运行时：7 例（parseScreenJSON 六类错误路径 + renderFromJSON 抛错先于 DOM）。**附带重构**：parseScreenJSON 拆至无 Vue 依赖的 `runtime/parseScreen.ts`（原文件静态 import `.vue` 导致 node 测试环境无法加载，vi.mock 拦截组件后验证抛错路径）
    - grid O-2/O-4：9 例（convexHull 退化/内部点/纯函数性、centroid 空集、severity 递减与排序居首）
-2. **P1（核心算法零守护，待补）**：compute C-1 着色层 + `checkAlerts`；pipeline H-5 权重；transport TF-4；telecom NH-3。
+2. ~~**P1（核心算法零守护）**~~ → **✅ 已修复（2026-10-03，+32 用例，全仓 975 全绿）**：
+   - compute：C-1 着色层 8 例（paint 表达式结构/色阶锚点/工厂回退/**色板常量固化**——改色必须显式改测试）+ legend 2 例 + LM-4 `checkAlerts` 5 例（**恰好等于阈值不告警**、**NaN 不告警**、超 2 倍 critical、自定义阈值）+ `latencyLevel` 边界 1 例
+   - pipeline：H-5 `scorePipeHealth` 9 例（**默认权重和为 1**、age/soil/history/protection 查表、damaged 约半/abandoned 归零、等级分档、**自定义权重生效**——此前改坏权重不破坏任何测试、批量入口）
+   - transport：TF-4 `renderOdMatrix` 5 例（图层产物/零流量插值锚点从 0 起/未知节点跳过/自定义前缀）。**发现并锁定契约差异**：本实现对空/全无效输入仍 upsert 空 source（等效清空上一帧），与 water/pipeline 的「空输入早退」不同——非 bug，测试即文档
+   - telecom：NH-3 `faultTrend` 5 例（day=UTC 日期、month=UTC 年月、**week=epoch 周序号而非自然周**、升序、空输入）
+   - 测试假设纠偏：`paintNodeBy` 合法 mode 并非 'gpu'；`paintLinkByType` 属性名是 `type` 非 `linkType`——按实现修正断言
 3. **P2（渲染薄壳对齐最佳实践，待补）**：把 B-2/B-5/H-2/F-2/F-6 渲染层测试补到 F-4/F-5/L-4 的「四连断言」标准。
 4. **文档一致性（待改）**：water DO-4/DO-5 验收清单自相矛盾；transport 测试标题编号错位；compute C-4 状态标注；editor 清单的用例数过期。
