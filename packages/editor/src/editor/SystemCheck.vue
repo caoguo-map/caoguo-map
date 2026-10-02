@@ -2,7 +2,8 @@
 import { ref, computed, watch } from 'vue';
 import { useEditor } from '../store/useEditor';
 import { useDataSources } from '../store/useDataSources';
-import type { DataSource, EditorNode, MapLayer, Scene } from '../types';
+import { runStaticCheck as runStaticCheckPure } from '../systemCheck';
+import type { CheckItem } from '../systemCheck';
 
 const props = defineProps<{ open: boolean }>();
 const emit = defineEmits<{ (e: 'close'): void }>();
@@ -10,143 +11,18 @@ const emit = defineEmits<{ (e: 'close'): void }>();
 const { state } = useEditor();
 const ds = useDataSources();
 
-type CheckLevel = 'error' | 'warn' | 'info' | 'ok';
-interface CheckItem {
-  level: CheckLevel;
-  group: string;
-  title: string;
-  detail?: string;
-}
-
 const items = ref<CheckItem[]>([]);
 const checking = ref(false);
 const connItems = ref<CheckItem[]>([]);
 const connChecking = ref(false);
 
-function isDataBound(n: { dataSourceId?: string; dataSource?: unknown }): boolean {
-  return !!(n.dataSourceId || n.dataSource);
-}
-function hasFetchable(src: DataSource | undefined): boolean {
-  if (!src) return false;
-  return (
-    src.staticData !== undefined ||
-    !!src.url ||
-    !!src.query ||
-    !!src.source ||
-    !!src.host ||
-    src.type === 'postmessage' ||
-    src.type === 'websocket'
-  );
-}
-
-/** 静态体检：配置完整性 / 节点越界 / 数据源绑定一致性（不发起网络） */
+/**
+ * 静态体检：委托 `systemCheck.runStaticCheck` 纯函数（可单测）。
+ * 覆盖：场景 key 缺失/重复、节点 id 重复、越界、数据源与绑定引用一致性、
+ * 设备图层引用、下钻场景引用、图表聚合字段、阈值规则完整性。不发起网络。
+ */
 function runStaticCheck() {
-  const list: CheckItem[] = [];
-  const cfg = state.config;
-  const cw = cfg.canvas?.width ?? 1920;
-  const ch = cfg.canvas?.height ?? 1080;
-  const managed = ds.list.value;
-
-  if (!Array.isArray(cfg.scenes) || cfg.scenes.length === 0) {
-    list.push({ level: 'error', group: '配置', title: '没有场景', detail: '至少需有一个场景才能投放大屏。' });
-  }
-
-  let totalNodes = 0;
-  const idSeen = new Map<string, string>();
-  const danglingRefs: string[] = [];
-
-  function walk(node: EditorNode, sceneTitle: string) {
-    totalNodes++;
-    // 重复 id
-    if (idSeen.has(node.id)) {
-      list.push({
-        level: 'error',
-        group: '场景·' + sceneTitle,
-        title: `重复节点 id：${node.id}`,
-        detail: `同时出现在「${idSeen.get(node.id)}」与「${sceneTitle}」`,
-      });
-    } else {
-      idSeen.set(node.id, sceneTitle);
-    }
-    // 越界
-    const p = node.position || ({} as any);
-    const x = p.x ?? 0;
-    const y = p.y ?? 0;
-    const w = p.w ?? 0;
-    const h = p.h ?? 0;
-    if (x < 0 || y < 0 || x + w > cw + 1 || y + h > ch + 1) {
-      list.push({
-        level: 'warn',
-        group: '场景·' + sceneTitle,
-        title: `节点越界：${node.type}（${node.id}）`,
-        detail: `位置 ${Math.round(x)},${Math.round(y)} 尺寸 ${Math.round(w)}×${Math.round(h)}，画布 ${cw}×${ch}`,
-      });
-    }
-    // 悬空数据源引用
-    if (node.dataSourceId && !managed.some((m) => m.id === node.dataSourceId)) {
-      danglingRefs.push(`${node.id}`);
-      list.push({
-        level: 'error',
-        group: '场景·' + sceneTitle,
-        title: `悬空数据源引用：${node.type}`,
-        detail: `节点 ${node.id} 引用 dataSourceId="${node.dataSourceId}"，但全局数据源中不存在`,
-      });
-    }
-    // 有数据源但无可取数配置（内联）
-    if (!node.dataSourceId && node.dataSource && !hasFetchable(node.dataSource)) {
-      list.push({
-        level: 'warn',
-        group: '场景·' + sceneTitle,
-        title: `数据源未配置：${node.type}`,
-        detail: `节点 ${node.id} 的内联数据源缺少可取数内容（url/query/staticData 等）`,
-      });
-    }
-    if (node.children) node.children.forEach((c) => walk(c, sceneTitle));
-  }
-  function walkLayer(l: MapLayer, sceneTitle: string) {
-    totalNodes++;
-    if (l.dataSourceId && !managed.some((m) => m.id === l.dataSourceId)) {
-      list.push({
-        level: 'error',
-        group: '场景·' + sceneTitle,
-        title: `悬空数据源引用（图层）：${l.type}`,
-        detail: `图层 ${l.id} 引用 dataSourceId="${l.dataSourceId}"，但全局数据源中不存在`,
-      });
-    }
-    if (!l.dataSourceId && l.dataSource && !hasFetchable(l.dataSource)) {
-      list.push({
-        level: 'warn',
-        group: '场景·' + sceneTitle,
-        title: `数据源未配置（图层）：${l.type}`,
-        detail: `图层 ${l.id} 的内联数据源缺少可取数内容`,
-      });
-    }
-  }
-
-  for (const s of cfg.scenes as Scene[]) {
-    s.components?.forEach((c) => walk(c, s.title));
-    s.layers?.forEach((l) => walkLayer(l, s.title));
-    if (s.map?.tiles === 'tianditu') {
-      list.push({
-        level: 'info',
-        group: '场景·' + s.title,
-        title: '使用天地图底图',
-        detail: '未配置天地图 Token 时底图会回退到内置暗色底图（可在「底图设置」中配置）。',
-      });
-    }
-  }
-
-  // 顶层统计
-  list.unshift({
-    level: 'ok',
-    group: '概览',
-    title: `共 ${cfg.scenes?.length ?? 0} 个场景 · ${totalNodes} 个节点 · ${managed.length} 个数据源`,
-  });
-  if (managed.length === 0) {
-    list.push({ level: 'info', group: '配置', title: '尚未创建任何数据源', detail: '需要实时数据的组件请先通过「数据源」面板创建。' });
-  }
-
-  items.value = list;
+  items.value = runStaticCheckPure({ config: state.config, managedSources: ds.list.value });
 }
 
 /** 数据源连通性体检：逐个发起 test（含网络） */
