@@ -1,6 +1,6 @@
 {
   "name": "@caoguo/map-editor",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "草果地图大屏可视化编辑器 —— 拖拽式大屏搭建工具，零代码创建游戏式地图大屏",
   "license": "Apache-2.0",
   "author": "caoguo <caoguo@hb.cn>",
