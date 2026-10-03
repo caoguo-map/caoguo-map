@@ -231,7 +231,7 @@ docs/
 | `industry/*.md` 六张网专题 | 行业方案文档 | 🟡 包级总览已落地（2026-10-03：六网各 1 篇，含数据模型/能力速查/快速上手/延伸链接；场景拆分页与 data-spec 随集成方需求补充） |
 | `deployment/k8s.md` `nginx.md` `tiles.md` `monitoring.md` | 规模化与运维增强 | ✅ 已落地（2026-10-03：按仓库真实拓扑写实——四站静态产物 + ai-server 8787 `/api/health` 探活 + PostGIS compose healthcheck；瓦片三路线含 `localBasemapStyle` 无瓦片的诚实声明） |
 | `contributing/*.md` | 开源贡献指南 | ✅ 已落地（2026-10-03：guide / architecture / code-style 三篇，沉淀行业包三件套约定与四连断言标准） |
-| `ai/geoai.md` `ai/debug.md` | AI 数据入图与调试 |
+| `ai/geoai.md` `ai/debug.md` | AI 数据入图与调试 | ✅ 已落地（2026-10-03：按 `packages/ai` 真实 API 写实——geoai 表头识别/地址解析/detectCRS/importToGeoJSON、debug analyzePerformance/analyzeTiles/detectMemoryLeak/diagnose，均含边界声明「规则引擎非 LLM」） |
 
 ---
 
@@ -494,7 +494,7 @@ onMounted(() => {
 | **M0（已完成）** | Phase-0 引擎 T1-T9 + D5；文档站搭建 + 6.1 清单 11 篇落地；双站构建通过；75 passed 测试 | ✅ 已交付 |
 | **M1（Phase 1）** | 把 T2/T4/T7/T8 等已实现能力补写成概念/教程/控件/相机/事件文档；examples ≥ 5；faq ≥ 5；随 NLPG/Copilot 能力开发写实 ai/* | ✅ 已落地（概念 5 篇含 projection/sources/layers/style、教程 2 篇、控件/相机/事件 API 齐；examples 8 篇、faq 5 篇；ai/nlpg + ai/copilot 已写实——2026-10-03 补齐概念与 2 个点名示例后收口） |
 | **M2（Phase 2）** | 六张网行业专题文档（随专题图层能力开发）；deployment 规模化（k8s/nginx/tiles/monitoring） | 🟡 大部分落地（**deployment ✅、行业专题包级总览 6 篇 ✅（2026-10-03）**；行业场景拆分页与 data-spec 随集成需求补充） |
-| **M3（Phase 3）** | contributing 开源贡献体系；ai/geoai、ai/debug；英文版评估 | 🟡 部分落地（**contributing ✅ 已落地（2026-10-03，三篇）**；ai/geoai、ai/debug 随 AI 能力开发写实；英文版评估待受众确认） |
+| **M3（Phase 3）** | contributing 开源贡献体系；ai/geoai、ai/debug；英文版评估 | 🟡 大部分落地（**contributing ✅ 三篇、ai/geoai ✅、ai/debug ✅（2026-10-03）**；仅英文版评估待受众确认） |
 
 > Phase-0 原「D1-D10」天级排期已实际执行完毕，此处不再保留；后续以 M1-M3 迭代视角跟踪，每迭代末做复审与对外口径校准。
 

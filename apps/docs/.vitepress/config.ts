@@ -102,6 +102,8 @@ export default defineConfig({
         items: [
           { text: 'NLPG 自然语言查询', link: '/ai/nlpg' },
           { text: 'MapCopilot 代码生成', link: '/ai/copilot' },
+          { text: 'GeoAI 数据入图', link: '/ai/geoai' },
+          { text: 'AI Debug 诊断', link: '/ai/debug' },
         ],
       },
       {
