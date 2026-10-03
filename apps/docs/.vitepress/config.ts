@@ -128,6 +128,10 @@ export default defineConfig({
         text: '部署',
         items: [
           { text: 'Docker 部署', link: '/deployment/docker' },
+          { text: 'Nginx 单机部署', link: '/deployment/nginx' },
+          { text: 'Kubernetes', link: '/deployment/k8s' },
+          { text: '瓦片服务', link: '/deployment/tiles' },
+          { text: '监控与运维', link: '/deployment/monitoring' },
           { text: '离线 / 空气隔离', link: '/deployment/air-gap' },
         ],
       },

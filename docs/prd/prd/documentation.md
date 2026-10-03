@@ -169,10 +169,10 @@ docs/
 ├── deployment/               # 部署运维
 │   ├── docker.md             # Docker 部署                       【✅ 已落地】
 │   ├── air-gap.md            # 离线/内网（空气隔离）部署           【✅ 已落地】
-│   ├── k8s.md                # Kubernetes 部署                  【🟡 规划中】
-│   ├── nginx.md              # Nginx 配置                       【🟡 规划中】
-│   ├── tiles.md              # 瓦片服务配置                     【🟡 规划中】
-│   └── monitoring.md         # 监控与告警                       【🟡 规划中】
+│   ├── nginx.md              # Nginx 单机部署（四站反代 + WS）     【✅ 已落地（2026-10-03）】
+│   ├── k8s.md                # Kubernetes 编排（探活/Secret/Ingress）【✅ 已落地（2026-10-03）】
+│   ├── tiles.md              # 瓦片服务（自建/天地图/离线三路线）   【✅ 已落地（2026-10-03）】
+│   └── monitoring.md         # 监控与运维（/api/health 挂钩）      【✅ 已落地（2026-10-03）】
 │
 ├── demo/                     # 交互式演示中心（apps/demo，VitePress）【✅ 已落地 D5】
 │   └── index.md + features/  # FeatureShowcase 串联（T8/T6/T7/T4/T5）【✅ 已落地】
@@ -258,7 +258,7 @@ docs/
 | 文档 | 说明 |
 |------|------|
 | `industry/pipeline/*.md` 等六张网 | 随六张网专题图层与数据接入能力开发后写实 |
-| `deployment/k8s.md` `nginx.md` `tiles.md` `monitoring.md` | 规模化与运维增强 |
+| `deployment/k8s.md` `nginx.md` `tiles.md` `monitoring.md` | 规模化与运维增强 | ✅ 已落地（2026-10-03：按仓库真实拓扑写实——四站静态产物 + ai-server 8787 `/api/health` 探活 + PostGIS compose healthcheck；瓦片三路线含 `localBasemapStyle` 无瓦片的诚实声明） |
 | `contributing/*.md` | 开源贡献指南 |
 | `ai/geoai.md` `ai/debug.md` | AI 数据入图与调试 |
 
@@ -522,7 +522,7 @@ onMounted(() => {
 |------|------|------|
 | **M0（已完成）** | Phase-0 引擎 T1-T9 + D5；文档站搭建 + 6.1 清单 11 篇落地；双站构建通过；75 passed 测试 | ✅ 已交付 |
 | **M1（Phase 1）** | 把 T2/T4/T7/T8 等已实现能力补写成概念/教程/控件/相机/事件文档；examples ≥ 5；faq ≥ 5；随 NLPG/Copilot 能力开发写实 ai/* | ✅ 已落地（概念 5 篇含 projection/sources/layers/style、教程 2 篇、控件/相机/事件 API 齐；examples 8 篇、faq 5 篇；ai/nlpg + ai/copilot 已写实——2026-10-03 补齐概念与 2 个点名示例后收口） |
-| **M2（Phase 2）** | 六张网行业专题文档（随专题图层能力开发）；deployment 规模化（k8s/nginx/tiles/monitoring） | 🟡 规划中 |
+| **M2（Phase 2）** | 六张网行业专题文档（随专题图层能力开发）；deployment 规模化（k8s/nginx/tiles/monitoring） | 🟡 部分落地（**deployment 规模化 ✅ 已落地（2026-10-03）**；六张网行业专题仍随能力开发写实） |
 | **M3（Phase 3）** | contributing 开源贡献体系；ai/geoai、ai/debug；英文版评估 | 🟡 规划中 |
 
 > Phase-0 原「D1-D10」天级排期已实际执行完毕，此处不再保留；后续以 M1-M3 迭代视角跟踪，每迭代末做复审与对外口径校准。

@@ -7,7 +7,7 @@
 ```bash
 pnpm install
 pnpm build
-# 产物位于 apps/landing/dist、apps/docs/dist、apps/demo/dist
+# 产物位于 apps/landing/.vitepress/dist、apps/docs/.vitepress/dist、apps/demo/.vitepress/dist（大屏编辑器为 apps/editor-app/dist）
 ```
 
 ## 2. 反向代理配置（Nginx）
@@ -36,9 +36,9 @@ server {
 ```dockerfile
 FROM nginx:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY apps/landing/dist   /srv/caoguo/landing/dist
-COPY apps/docs/dist      /srv/caoguo/docs/dist
-COPY apps/demo/dist      /srv/caoguo/demo/dist
+COPY apps/landing/.vitepress/dist /srv/caoguo/landing/dist
+COPY apps/docs/.vitepress/dist    /srv/caoguo/docs/dist
+COPY apps/demo/.vitepress/dist    /srv/caoguo/demo/dist
 ```
 
 ```bash
