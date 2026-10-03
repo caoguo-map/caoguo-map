@@ -145,8 +145,14 @@ docs/
 │   ├── tiles.md              # 瓦片服务（自建/天地图/离线三路线）   【✅ 已落地（2026-10-03）】
 │   └── monitoring.md         # 监控与运维（/api/health 挂钩）      【✅ 已落地（2026-10-03）】
 │
-├── demo/                     # 交互式演示中心（apps/demo，VitePress）【✅ 已落地 D5】
-│   └── index.md + features/  # FeatureShowcase 串联（T8/T6/T7/T4/T5）【✅ 已落地】
+├── demo/                     # 交互式演示中心（apps/demo，VitePress）【✅ 已落地（远超 D5 规划：六张网 30+ 交互演示页）】
+│   ├── Phase 0：basic/geojson/nlpg/copilot/features（FeatureShowcase 串联 T8/T6/T7/T4/T5）
+│   ├── 地下管网：topology/burst/health/nlpg（P1–P4）
+│   ├── 电网：topology/outage/load/station3d/realtime（G1–G5）
+│   ├── 水网：river/flood/dam（R1/F1/DO1）＋交通网：road/traffic/incident/transit（T1–T4）
+│   ├── 算力网：nodes/latency/predict/nlp（C1–C4）＋通信网：coverage/health/capacity（T1–T3）
+│   ├── themes/（六张网行业主题配色）＋ ai/（AI 工具链）
+│   └── data/：六网武汉合成示例数据（类型化 dataset，仅演示用）
 │
 ├── examples/                 # 代码示例【✅ 已落地（8 篇：基础地图/GeoJSON 图层/热力图/矢量瓦片/信息弹窗/管线辉光/自定义标记/3D 地形）】
 │   ├── basic-map.md          # 基础地图
@@ -204,7 +210,7 @@ docs/
 | `api/industry-extensions.md` | 跨包扩展：设备卡片外壳（cardFields）/ 故障根因诊断（NH-4）/ 算力任务分配（C-4）/ 绕行与影响范围渲染（IM-2~4） | ✅ 已落地（2026-08-28） |
 | `deployment/docker.md` | Docker 部署 | ✅ 已落地 |
 | `deployment/air-gap.md` | 离线/内网（空气隔离）部署 | ✅ 已落地 |
-| `demo/`（apps/demo） | D5 FeatureShowcase 串联闭环 | ✅ 已落地 |
+| `demo/`（apps/demo） | 交互式演示中心 | ✅ 已落地（D5 FeatureShowcase + **六张网 30+ 演示页**：P1–P4/G1–G5/R1·F1·DO1/T1–T4/C1–C4/通信 T1–T3 + 行业主题 + AI；每网配武汉类型化示例数据，42 处行业包 import，vitepress build 通过） |
 
 ### 6.2 P1 — Phase 1（🟡 与引擎能力同步启动）
 
