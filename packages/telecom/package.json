@@ -57,6 +57,16 @@
       "import": "./dist/nlpg/index.js",
       "require": "./dist/nlpg/index.cjs"
     },
+    "./topology": {
+      "types": "./dist/topology/index.d.ts",
+      "import": "./dist/topology/index.js",
+      "require": "./dist/topology/index.cjs"
+    },
+    "./capacity": {
+      "types": "./dist/capacity/index.d.ts",
+      "import": "./dist/capacity/index.js",
+      "require": "./dist/capacity/index.cjs"
+    },
     "./types": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/types/index.js",

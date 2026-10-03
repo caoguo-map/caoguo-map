@@ -57,6 +57,16 @@
       "import": "./dist/load/index.js",
       "require": "./dist/load/index.cjs"
     },
+    "./realtime": {
+      "types": "./dist/realtime/index.d.ts",
+      "import": "./dist/realtime/index.js",
+      "require": "./dist/realtime/index.cjs"
+    },
+    "./station3d": {
+      "types": "./dist/station3d/index.d.ts",
+      "import": "./dist/station3d/index.js",
+      "require": "./dist/station3d/index.cjs"
+    },
     "./types": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/types/index.js",
