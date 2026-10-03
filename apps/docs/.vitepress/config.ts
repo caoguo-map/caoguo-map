@@ -135,6 +135,14 @@ export default defineConfig({
           { text: '离线 / 空气隔离', link: '/deployment/air-gap' },
         ],
       },
+      {
+        text: '参与贡献',
+        items: [
+          { text: '快速上手', link: '/contributing/guide' },
+          { text: '项目架构', link: '/contributing/architecture' },
+          { text: '代码规范', link: '/contributing/code-style' },
+        ],
+      },
     ],
     socialLinks: [
       { icon: 'github', link: 'https://github.com/caoguo-map/caoguo-map' },
