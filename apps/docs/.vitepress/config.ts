@@ -72,6 +72,18 @@ export default defineConfig({
         ],
       },
       {
+        text: '六张网专题',
+        collapsed: false,
+        items: [
+          { text: '地下管网', link: '/industry/pipeline' },
+          { text: '电网', link: '/industry/grid' },
+          { text: '水网', link: '/industry/water' },
+          { text: '交通网', link: '/industry/transport' },
+          { text: '算力网', link: '/industry/compute' },
+          { text: '通信网', link: '/industry/telecom' },
+        ],
+      },
+      {
         text: '行业组件 API',
         collapsed: false,
         items: [

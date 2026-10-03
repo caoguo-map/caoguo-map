@@ -17,7 +17,7 @@
 | 引擎里程碑 | W8 Copilot v1 | 🟡 | 5 类意图代码生成已落地，**沙箱运行待 LLM 联调** |
 | 引擎里程碑 | W12 Phase 0 RC | 🟡 | 引擎/展示/文档 ✅，AI 三模块代码层 ✅、**端到端联调 🟡** |
 | pipeline | P-5 拓扑编辑 | 🟡 | **数据层已落地**（addNode/addPipe/removePipe/removeNode，端点校验保连通）；**拖拽交互由集成方实现** |
-| docs | M2 / M3（M1 已完成） | 🟡 | **M1 ✅**（概念 5 篇 / 教程 2 篇 / examples 8 篇 / faq 5 篇 / ai 写实，2026-10-03 收口）；**M2 🟡**：deployment 规模化 ✅（四篇），六张网行业专题随能力开发写实；**M3 🟡**：contributing ✅（三篇，2026-10-03），ai/geoai、ai/debug 随 AI 能力写实，英文版评估待定 |
+| docs | M2 / M3（M1 已完成） | 🟡 | **M1 ✅**（概念 5 篇 / 教程 2 篇 / examples 8 篇 / faq 5 篇 / ai 写实，2026-10-03 收口）；**M2 🟡 大部分落地**：deployment ✅（四篇）+ 六张网专题包级总览 ✅（6 篇，2026-10-03），场景拆分页随集成需求补；**M3 🟡**：contributing ✅（三篇，2026-10-03），ai/geoai、ai/debug 随 AI 能力写实，英文版评估待定 |
 | demo | 大屏编辑器与运行时 | 🟡 | 编辑器入口已迁移至独立应用 `apps/editor-app`，demo 站不再内嵌 |
 
 

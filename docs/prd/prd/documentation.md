@@ -129,42 +129,13 @@ docs/
 │   ├── geoai.md              # GeoAI 数据入图
 │   └── debug.md              # AI Debug 工具
 │
-├── industry/                 # 行业方案【🟡 规划中，六张网专题尚未启动】
-│   ├── pipeline/             # 地下管网
-│   │   ├── overview.md       # 方案概览
-│   │   ├── topology.md       # 拓扑编辑器
-│   │   ├── burst.md          # 爆管推演
-│   │   ├── leakage.md        # 泄漏扩散
-│   │   ├── health.md         # 健康评估
-│   │   └── data-spec.md      # 数据接入规范
-│   ├── grid/                 # 电网
-│   │   ├── overview.md
-│   │   ├── topology.md       # 电网拓扑
-│   │   ├── outage.md         # 停电分析
-│   │   ├── load.md           # 负荷热力图
-│   │   └── data-spec.md
-│   ├── water/                # 水网
-│   │   ├── overview.md
-│   │   ├── river.md          # 水系拓扑
-│   │   ├── flood.md          # 洪水淹没
-│   │   ├── dam.md            # 水库调度
-│   │   └── data-spec.md
-│   ├── transport/            # 交通网
-│   │   ├── overview.md
-│   │   ├── road.md           # 路网编辑器
-│   │   ├── traffic.md        # 交通流量
-│   │   ├── incident.md       # 事件响应
-│   │   └── data-spec.md
-│   ├── compute/              # 算力网
-│   │   ├── overview.md
-│   │   ├── nodes.md          # 算力节点
-│   │   ├── fiber.md          # 光缆路由
-│   │   └── data-spec.md
-│   └── telecom/              # 通信网
-│       ├── overview.md
-│       ├── coverage.md       # 基站覆盖
-│       ├── health.md         # 网络健康
-│       └── data-spec.md
+├── industry/                 # 行业方案【🟡 包级总览已落地（2026-10-03，六网各 1 篇）；场景拆分页/data-spec 按需补】
+│   ├── pipeline.md           # 地下管网（爆管/泄漏/健康/拓扑）
+│   ├── grid.md               # 电网（停电/负荷/实时/三维站）
+│   ├── water.md              # 水网（淹没/水库调度/撤退路径）
+│   ├── transport.md          # 交通网（路网/交通流/事件响应/OD）
+│   ├── compute.md            # 算力网（节点/延迟热力/分配/预测）
+│   └── telecom.md            # 通信网（覆盖/健康/容量/盲区）
 │
 ├── deployment/               # 部署运维
 │   ├── docker.md             # Docker 部署                       【✅ 已落地】
@@ -257,7 +228,7 @@ docs/
 
 | 文档 | 说明 |
 |------|------|
-| `industry/pipeline/*.md` 等六张网 | 随六张网专题图层与数据接入能力开发后写实 |
+| `industry/*.md` 六张网专题 | 行业方案文档 | 🟡 包级总览已落地（2026-10-03：六网各 1 篇，含数据模型/能力速查/快速上手/延伸链接；场景拆分页与 data-spec 随集成方需求补充） |
 | `deployment/k8s.md` `nginx.md` `tiles.md` `monitoring.md` | 规模化与运维增强 | ✅ 已落地（2026-10-03：按仓库真实拓扑写实——四站静态产物 + ai-server 8787 `/api/health` 探活 + PostGIS compose healthcheck；瓦片三路线含 `localBasemapStyle` 无瓦片的诚实声明） |
 | `contributing/*.md` | 开源贡献指南 | ✅ 已落地（2026-10-03：guide / architecture / code-style 三篇，沉淀行业包三件套约定与四连断言标准） |
 | `ai/geoai.md` `ai/debug.md` | AI 数据入图与调试 |
@@ -522,7 +493,7 @@ onMounted(() => {
 |------|------|------|
 | **M0（已完成）** | Phase-0 引擎 T1-T9 + D5；文档站搭建 + 6.1 清单 11 篇落地；双站构建通过；75 passed 测试 | ✅ 已交付 |
 | **M1（Phase 1）** | 把 T2/T4/T7/T8 等已实现能力补写成概念/教程/控件/相机/事件文档；examples ≥ 5；faq ≥ 5；随 NLPG/Copilot 能力开发写实 ai/* | ✅ 已落地（概念 5 篇含 projection/sources/layers/style、教程 2 篇、控件/相机/事件 API 齐；examples 8 篇、faq 5 篇；ai/nlpg + ai/copilot 已写实——2026-10-03 补齐概念与 2 个点名示例后收口） |
-| **M2（Phase 2）** | 六张网行业专题文档（随专题图层能力开发）；deployment 规模化（k8s/nginx/tiles/monitoring） | 🟡 部分落地（**deployment 规模化 ✅ 已落地（2026-10-03）**；六张网行业专题仍随能力开发写实） |
+| **M2（Phase 2）** | 六张网行业专题文档（随专题图层能力开发）；deployment 规模化（k8s/nginx/tiles/monitoring） | 🟡 大部分落地（**deployment ✅、行业专题包级总览 6 篇 ✅（2026-10-03）**；行业场景拆分页与 data-spec 随集成需求补充） |
 | **M3（Phase 3）** | contributing 开源贡献体系；ai/geoai、ai/debug；英文版评估 | 🟡 部分落地（**contributing ✅ 已落地（2026-10-03，三篇）**；ai/geoai、ai/debug 随 AI 能力开发写实；英文版评估待受众确认） |
 
 > Phase-0 原「D1-D10」天级排期已实际执行完毕，此处不再保留；后续以 M1-M3 迭代视角跟踪，每迭代末做复审与对外口径校准。
