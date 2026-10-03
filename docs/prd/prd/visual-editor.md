@@ -840,12 +840,7 @@ export function renderFromJSON(json: DashboardConfig, container: string | HTMLEl
 │   ├── schema/                   # JSON Schema 定义
 │   │   └── dashboard.json
 │   │
-│   └── templates/                # 行业模板
-│       ├── pipeline.json
-│       ├── grid.json
-│       ├── water.json
-│       ├── agriculture.json
-│       └── ...
+│   └── templates.ts              # 行业模板（8 套构建器，代码生成；原 templates/*.json 方案已并入）
 │
 └── demo/
     ├── editor.html               # 编辑器 Demo
