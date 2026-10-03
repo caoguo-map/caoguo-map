@@ -177,13 +177,14 @@ docs/
 ├── demo/                     # 交互式演示中心（apps/demo，VitePress）【✅ 已落地 D5】
 │   └── index.md + features/  # FeatureShowcase 串联（T8/T6/T7/T4/T5）【✅ 已落地】
 │
-├── examples/                 # 代码示例【✅ 已落地（6 篇：基础地图/GeoJSON 图层/热力图/矢量瓦片/信息弹窗/管线辉光）】
+├── examples/                 # 代码示例【✅ 已落地（8 篇：基础地图/GeoJSON 图层/热力图/矢量瓦片/信息弹窗/管线辉光/自定义标记/3D 地形）】
 │   ├── basic-map.md          # 基础地图
-│   ├── custom-marker.md      # 自定义标记
+│   ├── custom-marker.md      # 自定义标记（overlay 配色 + 信息卡片）
 │   ├── heatmap.md            # 热力图
 │   ├── vector-tiles.md       # 矢量切片
 │   ├── geojson-layer.md      # GeoJSON 图层
 │   ├── popup-info.md         # 信息弹窗
+│   ├── glow-pipeline.md      # 管线辉光
 │   └── 3d-terrain.md         # 3D 地形
 │
 ├── faq/                      # 常见问题【✅ 已落地（5 篇：坐标偏移/瓦片慢/样式/离线/兼容性）】
@@ -239,11 +240,16 @@ docs/
 | 文档 | 对应能力（规划） | 状态 |
 |------|------------------|------|
 | `guide/concepts/coordinates.md` | T2 CRS 转换（已实现） | ✅ 已落地 |
+| `guide/concepts/projection.md` | Web Mercator 投影与屏幕像素换算 | ✅ 已落地（2026-10-03） |
+| `guide/concepts/sources.md` | 数据源模型（幂等 upsert / 天地图预置 / 离线源） | ✅ 已落地（2026-10-03） |
+| `guide/concepts/layers.md` | 图层模型与 data-driven 表达式工程约定 | ✅ 已落地（2026-10-03） |
+| `guide/concepts/style.md` | 样式系统与行业主题注册表 | ✅ 已落地（2026-10-03） |
 | `guide/guides/data-import.md` | `packGeoJSON`（T4，已实现） | ✅ 已落地 |
 | `guide/guides/performance.md` | T7 LOD 控制器（已实现） | ✅ 已落地 |
 | `api/control/scale.md` `camera.md` | T8 ScaleControl / `flyTo`（已实现） | ✅ 已落地 |
 | `api/event.md` | `Map.on`（已实现） | ✅ 已落地 |
-| `examples/*.md` | — | ✅ 已落地（6 篇） |
+| `examples/custom-marker.md` `3d-terrain.md` | overlay 自定义标记 / 3D 地形（PRD 点名补齐） | ✅ 已落地（2026-10-03） |
+| `examples/*.md` | — | ✅ 已落地（8 篇） |
 | `faq/*.md` | — | ✅ 已落地（5 篇） |
 | `ai/nlpg.md` `ai/copilot.md` | D3 NLPG / D4 Copilot | ✅ 已落地（2026-10-02 写实：按 `@caoguo/maplibre-ai` 真实 API 编写，含规则引擎/安全校验/LLM 增强与 5 类意图） |
 
@@ -515,7 +521,7 @@ onMounted(() => {
 | 阶段 | 范围 | 状态 |
 |------|------|------|
 | **M0（已完成）** | Phase-0 引擎 T1-T9 + D5；文档站搭建 + 6.1 清单 11 篇落地；双站构建通过；75 passed 测试 | ✅ 已交付 |
-| **M1（Phase 1）** | 把 T2/T4/T7/T8 等已实现能力补写成概念/教程/控件/相机/事件文档；examples ≥ 5；faq ≥ 5；随 NLPG/Copilot 能力开发写实 ai/* | 🟡 规划中 |
+| **M1（Phase 1）** | 把 T2/T4/T7/T8 等已实现能力补写成概念/教程/控件/相机/事件文档；examples ≥ 5；faq ≥ 5；随 NLPG/Copilot 能力开发写实 ai/* | ✅ 已落地（概念 5 篇含 projection/sources/layers/style、教程 2 篇、控件/相机/事件 API 齐；examples 8 篇、faq 5 篇；ai/nlpg + ai/copilot 已写实——2026-10-03 补齐概念与 2 个点名示例后收口） |
 | **M2（Phase 2）** | 六张网行业专题文档（随专题图层能力开发）；deployment 规模化（k8s/nginx/tiles/monitoring） | 🟡 规划中 |
 | **M3（Phase 3）** | contributing 开源贡献体系；ai/geoai、ai/debug；英文版评估 | 🟡 规划中 |
 

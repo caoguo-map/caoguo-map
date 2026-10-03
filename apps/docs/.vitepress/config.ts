@@ -37,6 +37,10 @@ export default defineConfig({
             collapsed: true,
             items: [
               { text: '坐标系与偏移纠偏', link: '/guide/concepts/coordinates' },
+              { text: '投影与屏幕坐标', link: '/guide/concepts/projection' },
+              { text: '数据源 Sources', link: '/guide/concepts/sources' },
+              { text: '图层 Layers', link: '/guide/concepts/layers' },
+              { text: '样式与主题', link: '/guide/concepts/style' },
             ],
           },
           {
@@ -106,6 +110,8 @@ export default defineConfig({
           { text: '矢量瓦片', link: '/examples/vector-tiles' },
           { text: '信息弹窗', link: '/examples/popup-info' },
           { text: '管线辉光', link: '/examples/glow-pipeline' },
+          { text: '自定义标记', link: '/examples/custom-marker' },
+          { text: '3D 地形', link: '/examples/3d-terrain' },
         ],
       },
       {
